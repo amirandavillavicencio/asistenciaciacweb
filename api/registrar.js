@@ -1,4 +1,4 @@
-const { supabaseRequest } = require('../lib/supabase');
+const { supabaseGet, supabasePatch, supabasePost } = require('../lib/supabase');
 const { cleanRun, cleanDv, isValidRut } = require('../lib/rut');
 
 const CHILE_TIMEZONE = 'America/Santiago';
@@ -40,10 +40,9 @@ function getChileParts(date = new Date()) {
 
 function getChileDateInfo(date = new Date()) {
   const parts = getChileParts(date);
-  const dia = `${parts.year}-${parts.month}-${parts.day}`;
 
   return {
-    dia,
+    dia: `${parts.year}-${parts.month}-${parts.day}`,
     hora: `${parts.hour}:${parts.minute}:${parts.second}`,
   };
 }
@@ -57,31 +56,23 @@ function parseBody(req) {
 }
 
 async function getOpenRecord(dia, run) {
-  const data = await supabaseRequest({
-    path: 'attendance_records',
-    query: {
-      select: RECORD_SELECT,
-      dia: `eq.${dia}`,
-      run: `eq.${run}`,
-      estado: 'eq.Dentro',
-      order: 'hora_entrada.desc',
-      limit: '1',
-    },
-    prefer: null,
+  const data = await supabaseGet('attendance_records', {
+    select: RECORD_SELECT,
+    dia: `eq.${dia}`,
+    run: `eq.${run}`,
+    hora_salida: 'is.null',
+    order: 'hora_entrada.desc',
+    limit: '1',
   });
 
   return Array.isArray(data) ? data[0] || null : null;
 }
 
 async function getTodayRecords(dia) {
-  const data = await supabaseRequest({
-    path: 'attendance_records',
-    query: {
-      select: RECORD_SELECT,
-      dia: `eq.${dia}`,
-      order: 'hora_entrada.desc',
-    },
-    prefer: null,
+  const data = await supabaseGet('attendance_records', {
+    select: RECORD_SELECT,
+    dia: `eq.${dia}`,
+    order: 'hora_entrada.desc',
   });
 
   return Array.isArray(data) ? data : [];
@@ -137,13 +128,10 @@ module.exports = async function handler(req, res) {
     let action = 'entrada';
 
     if (openRecord) {
-      await supabaseRequest({
-        path: 'attendance_records',
-        method: 'PATCH',
-        query: {
-          id: `eq.${openRecord.id}`,
-        },
-        body: {
+      await supabasePatch(
+        'attendance_records',
+        { id: `eq.${openRecord.id}` },
+        {
           hora_salida: now.hora,
           dv,
           carrera,
@@ -155,27 +143,23 @@ module.exports = async function handler(req, res) {
           espacio,
           estado: 'Fuera',
         },
-      });
+      );
       action = 'salida';
     } else {
-      await supabaseRequest({
-        path: 'attendance_records',
-        method: 'POST',
-        body: {
-          dia: now.dia,
-          hora_entrada: now.hora,
-          hora_salida: null,
-          run,
-          dv,
-          carrera,
-          sede: campus,
-          anio_ingreso: Number(anioIngreso),
-          actividad,
-          tematica,
-          observaciones,
-          espacio,
-          estado: 'Dentro',
-        },
+      await supabasePost('attendance_records', {
+        dia: now.dia,
+        hora_entrada: now.hora,
+        hora_salida: null,
+        run,
+        dv,
+        carrera,
+        sede: campus,
+        anio_ingreso: Number(anioIngreso),
+        actividad,
+        tematica,
+        observaciones,
+        espacio,
+        estado: 'Dentro',
       });
     }
 
