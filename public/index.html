@@ -12,7 +12,7 @@
       <div>
         <p class="eyebrow">Registro diario</p>
         <h1>CIAC Registro</h1>
-        <p class="hero__text">Registro simple de entrada y salida con autocompletado desde la matriz institucional.</p>
+        <p class="hero__text">Registro de entrada y salida con autocompletado por RUN y exportación directa a Excel.</p>
       </div>
     </header>
 
@@ -20,7 +20,7 @@
       <div class="panel__header">
         <div>
           <h2>Formulario principal</h2>
-          <p>Completa RUN, valida el DV al registrar y selecciona la actividad del día.</p>
+          <p>El RUN busca en la matriz desde 3 dígitos, completa DV, carrera y año de ingreso, y valida el RUT solo al registrar.</p>
         </div>
       </div>
 
@@ -55,7 +55,7 @@
         <div class="grid grid--run">
           <label>
             <span>RUN</span>
-            <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números" required>
+            <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números, sin puntos ni guion" required>
           </label>
 
           <label>
@@ -78,22 +78,37 @@
           </label>
         </div>
 
+        <div class="grid grid--2">
+          <label>
+            <span>Temática</span>
+            <input id="tematica" name="tematica" type="text" autocomplete="off" placeholder="Ingresa la temática" required>
+          </label>
+
+          <label>
+            <span>Espacio</span>
+            <select id="espacio" name="espacio" required disabled>
+              <option value="">Selecciona primero el campus</option>
+            </select>
+          </label>
+        </div>
+
         <label>
-          <span>Espacio</span>
-          <select id="espacio" name="espacio" required disabled>
-            <option value="">Selecciona primero el campus</option>
-          </select>
+          <span>Observaciones</span>
+          <textarea id="observaciones" name="observaciones" rows="4" placeholder="Ingresa observaciones" required></textarea>
         </label>
 
-        <button id="submit-button" type="submit">Registrar</button>
+        <div class="actions">
+          <button id="submit-button" type="submit">Registrar</button>
+          <button id="export-button" type="button" class="button-secondary">Exportar Excel</button>
+        </div>
       </form>
     </section>
 
     <section class="panel">
       <div class="panel__header panel__header--table">
         <div>
-          <h2>Registros del día</h2>
-          <p>Vista operativa con entradas y salidas registradas hoy.</p>
+          <h2>Tabla del día</h2>
+          <p>Vista operativa de los registros creados hoy.</p>
         </div>
         <span id="records-count" class="badge">0 registros</span>
       </div>
@@ -102,19 +117,23 @@
         <table>
           <thead>
             <tr>
+              <th>Día</th>
               <th>Hora entrada</th>
               <th>Hora salida</th>
               <th>RUN</th>
+              <th>Dígito V</th>
               <th>Carrera</th>
-              <th>Campus</th>
+              <th>Sede</th>
+              <th>Año ingreso</th>
               <th>Actividad</th>
-              <th>Espacio</th>
+              <th>Temática</th>
+              <th>Observaciones</th>
               <th>Estado</th>
             </tr>
           </thead>
           <tbody id="records-body">
             <tr>
-              <td colspan="8" class="empty">No hay registros hoy.</td>
+              <td colspan="12" class="empty">No hay registros hoy.</td>
             </tr>
           </tbody>
         </table>

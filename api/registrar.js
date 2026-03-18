@@ -36,7 +36,7 @@ function getChileDateTime(date = new Date()) {
   );
 
   return {
-    fecha: `${parts.year}-${parts.month}-${parts.day}`,
+    dia: `${parts.year}-${parts.month}-${parts.day}`,
     hora: `${parts.hour}:${parts.minute}:${parts.second}`,
   };
 }
@@ -49,12 +49,12 @@ function parseBody(req) {
   return req.body || {};
 }
 
-async function getOpenRecord(fecha, run) {
+async function getOpenRecord(dia, run) {
   const data = await supabaseRequest({
     path: 'attendance_records',
     query: {
       select: 'id',
-      fecha: `eq.${fecha}`,
+      dia: `eq.${dia}`,
       run: `eq.${run}`,
       hora_salida: 'is.null',
       order: 'hora_entrada.desc',
@@ -65,12 +65,12 @@ async function getOpenRecord(fecha, run) {
   return Array.isArray(data) ? data[0] || null : null;
 }
 
-async function getTodayRecords(fecha) {
+async function getTodayRecords(dia) {
   return supabaseRequest({
     path: 'attendance_records',
     query: {
-      select: 'id,campus,run,dv,carrera,anio_ingreso,actividad,espacio,fecha,hora_entrada,hora_salida,estado',
-      fecha: `eq.${fecha}`,
+      select: 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado',
+      dia: `eq.${dia}`,
       order: 'hora_entrada.desc',
     },
   });
@@ -89,6 +89,8 @@ module.exports = async function handler(req, res) {
     const carrera = String(body.carrera || '').trim();
     const anioIngreso = String(body.anio_ingreso || '').trim();
     const actividad = String(body.actividad || '').trim();
+    const tematica = String(body.tematica || '').trim();
+    const observaciones = String(body.observaciones || '').trim();
     const espacio = String(body.espacio || '').trim();
 
     if (!CAMPUS_OPTIONS.includes(campus)) {
@@ -119,12 +121,20 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes seleccionar una actividad válida.' });
     }
 
+    if (!tematica) {
+      return res.status(400).json({ error: 'Debes ingresar la temática.' });
+    }
+
+    if (!observaciones) {
+      return res.status(400).json({ error: 'Debes ingresar las observaciones.' });
+    }
+
     if (!SPACE_OPTIONS[campus].includes(espacio)) {
       return res.status(400).json({ error: 'Debes seleccionar un espacio válido para el campus.' });
     }
 
     const now = getChileDateTime();
-    const openRecord = await getOpenRecord(now.fecha, run);
+    const openRecord = await getOpenRecord(now.dia, run);
 
     let action;
 
@@ -138,11 +148,13 @@ module.exports = async function handler(req, res) {
         body: {
           hora_salida: now.hora,
           estado: 'Finalizado',
-          campus,
           dv,
           carrera,
+          sede: campus,
           anio_ingreso: anioIngreso,
           actividad,
+          tematica,
+          observaciones,
           espacio,
         },
         prefer: 'return=minimal',
@@ -153,24 +165,26 @@ module.exports = async function handler(req, res) {
         path: 'attendance_records',
         method: 'POST',
         body: {
-          campus,
+          dia: now.dia,
+          hora_entrada: now.hora,
+          hora_salida: null,
           run,
           dv,
           carrera,
+          sede: campus,
           anio_ingreso: anioIngreso,
           actividad,
+          tematica,
+          observaciones,
           espacio,
-          fecha: now.fecha,
-          hora_entrada: now.hora,
-          hora_salida: null,
-          estado: 'En curso',
+          estado: 'Abierto',
         },
         prefer: 'return=minimal',
       });
       action = 'entrada';
     }
 
-    const registrosHoy = await getTodayRecords(now.fecha);
+    const registrosHoy = await getTodayRecords(now.dia);
 
     return res.status(200).json({
       ok: true,

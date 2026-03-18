@@ -23,12 +23,13 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
 .app-shell {
-  max-width: 1180px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 24px 16px 40px;
   display: grid;
@@ -112,7 +113,8 @@ label span {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 46px;
   border: 1px solid var(--border);
@@ -121,8 +123,14 @@ select {
   background: #fff;
 }
 
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: 2px solid rgba(18, 69, 122, 0.18);
   border-color: var(--primary);
 }
@@ -140,11 +148,24 @@ button {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+  padding: 0 18px;
 }
 
 button:disabled {
   opacity: 0.75;
   cursor: wait;
+}
+
+.button-secondary {
+  background: #eef4fb;
+  color: var(--primary);
+  border: 1px solid #cfe0f4;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .message {
@@ -205,6 +226,7 @@ thead th {
   font-size: 13px;
   background: #f8fafc;
   color: #334155;
+  white-space: nowrap;
 }
 
 th,
@@ -212,6 +234,7 @@ td {
   padding: 12px 10px;
   border-bottom: 1px solid var(--border);
   vertical-align: top;
+  font-size: 14px;
 }
 
 .empty {
@@ -252,7 +275,8 @@ td {
 
   .grid--2,
   .grid--run,
-  .panel__header {
+  .panel__header,
+  .actions {
     grid-template-columns: 1fr;
     display: grid;
   }

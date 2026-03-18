@@ -21,8 +21,8 @@ module.exports = async function handler(req, res) {
     const data = await supabaseRequest({
       path: 'attendance_records',
       query: {
-        select: 'id,campus,run,dv,carrera,anio_ingreso,actividad,espacio,fecha,hora_entrada,hora_salida,estado',
-        fecha: `eq.${today}`,
+        select: 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado',
+        dia: `eq.${today}`,
         order: 'hora_entrada.desc',
       },
     });
