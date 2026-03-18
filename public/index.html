@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIAC Registro</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="app__header">
+      <div>
+        <h1>CIAC Registro</h1>
+        <p>MVP mínimo para registro de entrada y salida.</p>
+      </div>
+    </header>
+
+    <section class="panel">
+      <h2>Registro</h2>
+
+      <div id="message" class="message" aria-live="polite"></div>
+
+      <form id="registro-form" class="form" novalidate>
+        <div class="form__row form__row--run">
+          <label>
+            <span>RUN</span>
+            <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números">
+          </label>
+
+          <label class="dv-field">
+            <span>DV</span>
+            <input id="dv" name="dv" type="text" maxlength="1" autocomplete="off" placeholder="K">
+          </label>
+        </div>
+
+        <p id="autocomplete-status" class="hint">Escribe al menos 3 dígitos del RUN para buscar coincidencias.</p>
+
+        <label>
+          <span>Nombre</span>
+          <input id="nombre" name="nombre" type="text" autocomplete="off" placeholder="Ingreso manual">
+        </label>
+
+        <label>
+          <span>Carrera</span>
+          <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Se puede autocompletar o editar">
+        </label>
+
+        <label>
+          <span>Año ingreso</span>
+          <input id="anio_ingreso" name="anio_ingreso" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Ej: 2024">
+        </label>
+
+        <button id="submit-button" type="submit">Registrar</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel__title">
+        <h2>Registros del día</h2>
+        <span id="records-count" class="badge">0 registros</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Hora entrada</th>
+              <th>Hora salida</th>
+              <th>RUN</th>
+              <th>Nombre</th>
+              <th>Carrera</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="records-body">
+            <tr>
+              <td colspan="6" class="empty">No hay registros hoy.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>

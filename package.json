@@ -1,0 +1,13 @@
+{
+  "name": "ciac-registro-mvp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MVP web de CIAC Registro listo para GitHub y Vercel.",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "devDependencies": {
+    "vercel": "^39.4.0"
+  }
+}
