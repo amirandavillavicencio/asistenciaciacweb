@@ -20,7 +20,6 @@ module.exports = async function handler(req, res) {
         rut: `eq.${run}`,
         limit: '1',
       },
-      prefer: 'return=representation',
     });
 
     const alumno = Array.isArray(data) ? data[0] : null;
