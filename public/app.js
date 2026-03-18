@@ -49,8 +49,37 @@ function clearMessage() {
   messageBox.className = 'message';
 }
 
+function buildApiError(data, fallback) {
+  if (!data || typeof data !== 'object') {
+    return fallback;
+  }
+
+  const parts = [];
+
+  if (data.error) {
+    parts.push(data.error);
+  }
+
+  if (data.detail && data.detail !== data.error) {
+    parts.push(data.detail);
+  }
+
+  if (data.supabase) {
+    const supabaseText = typeof data.supabase === 'string'
+      ? data.supabase
+      : JSON.stringify(data.supabase);
+
+    if (supabaseText && supabaseText !== '{}') {
+      parts.push(`Supabase: ${supabaseText}`);
+    }
+  }
+
+  return parts.join(' | ') || fallback;
+}
+
 function updateEspacios() {
   const spaces = CAMPUS_SPACES[campusInput.value] || [];
+  const previousValue = espacioInput.value;
 
   if (!spaces.length) {
     espacioInput.innerHTML = '<option value="">Selecciona primero el campus</option>';
@@ -62,6 +91,10 @@ function updateEspacios() {
     .concat(spaces.map((space) => `<option value="${escapeHtml(space)}">${escapeHtml(space)}</option>`))
     .join('');
   espacioInput.disabled = false;
+
+  if (spaces.includes(previousValue)) {
+    espacioInput.value = previousValue;
+  }
 }
 
 function renderRecords(records) {
@@ -101,7 +134,7 @@ async function loadTodayRecords() {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'No se pudieron cargar los registros.');
+    throw new Error(buildApiError(data, 'No se pudieron cargar los registros.'));
   }
 
   renderRecords(data.registros || []);
@@ -125,7 +158,7 @@ async function lookupStudent(runValue) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'No se pudo buscar el RUN.');
+      throw new Error(buildApiError(data, 'No se pudo buscar el RUN.'));
     }
 
     if (!data.alumno) {
@@ -159,7 +192,7 @@ async function exportExcel() {
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.error || 'No se pudo exportar el Excel.');
+      throw new Error(buildApiError(data, 'No se pudo exportar el Excel.'));
     }
 
     const blob = await response.blob();
@@ -236,24 +269,23 @@ form.addEventListener('submit', async (event) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'No se pudo registrar.');
+      throw new Error(buildApiError(data, 'No se pudo registrar la asistencia.'));
     }
 
     showMessage(data.message || 'Registro guardado.', 'success');
     renderRecords(data.registrosHoy || []);
+
     const selectedCampus = campusInput.value;
     const selectedActividad = actividadInput.value;
+
     form.reset();
     campusInput.value = selectedCampus;
     actividadInput.value = selectedActividad;
-    dvInput.value = '';
-    carreraInput.value = '';
-    anioInput.value = '';
     updateEspacios();
     autocompleteStatus.textContent = 'Escribe 3 o más dígitos del RUN para consultar la matriz.';
     runInput.focus();
   } catch (error) {
-    showMessage(error.message || 'No se pudo registrar.', 'error');
+    showMessage(error.message || 'No se pudo registrar la asistencia.', 'error');
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = 'Registrar';

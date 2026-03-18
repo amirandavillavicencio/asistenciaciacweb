@@ -32,34 +32,37 @@ module.exports = async function handler(req, res) {
 
   try {
     const dia = getChileDate();
-    const records = await supabaseGet('attendance_records', {
+    const registros = await supabaseGet('attendance_records', {
       select: 'dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones',
       dia: `eq.${dia}`,
-      order: 'hora_entrada.asc',
+      order: 'hora_entrada.desc',
     });
 
-    const rows = (Array.isArray(records) ? records : []).map((item) => ({
-      [EXPORT_HEADERS[0]]: item.dia || '',
-      [EXPORT_HEADERS[1]]: item.hora_entrada || '',
-      [EXPORT_HEADERS[2]]: item.hora_salida || '',
-      [EXPORT_HEADERS[3]]: item.run || '',
-      [EXPORT_HEADERS[4]]: item.dv || '',
-      [EXPORT_HEADERS[5]]: item.carrera || '',
-      [EXPORT_HEADERS[6]]: item.sede || '',
-      [EXPORT_HEADERS[7]]: item.anio_ingreso || '',
-      [EXPORT_HEADERS[8]]: item.actividad || '',
-      [EXPORT_HEADERS[9]]: item.tematica || '',
-      [EXPORT_HEADERS[10]]: item.observaciones || '',
-    }));
+    const rows = [EXPORT_HEADERS].concat(
+      (Array.isArray(registros) ? registros : []).map((item) => [
+        item.dia || '',
+        item.hora_entrada || '',
+        item.hora_salida || '',
+        item.run || '',
+        item.dv || '',
+        item.carrera || '',
+        item.sede || '',
+        item.anio_ingreso || '',
+        item.actividad || '',
+        item.tematica || '',
+        item.observaciones || '',
+      ]),
+    );
 
-    const worksheet = XLSX.utils.json_to_sheet(rows, { header: EXPORT_HEADERS, skipHeader: false });
     const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
 
     const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="ciac-registros-${dia}.xlsx"`);
+    res.setHeader('Content-Length', buffer.length);
     return res.status(200).send(buffer);
   } catch (error) {
     return res.status(error.status || 500).json({
