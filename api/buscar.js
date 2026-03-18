@@ -1,4 +1,4 @@
-const { supabaseRequest } = require('../lib/supabase');
+const { supabaseGet } = require('../lib/supabase');
 const { cleanRun } = require('../lib/rut');
 
 module.exports = async function handler(req, res) {
@@ -13,14 +13,10 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ alumno: null });
     }
 
-    const data = await supabaseRequest({
-      path: 'students_matrix',
-      query: {
-        select: 'run,dv,carrera,anio_ingreso,sede',
-        run: `eq.${run}`,
-        limit: '1',
-      },
-      prefer: null,
+    const data = await supabaseGet('students_matrix', {
+      select: 'rut,dv,carrera_ingreso,cohorte,sede',
+      rut: `eq.${run}`,
+      limit: '1',
     });
 
     const alumno = Array.isArray(data) ? data[0] || null : null;
@@ -31,10 +27,10 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       alumno: {
-        run: String(alumno.run || ''),
+        run,
         dv: String(alumno.dv || ''),
-        carrera: String(alumno.carrera || ''),
-        anio_ingreso: alumno.anio_ingreso === null || alumno.anio_ingreso === undefined ? '' : String(alumno.anio_ingreso),
+        carrera: String(alumno.carrera_ingreso || ''),
+        anio_ingreso: alumno.cohorte === null || alumno.cohorte === undefined ? '' : String(alumno.cohorte),
         sede: String(alumno.sede || ''),
       },
     });

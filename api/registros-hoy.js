@@ -1,4 +1,4 @@
-const { supabaseRequest } = require('../lib/supabase');
+const { supabaseGet } = require('../lib/supabase');
 
 const CHILE_TIMEZONE = 'America/Santiago';
 const RECORD_SELECT = 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado';
@@ -19,14 +19,10 @@ module.exports = async function handler(req, res) {
 
   try {
     const dia = getChileDate();
-    const data = await supabaseRequest({
-      path: 'attendance_records',
-      query: {
-        select: RECORD_SELECT,
-        dia: `eq.${dia}`,
-        order: 'hora_entrada.desc',
-      },
-      prefer: null,
+    const data = await supabaseGet('attendance_records', {
+      select: RECORD_SELECT,
+      dia: `eq.${dia}`,
+      order: 'hora_entrada.desc',
     });
 
     return res.status(200).json({

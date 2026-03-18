@@ -241,7 +241,14 @@ form.addEventListener('submit', async (event) => {
 
     showMessage(data.message || 'Registro guardado.', 'success');
     renderRecords(data.registrosHoy || []);
+    const selectedCampus = campusInput.value;
+    const selectedActividad = actividadInput.value;
     form.reset();
+    campusInput.value = selectedCampus;
+    actividadInput.value = selectedActividad;
+    dvInput.value = '';
+    carreraInput.value = '';
+    anioInput.value = '';
     updateEspacios();
     autocompleteStatus.textContent = 'Escribe 3 o más dígitos del RUN para consultar la matriz.';
     runInput.focus();
