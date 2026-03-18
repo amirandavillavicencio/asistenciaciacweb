@@ -5,7 +5,8 @@
   "description": "MVP web de CIAC Registro listo para GitHub y Vercel.",
   "scripts": {
     "dev": "vercel dev",
-    "start": "vercel dev"
+    "start": "vercel dev",
+    "check": "node --check api/buscar.js && node --check api/registrar.js && node --check api/registros-hoy.js && node --check lib/supabase.js && node --check lib/rut.js && node --check public/app.js"
   },
   "devDependencies": {
     "vercel": "^39.4.0"

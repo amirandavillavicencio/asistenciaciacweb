@@ -7,47 +7,82 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main class="app">
-    <header class="app__header">
+  <main class="app-shell">
+    <header class="hero">
       <div>
+        <p class="eyebrow">Registro diario</p>
         <h1>CIAC Registro</h1>
-        <p>MVP mínimo para registro de entrada y salida.</p>
+        <p class="hero__text">Registro simple de entrada y salida con autocompletado desde la matriz institucional.</p>
       </div>
     </header>
 
     <section class="panel">
-      <h2>Registro</h2>
+      <div class="panel__header">
+        <div>
+          <h2>Formulario principal</h2>
+          <p>Completa RUN, valida el DV al registrar y selecciona la actividad del día.</p>
+        </div>
+      </div>
 
       <div id="message" class="message" aria-live="polite"></div>
 
       <form id="registro-form" class="form" novalidate>
-        <div class="form__row form__row--run">
+        <div class="grid grid--2">
           <label>
-            <span>RUN</span>
-            <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números">
+            <span>Campus</span>
+            <select id="campus" name="campus" required>
+              <option value="">Selecciona campus</option>
+              <option value="Vitacura">Vitacura</option>
+              <option value="San Joaquín">San Joaquín</option>
+            </select>
           </label>
 
-          <label class="dv-field">
-            <span>DV</span>
-            <input id="dv" name="dv" type="text" maxlength="1" autocomplete="off" placeholder="K">
+          <label>
+            <span>Actividad</span>
+            <select id="actividad" name="actividad" required>
+              <option value="">Selecciona actividad</option>
+              <option value="Reforzamiento">Reforzamiento</option>
+              <option value="Consultoría">Consultoría</option>
+              <option value="Tutoría par integral">Tutoría par integral</option>
+              <option value="Mentoría">Mentoría</option>
+              <option value="Psicoeducativo individual">Psicoeducativo individual</option>
+              <option value="Psicoeducativo grupal">Psicoeducativo grupal</option>
+              <option value="Uso de sala">Uso de sala</option>
+            </select>
           </label>
         </div>
 
-        <p id="autocomplete-status" class="hint">Escribe al menos 3 dígitos del RUN para buscar coincidencias.</p>
+        <div class="grid grid--run">
+          <label>
+            <span>RUN</span>
+            <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números" required>
+          </label>
+
+          <label>
+            <span>DV</span>
+            <input id="dv" name="dv" type="text" maxlength="1" autocomplete="off" placeholder="K" required>
+          </label>
+        </div>
+
+        <p id="autocomplete-status" class="hint">Escribe 3 o más dígitos del RUN para consultar la matriz.</p>
+
+        <div class="grid grid--2">
+          <label>
+            <span>Carrera</span>
+            <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Se autocompleta desde la matriz" required>
+          </label>
+
+          <label>
+            <span>Año ingreso</span>
+            <input id="anio_ingreso" name="anio_ingreso" type="text" inputmode="numeric" autocomplete="off" placeholder="AAAA" maxlength="4" required>
+          </label>
+        </div>
 
         <label>
-          <span>Nombre</span>
-          <input id="nombre" name="nombre" type="text" autocomplete="off" placeholder="Ingreso manual">
-        </label>
-
-        <label>
-          <span>Carrera</span>
-          <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Se puede autocompletar o editar">
-        </label>
-
-        <label>
-          <span>Año ingreso</span>
-          <input id="anio_ingreso" name="anio_ingreso" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Ej: 2024">
+          <span>Espacio</span>
+          <select id="espacio" name="espacio" required disabled>
+            <option value="">Selecciona primero el campus</option>
+          </select>
         </label>
 
         <button id="submit-button" type="submit">Registrar</button>
@@ -55,8 +90,11 @@
     </section>
 
     <section class="panel">
-      <div class="panel__title">
-        <h2>Registros del día</h2>
+      <div class="panel__header panel__header--table">
+        <div>
+          <h2>Registros del día</h2>
+          <p>Vista operativa con entradas y salidas registradas hoy.</p>
+        </div>
         <span id="records-count" class="badge">0 registros</span>
       </div>
 
@@ -67,14 +105,16 @@
               <th>Hora entrada</th>
               <th>Hora salida</th>
               <th>RUN</th>
-              <th>Nombre</th>
               <th>Carrera</th>
+              <th>Campus</th>
+              <th>Actividad</th>
+              <th>Espacio</th>
               <th>Estado</th>
             </tr>
           </thead>
           <tbody id="records-body">
             <tr>
-              <td colspan="6" class="empty">No hay registros hoy.</td>
+              <td colspan="8" class="empty">No hay registros hoy.</td>
             </tr>
           </tbody>
         </table>

@@ -1,23 +1,39 @@
+const CAMPUS_SPACES = {
+  Vitacura: ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
+  'San Joaquín': ['Espacio común'],
+};
+
 const form = document.getElementById('registro-form');
+const campusInput = document.getElementById('campus');
 const runInput = document.getElementById('run');
 const dvInput = document.getElementById('dv');
-const nombreInput = document.getElementById('nombre');
 const carreraInput = document.getElementById('carrera');
 const anioInput = document.getElementById('anio_ingreso');
+const actividadInput = document.getElementById('actividad');
+const espacioInput = document.getElementById('espacio');
+const messageBox = document.getElementById('message');
+const autocompleteStatus = document.getElementById('autocomplete-status');
+const submitButton = document.getElementById('submit-button');
 const recordsBody = document.getElementById('records-body');
 const recordsCount = document.getElementById('records-count');
-const messageBox = document.getElementById('message');
-const submitButton = document.getElementById('submit-button');
-const autocompleteStatus = document.getElementById('autocomplete-status');
 
-let autocompleteTimer = null;
+let lookupTimer = null;
 
 function sanitizeRun(value) {
   return String(value).replace(/\D/g, '');
 }
 
 function sanitizeDv(value) {
-  return String(value).toUpperCase().replace(/[^0-9K]/g, '').slice(0, 1);
+  return String(value).trim().toUpperCase().replace(/[^0-9K]/g, '').slice(0, 1);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function showMessage(text, type) {
@@ -30,39 +46,57 @@ function clearMessage() {
   messageBox.className = 'message';
 }
 
+function updateEspacios() {
+  const campus = campusInput.value;
+  const spaces = CAMPUS_SPACES[campus] || [];
+
+  if (!spaces.length) {
+    espacioInput.innerHTML = '<option value="">Selecciona primero el campus</option>';
+    espacioInput.disabled = true;
+    return;
+  }
+
+  espacioInput.innerHTML = [
+    '<option value="">Selecciona espacio</option>',
+    ...spaces.map((space) => `<option value="${escapeHtml(space)}">${escapeHtml(space)}</option>`),
+  ].join('');
+  espacioInput.disabled = false;
+}
+
 function renderRecords(records) {
   if (!Array.isArray(records) || records.length === 0) {
-    recordsBody.innerHTML = '<tr><td colspan="6" class="empty">No hay registros hoy.</td></tr>';
+    recordsBody.innerHTML = '<tr><td colspan="8" class="empty">No hay registros hoy.</td></tr>';
     recordsCount.textContent = '0 registros';
     return;
   }
 
-  recordsBody.innerHTML = records.map((item) => `
-    <tr>
-      <td>${item.hora_entrada || ''}</td>
-      <td>${item.hora_salida || ''}</td>
-      <td>${item.run}-${item.dv}</td>
-      <td>${escapeHtml(item.nombre || '')}</td>
-      <td>${escapeHtml(item.carrera || '')}</td>
-      <td><span class="estado ${item.estado === 'Dentro' ? 'estado--dentro' : 'estado--fuera'}">${item.estado}</span></td>
-    </tr>
-  `).join('');
+  recordsBody.innerHTML = records.map((item) => {
+    const estadoClass = item.hora_salida ? 'estado--cerrado' : 'estado--activo';
+    return `
+      <tr>
+        <td>${escapeHtml(item.hora_entrada || '')}</td>
+        <td>${escapeHtml(item.hora_salida || '')}</td>
+        <td>${escapeHtml(item.run || '')}-${escapeHtml(item.dv || '')}</td>
+        <td>${escapeHtml(item.carrera || '')}</td>
+        <td>${escapeHtml(item.campus || '')}</td>
+        <td>${escapeHtml(item.actividad || '')}</td>
+        <td>${escapeHtml(item.espacio || '')}</td>
+        <td><span class="estado ${estadoClass}">${escapeHtml(item.estado || '')}</span></td>
+      </tr>
+    `;
+  }).join('');
 
   recordsCount.textContent = `${records.length} registro${records.length === 1 ? '' : 's'}`;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
 }
 
 async function loadTodayRecords() {
   const response = await fetch('/api/registros-hoy');
   const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'No se pudieron cargar los registros.');
+  }
+
   renderRecords(data.registros || []);
 }
 
@@ -70,38 +104,53 @@ async function lookupStudent(runValue) {
   const run = sanitizeRun(runValue);
 
   if (run.length < 3) {
-    autocompleteStatus.textContent = 'Escribe al menos 3 dígitos del RUN para buscar coincidencias.';
+    autocompleteStatus.textContent = 'Escribe 3 o más dígitos del RUN para consultar la matriz.';
     return;
   }
 
-  autocompleteStatus.textContent = 'Buscando coincidencia...';
+  autocompleteStatus.textContent = 'Buscando en la matriz...';
 
   try {
     const response = await fetch(`/api/buscar?run=${encodeURIComponent(run)}`);
     const data = await response.json();
 
+    if (!response.ok) {
+      throw new Error(data.error || 'No se pudo completar la búsqueda.');
+    }
+
     if (!data.alumno) {
-      autocompleteStatus.textContent = 'Sin coincidencias. Puedes completar los datos manualmente.';
+      autocompleteStatus.textContent = 'RUN sin coincidencia en la matriz. Completa DV, carrera y año ingreso manualmente.';
       return;
     }
 
     dvInput.value = data.alumno.dv || '';
     carreraInput.value = data.alumno.carrera || '';
-    anioInput.value = data.alumno.anio_ingreso ? String(data.alumno.anio_ingreso) : '';
-    autocompleteStatus.textContent = `Coincidencia encontrada para RUN ${data.alumno.run}-${data.alumno.dv}.`;
+    anioInput.value = data.alumno.anio_ingreso || '';
+
+    if (data.alumno.sede && !campusInput.value && Object.prototype.hasOwnProperty.call(CAMPUS_SPACES, data.alumno.sede)) {
+      campusInput.value = data.alumno.sede;
+      updateEspacios();
+    }
+
+    autocompleteStatus.textContent = 'Datos encontrados en la matriz: DV, carrera y año ingreso completados.';
   } catch (error) {
-    autocompleteStatus.textContent = 'No se pudo consultar el autocompletado.';
+    autocompleteStatus.textContent = 'No se pudo consultar la matriz en este momento.';
   }
 }
+
+campusInput.addEventListener('change', () => {
+  updateEspacios();
+  clearMessage();
+});
 
 runInput.addEventListener('input', () => {
   runInput.value = sanitizeRun(runInput.value);
   clearMessage();
 
-  window.clearTimeout(autocompleteTimer);
-  autocompleteTimer = window.setTimeout(() => {
+  window.clearTimeout(lookupTimer);
+  lookupTimer = window.setTimeout(() => {
     lookupStudent(runInput.value);
-  }, 250);
+  }, 300);
 });
 
 dvInput.addEventListener('input', () => {
@@ -110,7 +159,7 @@ dvInput.addEventListener('input', () => {
 });
 
 anioInput.addEventListener('input', () => {
-  anioInput.value = anioInput.value.replace(/\D/g, '').slice(0, 4);
+  anioInput.value = String(anioInput.value).replace(/\D/g, '').slice(0, 4);
 });
 
 form.addEventListener('submit', async (event) => {
@@ -118,11 +167,13 @@ form.addEventListener('submit', async (event) => {
   clearMessage();
 
   const payload = {
+    campus: campusInput.value,
     run: sanitizeRun(runInput.value),
     dv: sanitizeDv(dvInput.value),
-    nombre: nombreInput.value.trim(),
     carrera: carreraInput.value.trim(),
     anio_ingreso: anioInput.value.trim(),
+    actividad: actividadInput.value,
+    espacio: espacioInput.value,
   };
 
   submitButton.disabled = true;
@@ -144,8 +195,17 @@ form.addEventListener('submit', async (event) => {
 
     showMessage(data.message || 'Registro actualizado.', 'success');
     renderRecords(data.registrosHoy || []);
+
+    const campusValue = campusInput.value;
+    const actividadValue = actividadInput.value;
+    const espacioValue = espacioInput.value;
+
     form.reset();
-    autocompleteStatus.textContent = 'Escribe al menos 3 dígitos del RUN para buscar coincidencias.';
+    campusInput.value = campusValue;
+    actividadInput.value = actividadValue;
+    updateEspacios();
+    espacioInput.value = espacioValue;
+    autocompleteStatus.textContent = 'Escribe 3 o más dígitos del RUN para consultar la matriz.';
     runInput.focus();
   } catch (error) {
     showMessage('Ocurrió un error inesperado al registrar.', 'error');
@@ -155,6 +215,7 @@ form.addEventListener('submit', async (event) => {
   }
 });
 
-loadTodayRecords().catch(() => {
-  showMessage('No se pudieron cargar los registros del día.', 'error');
+updateEspacios();
+loadTodayRecords().catch((error) => {
+  showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
 });
