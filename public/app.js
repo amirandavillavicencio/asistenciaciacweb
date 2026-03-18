@@ -1,6 +1,6 @@
 const CAMPUS_SPACES = {
-  Vitacura: ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
-  'San Joaquín': ['Espacio común'],
+  Vitacura: ['Espacio común'],
+  'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
 };
 
 const form = document.getElementById('registro-form');
@@ -10,7 +10,10 @@ const dvInput = document.getElementById('dv');
 const carreraInput = document.getElementById('carrera');
 const anioInput = document.getElementById('anio_ingreso');
 const actividadInput = document.getElementById('actividad');
+const tematicaInput = document.getElementById('tematica');
+const observacionesInput = document.getElementById('observaciones');
 const espacioInput = document.getElementById('espacio');
+const exportButton = document.getElementById('export-button');
 const messageBox = document.getElementById('message');
 const autocompleteStatus = document.getElementById('autocomplete-status');
 const submitButton = document.getElementById('submit-button');
@@ -28,12 +31,32 @@ function sanitizeDv(value) {
 }
 
 function escapeHtml(value) {
-  return String(value)
+  return String(value || '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return escapeHtml(value);
+  }
+
+  return new Intl.DateTimeFormat('es-CL', {
+    timeZone: 'America/Santiago',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).format(date);
 }
 
 function showMessage(text, type) {
@@ -65,21 +88,27 @@ function updateEspacios() {
 
 function renderRecords(records) {
   if (!Array.isArray(records) || records.length === 0) {
-    recordsBody.innerHTML = '<tr><td colspan="8" class="empty">No hay registros hoy.</td></tr>';
+    recordsBody.innerHTML = '<tr><td colspan="13" class="empty">No hay registros hoy.</td></tr>';
     recordsCount.textContent = '0 registros';
     return;
   }
 
   recordsBody.innerHTML = records.map((item) => {
-    const estadoClass = item.hora_salida ? 'estado--cerrado' : 'estado--activo';
+    const estadoClass = item.estado === 'Dentro' ? 'estado--activo' : 'estado--cerrado';
+
     return `
       <tr>
-        <td>${escapeHtml(item.hora_entrada || '')}</td>
-        <td>${escapeHtml(item.hora_salida || '')}</td>
-        <td>${escapeHtml(item.run || '')}-${escapeHtml(item.dv || '')}</td>
+        <td>${escapeHtml(item.dia || '')}</td>
+        <td>${formatDateTime(item.hora_entrada)}</td>
+        <td>${formatDateTime(item.hora_salida)}</td>
+        <td>${escapeHtml(item.run || '')}</td>
+        <td>${escapeHtml(item.dv || '')}</td>
         <td>${escapeHtml(item.carrera || '')}</td>
-        <td>${escapeHtml(item.campus || '')}</td>
+        <td>${escapeHtml(item.sede || '')}</td>
+        <td>${escapeHtml(item.anio_ingreso || '')}</td>
         <td>${escapeHtml(item.actividad || '')}</td>
+        <td>${escapeHtml(item.tematica || '')}</td>
+        <td>${escapeHtml(item.observaciones || '')}</td>
         <td>${escapeHtml(item.espacio || '')}</td>
         <td><span class="estado ${estadoClass}">${escapeHtml(item.estado || '')}</span></td>
       </tr>
@@ -108,7 +137,7 @@ async function lookupStudent(runValue) {
     return;
   }
 
-  autocompleteStatus.textContent = 'Buscando en la matriz...';
+  autocompleteStatus.textContent = 'Buscando en students_matrix...';
 
   try {
     const response = await fetch(`/api/buscar?run=${encodeURIComponent(run)}`);
@@ -126,15 +155,44 @@ async function lookupStudent(runValue) {
     dvInput.value = data.alumno.dv || '';
     carreraInput.value = data.alumno.carrera || '';
     anioInput.value = data.alumno.anio_ingreso || '';
-
-    if (data.alumno.sede && !campusInput.value && Object.prototype.hasOwnProperty.call(CAMPUS_SPACES, data.alumno.sede)) {
-      campusInput.value = data.alumno.sede;
-      updateEspacios();
-    }
-
     autocompleteStatus.textContent = 'Datos encontrados en la matriz: DV, carrera y año ingreso completados.';
   } catch (error) {
-    autocompleteStatus.textContent = 'No se pudo consultar la matriz en este momento.';
+    autocompleteStatus.textContent = 'No se pudo consultar students_matrix en este momento.';
+  }
+}
+
+async function exportExcel() {
+  exportButton.disabled = true;
+  exportButton.textContent = 'Exportando...';
+  clearMessage();
+
+  try {
+    const response = await fetch('/api/exportar-excel');
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'No se pudo exportar el archivo.');
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="?([^\"]+)"?/i);
+    const filename = match ? match[1] : 'ciac-registros.xlsx';
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    showMessage('Excel exportado correctamente desde attendance_records.', 'success');
+  } catch (error) {
+    showMessage(error.message || 'No se pudo exportar el Excel.', 'error');
+  } finally {
+    exportButton.disabled = false;
+    exportButton.textContent = 'Exportar Excel';
   }
 }
 
@@ -162,6 +220,10 @@ anioInput.addEventListener('input', () => {
   anioInput.value = String(anioInput.value).replace(/\D/g, '').slice(0, 4);
 });
 
+exportButton.addEventListener('click', () => {
+  exportExcel();
+});
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   clearMessage();
@@ -173,6 +235,8 @@ form.addEventListener('submit', async (event) => {
     carrera: carreraInput.value.trim(),
     anio_ingreso: anioInput.value.trim(),
     actividad: actividadInput.value,
+    tematica: tematicaInput.value.trim(),
+    observaciones: observacionesInput.value.trim(),
     espacio: espacioInput.value,
   };
 
@@ -196,15 +260,8 @@ form.addEventListener('submit', async (event) => {
     showMessage(data.message || 'Registro actualizado.', 'success');
     renderRecords(data.registrosHoy || []);
 
-    const campusValue = campusInput.value;
-    const actividadValue = actividadInput.value;
-    const espacioValue = espacioInput.value;
-
     form.reset();
-    campusInput.value = campusValue;
-    actividadInput.value = actividadValue;
     updateEspacios();
-    espacioInput.value = espacioValue;
     autocompleteStatus.textContent = 'Escribe 3 o más dígitos del RUN para consultar la matriz.';
     runInput.focus();
   } catch (error) {

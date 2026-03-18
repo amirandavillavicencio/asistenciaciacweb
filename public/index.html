@@ -12,7 +12,7 @@
       <div>
         <p class="eyebrow">Registro diario</p>
         <h1>CIAC Registro</h1>
-        <p class="hero__text">Registro simple de entrada y salida con autocompletado desde la matriz institucional.</p>
+        <p class="hero__text">Registro de entrada y salida con autocompletado por RUN desde students_matrix y persistencia real en Supabase.</p>
       </div>
     </header>
 
@@ -20,8 +20,9 @@
       <div class="panel__header">
         <div>
           <h2>Formulario principal</h2>
-          <p>Completa RUN, valida el DV al registrar y selecciona la actividad del día.</p>
+          <p>Completa el RUN, revisa el autocompletado y registra entrada o salida según corresponda.</p>
         </div>
+        <button id="export-button" class="button button--secondary" type="button">Exportar Excel</button>
       </div>
 
       <div id="message" class="message" aria-live="polite"></div>
@@ -78,14 +79,26 @@
           </label>
         </div>
 
+        <div class="grid grid--2">
+          <label>
+            <span>Temática</span>
+            <input id="tematica" name="tematica" type="text" autocomplete="off" placeholder="Describe la temática">
+          </label>
+
+          <label>
+            <span>Espacio</span>
+            <select id="espacio" name="espacio" required disabled>
+              <option value="">Selecciona primero el campus</option>
+            </select>
+          </label>
+        </div>
+
         <label>
-          <span>Espacio</span>
-          <select id="espacio" name="espacio" required disabled>
-            <option value="">Selecciona primero el campus</option>
-          </select>
+          <span>Observaciones</span>
+          <textarea id="observaciones" name="observaciones" rows="4" placeholder="Observaciones del registro"></textarea>
         </label>
 
-        <button id="submit-button" type="submit">Registrar</button>
+        <button id="submit-button" class="button" type="submit">Registrar</button>
       </form>
     </section>
 
@@ -93,7 +106,7 @@
       <div class="panel__header panel__header--table">
         <div>
           <h2>Registros del día</h2>
-          <p>Vista operativa con entradas y salidas registradas hoy.</p>
+          <p>Vista operativa sincronizada con attendance_records.</p>
         </div>
         <span id="records-count" class="badge">0 registros</span>
       </div>
@@ -102,19 +115,24 @@
         <table>
           <thead>
             <tr>
+              <th>Día</th>
               <th>Hora entrada</th>
               <th>Hora salida</th>
               <th>RUN</th>
+              <th>Dígito V</th>
               <th>Carrera</th>
-              <th>Campus</th>
+              <th>Sede</th>
+              <th>Año ingreso</th>
               <th>Actividad</th>
+              <th>Temática</th>
+              <th>Observaciones</th>
               <th>Espacio</th>
               <th>Estado</th>
             </tr>
           </thead>
           <tbody id="records-body">
             <tr>
-              <td colspan="8" class="empty">No hay registros hoy.</td>
+              <td colspan="13" class="empty">No hay registros hoy.</td>
             </tr>
           </tbody>
         </table>

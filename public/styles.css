@@ -23,12 +23,13 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
 .app-shell {
-  max-width: 1180px;
+  max-width: 1380px;
   margin: 0 auto;
   padding: 24px 16px 40px;
   display: grid;
@@ -112,7 +113,8 @@ label span {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 46px;
   border: 1px solid var(--border);
@@ -121,8 +123,14 @@ select {
   background: #fff;
 }
 
+textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: 2px solid rgba(18, 69, 122, 0.18);
   border-color: var(--primary);
 }
@@ -132,6 +140,7 @@ select:disabled {
   color: #94a3b8;
 }
 
+.button,
 button {
   min-height: 48px;
   border: 0;
@@ -140,6 +149,11 @@ button {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+  padding: 0 16px;
+}
+
+.button--secondary {
+  background: #0f172a;
 }
 
 button:disabled {
@@ -205,6 +219,7 @@ thead th {
   font-size: 13px;
   background: #f8fafc;
   color: #334155;
+  white-space: nowrap;
 }
 
 th,
@@ -212,6 +227,7 @@ td {
   padding: 12px 10px;
   border-bottom: 1px solid var(--border);
   vertical-align: top;
+  font-size: 14px;
 }
 
 .empty {
