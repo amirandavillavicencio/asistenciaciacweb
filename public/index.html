@@ -10,25 +10,17 @@
   <main class="app-shell">
     <header class="hero">
       <div>
-        <p class="eyebrow">Registro diario</p>
-        <h1>CIAC Registro</h1>
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
-        <p class="hero__text">Registro de entrada y salida con autocompletado por RUN desde students_matrix y persistencia real en Supabase.</p>
-=======
-        <p class="hero__text">Registro de entrada y salida con autocompletado por RUN y exportación directa a Excel.</p>
->>>>>>> main
+        <p class="eyebrow">MVP CIAC</p>
+        <h1>Registro CIAC</h1>
+        <p class="hero__text">Ingreso de RUN, autocompletado desde Supabase, registro de entrada/salida y exportación diaria a Excel.</p>
       </div>
     </header>
 
     <section class="panel">
       <div class="panel__header">
         <div>
-          <h2>Formulario principal</h2>
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
-          <p>Completa el RUN, revisa el autocompletado y registra entrada o salida según corresponda.</p>
-=======
-          <p>El RUN busca en la matriz desde 3 dígitos, completa DV, carrera y año de ingreso, y valida el RUT solo al registrar.</p>
->>>>>>> main
+          <h2>Registrar asistencia</h2>
+          <p>Completa el RUN y guarda la entrada o salida del estudiante.</p>
         </div>
         <button id="export-button" class="button button--secondary" type="button">Exportar Excel</button>
       </div>
@@ -78,7 +70,7 @@
         <div class="grid grid--2">
           <label>
             <span>Carrera</span>
-            <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Se autocompleta desde la matriz" required>
+            <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Se autocompleta desde Supabase" required>
           </label>
 
           <label>
@@ -90,11 +82,7 @@
         <div class="grid grid--2">
           <label>
             <span>Temática</span>
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
-            <input id="tematica" name="tematica" type="text" autocomplete="off" placeholder="Describe la temática">
-=======
-            <input id="tematica" name="tematica" type="text" autocomplete="off" placeholder="Ingresa la temática" required>
->>>>>>> main
+            <input id="tematica" name="tematica" type="text" autocomplete="off" placeholder="Tema trabajado" required>
           </label>
 
           <label>
@@ -107,33 +95,18 @@
 
         <label>
           <span>Observaciones</span>
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
           <textarea id="observaciones" name="observaciones" rows="4" placeholder="Observaciones del registro"></textarea>
         </label>
 
         <button id="submit-button" class="button" type="submit">Registrar</button>
-=======
-          <textarea id="observaciones" name="observaciones" rows="4" placeholder="Ingresa observaciones" required></textarea>
-        </label>
-
-        <div class="actions">
-          <button id="submit-button" type="submit">Registrar</button>
-          <button id="export-button" type="button" class="button-secondary">Exportar Excel</button>
-        </div>
->>>>>>> main
       </form>
     </section>
 
     <section class="panel">
       <div class="panel__header panel__header--table">
         <div>
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
           <h2>Registros del día</h2>
-          <p>Vista operativa sincronizada con attendance_records.</p>
-=======
-          <h2>Tabla del día</h2>
-          <p>Vista operativa de los registros creados hoy.</p>
->>>>>>> main
+          <p>Datos cargados desde attendance_records.</p>
         </div>
         <span id="records-count" class="badge">0 registros</span>
       </div>
@@ -146,27 +119,20 @@
               <th>Hora entrada</th>
               <th>Hora salida</th>
               <th>RUN</th>
-              <th>Dígito V</th>
+              <th>DV</th>
               <th>Carrera</th>
               <th>Sede</th>
               <th>Año ingreso</th>
               <th>Actividad</th>
               <th>Temática</th>
               <th>Observaciones</th>
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
               <th>Espacio</th>
-=======
->>>>>>> main
               <th>Estado</th>
             </tr>
           </thead>
           <tbody id="records-body">
             <tr>
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
               <td colspan="13" class="empty">No hay registros hoy.</td>
-=======
-              <td colspan="12" class="empty">No hay registros hoy.</td>
->>>>>>> main
             </tr>
           </tbody>
         </table>

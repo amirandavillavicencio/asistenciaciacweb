@@ -12,7 +12,9 @@
   --error-text: #b42318;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -29,11 +31,7 @@ textarea {
 }
 
 .app-shell {
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
   max-width: 1380px;
-=======
-  max-width: 1400px;
->>>>>>> main
   margin: 0 auto;
   padding: 24px 16px 40px;
   display: grid;
@@ -128,13 +126,8 @@ textarea {
 }
 
 textarea {
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
   resize: vertical;
   min-height: 110px;
-=======
-  min-height: 110px;
-  resize: vertical;
->>>>>>> main
 }
 
 input:focus,
@@ -158,32 +151,16 @@ button {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
   padding: 0 16px;
 }
 
 .button--secondary {
   background: #0f172a;
-=======
-  padding: 0 18px;
->>>>>>> main
 }
 
 button:disabled {
   opacity: 0.75;
   cursor: wait;
-}
-
-.button-secondary {
-  background: #eef4fb;
-  color: var(--primary);
-  border: 1px solid #cfe0f4;
-}
-
-.actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
 }
 
 .message {
@@ -264,39 +241,29 @@ td {
 .estado {
   display: inline-flex;
   align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
   border-radius: 999px;
-  padding: 4px 10px;
   font-size: 12px;
   font-weight: 700;
 }
 
 .estado--activo {
-  background: #ecfdf3;
+  background: #dcfce7;
   color: #166534;
 }
 
 .estado--cerrado {
-  background: #eef2f6;
-  color: #475467;
+  background: #e2e8f0;
+  color: #334155;
 }
 
-@media (max-width: 760px) {
-  .app-shell {
-    padding: 16px 12px 28px;
-  }
-
-  .hero,
-  .panel {
-    padding: 16px;
-    border-radius: 14px;
-  }
-
+@media (max-width: 800px) {
   .grid--2,
   .grid--run,
-  .panel__header,
-  .actions {
+  .panel__header {
     grid-template-columns: 1fr;
-    display: grid;
+    flex-direction: column;
   }
 
   .panel__header--table {

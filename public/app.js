@@ -17,18 +17,17 @@ const exportButton = document.getElementById('export-button');
 const messageBox = document.getElementById('message');
 const autocompleteStatus = document.getElementById('autocomplete-status');
 const submitButton = document.getElementById('submit-button');
-const exportButton = document.getElementById('export-button');
 const recordsBody = document.getElementById('records-body');
 const recordsCount = document.getElementById('records-count');
 
 let lookupTimer = null;
 
 function sanitizeRun(value) {
-  return String(value).replace(/\D/g, '');
+  return String(value || '').replace(/\D/g, '');
 }
 
 function sanitizeDv(value) {
-  return String(value).trim().toUpperCase().replace(/[^0-9K]/g, '').slice(0, 1);
+  return String(value || '').trim().toUpperCase().replace(/[^0-9K]/g, '').slice(0, 1);
 }
 
 function escapeHtml(value) {
@@ -38,26 +37,6 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
-}
-
-function formatDateTime(value) {
-  if (!value) {
-    return '';
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return escapeHtml(value);
-  }
-
-  return new Intl.DateTimeFormat('es-CL', {
-    timeZone: 'America/Santiago',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  }).format(date);
 }
 
 function showMessage(text, type) {
@@ -71,8 +50,7 @@ function clearMessage() {
 }
 
 function updateEspacios() {
-  const campus = campusInput.value;
-  const spaces = CAMPUS_SPACES[campus] || [];
+  const spaces = CAMPUS_SPACES[campusInput.value] || [];
 
   if (!spaces.length) {
     espacioInput.innerHTML = '<option value="">Selecciona primero el campus</option>';
@@ -80,20 +58,15 @@ function updateEspacios() {
     return;
   }
 
-  espacioInput.innerHTML = [
-    '<option value="">Selecciona espacio</option>',
-    ...spaces.map((space) => `<option value="${escapeHtml(space)}">${escapeHtml(space)}</option>`),
-  ].join('');
+  espacioInput.innerHTML = ['<option value="">Selecciona espacio</option>']
+    .concat(spaces.map((space) => `<option value="${escapeHtml(space)}">${escapeHtml(space)}</option>`))
+    .join('');
   espacioInput.disabled = false;
 }
 
 function renderRecords(records) {
   if (!Array.isArray(records) || records.length === 0) {
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
     recordsBody.innerHTML = '<tr><td colspan="13" class="empty">No hay registros hoy.</td></tr>';
-=======
-    recordsBody.innerHTML = '<tr><td colspan="12" class="empty">No hay registros hoy.</td></tr>';
->>>>>>> main
     recordsCount.textContent = '0 registros';
     return;
   }
@@ -103,27 +76,19 @@ function renderRecords(records) {
 
     return `
       <tr>
-        <td>${escapeHtml(item.dia || '')}</td>
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
-        <td>${formatDateTime(item.hora_entrada)}</td>
-        <td>${formatDateTime(item.hora_salida)}</td>
-=======
-        <td>${escapeHtml(item.hora_entrada || '')}</td>
-        <td>${escapeHtml(item.hora_salida || '')}</td>
->>>>>>> main
-        <td>${escapeHtml(item.run || '')}</td>
-        <td>${escapeHtml(item.dv || '')}</td>
-        <td>${escapeHtml(item.carrera || '')}</td>
-        <td>${escapeHtml(item.sede || '')}</td>
-        <td>${escapeHtml(item.anio_ingreso || '')}</td>
-        <td>${escapeHtml(item.actividad || '')}</td>
-        <td>${escapeHtml(item.tematica || '')}</td>
-        <td>${escapeHtml(item.observaciones || '')}</td>
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
-        <td>${escapeHtml(item.espacio || '')}</td>
-=======
->>>>>>> main
-        <td><span class="estado ${estadoClass}">${escapeHtml(item.estado || '')}</span></td>
+        <td>${escapeHtml(item.dia)}</td>
+        <td>${escapeHtml(item.hora_entrada)}</td>
+        <td>${escapeHtml(item.hora_salida)}</td>
+        <td>${escapeHtml(item.run)}</td>
+        <td>${escapeHtml(item.dv)}</td>
+        <td>${escapeHtml(item.carrera)}</td>
+        <td>${escapeHtml(item.sede)}</td>
+        <td>${escapeHtml(item.anio_ingreso)}</td>
+        <td>${escapeHtml(item.actividad)}</td>
+        <td>${escapeHtml(item.tematica)}</td>
+        <td>${escapeHtml(item.observaciones)}</td>
+        <td>${escapeHtml(item.espacio)}</td>
+        <td><span class="estado ${estadoClass}">${escapeHtml(item.estado)}</span></td>
       </tr>
     `;
   }).join('');
@@ -147,6 +112,9 @@ async function lookupStudent(runValue) {
 
   if (run.length < 3) {
     autocompleteStatus.textContent = 'Escribe 3 o más dígitos del RUN para consultar la matriz.';
+    dvInput.value = '';
+    carreraInput.value = '';
+    anioInput.value = '';
     return;
   }
 
@@ -157,56 +125,46 @@ async function lookupStudent(runValue) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'No se pudo completar la búsqueda.');
+      throw new Error(data.error || 'No se pudo buscar el RUN.');
     }
 
     if (!data.alumno) {
       dvInput.value = '';
       carreraInput.value = '';
       anioInput.value = '';
-      autocompleteStatus.textContent = 'RUN sin coincidencia en la matriz. Completa DV, carrera y año ingreso manualmente.';
+      autocompleteStatus.textContent = 'RUN sin coincidencia en students_matrix.';
       return;
     }
 
     dvInput.value = data.alumno.dv || '';
     carreraInput.value = data.alumno.carrera || '';
     anioInput.value = data.alumno.anio_ingreso || '';
-    autocompleteStatus.textContent = 'Datos encontrados en la matriz: DV, carrera y año ingreso completados.';
-  } catch (error) {
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+    if (data.alumno.sede && !campusInput.value) {
+      campusInput.value = data.alumno.sede;
+      updateEspacios();
+    }
+    autocompleteStatus.textContent = 'RUN encontrado y datos autocompletados.';
+  } catch {
     autocompleteStatus.textContent = 'No se pudo consultar students_matrix en este momento.';
-=======
-    autocompleteStatus.textContent = 'No se pudo consultar la matriz en este momento.';
->>>>>>> main
   }
 }
 
 async function exportExcel() {
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
-  exportButton.disabled = true;
-  exportButton.textContent = 'Exportando...';
-  clearMessage();
-=======
   clearMessage();
   exportButton.disabled = true;
   exportButton.textContent = 'Exportando...';
->>>>>>> main
 
   try {
     const response = await fetch('/api/exportar-excel');
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.error || 'No se pudo exportar el archivo.');
+      throw new Error(data.error || 'No se pudo exportar el Excel.');
     }
 
     const blob = await response.blob();
     const disposition = response.headers.get('Content-Disposition') || '';
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
-    const match = disposition.match(/filename="?([^\"]+)"?/i);
-=======
     const match = disposition.match(/filename="?([^";]+)"?/i);
->>>>>>> main
     const filename = match ? match[1] : 'ciac-registros.xlsx';
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -217,15 +175,9 @@ async function exportExcel() {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
-<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
-    showMessage('Excel exportado correctamente desde attendance_records.', 'success');
+    showMessage('Excel exportado correctamente.', 'success');
   } catch (error) {
     showMessage(error.message || 'No se pudo exportar el Excel.', 'error');
-=======
-    showMessage('Archivo Excel exportado correctamente.', 'success');
-  } catch (error) {
-    showMessage(error.message || 'No se pudo exportar el archivo Excel.', 'error');
->>>>>>> main
   } finally {
     exportButton.disabled = false;
     exportButton.textContent = 'Exportar Excel';
@@ -240,11 +192,8 @@ campusInput.addEventListener('change', () => {
 runInput.addEventListener('input', () => {
   runInput.value = sanitizeRun(runInput.value);
   clearMessage();
-
   window.clearTimeout(lookupTimer);
-  lookupTimer = window.setTimeout(() => {
-    lookupStudent(runInput.value);
-  }, 300);
+  lookupTimer = window.setTimeout(() => lookupStudent(runInput.value), 300);
 });
 
 dvInput.addEventListener('input', () => {
@@ -253,12 +202,10 @@ dvInput.addEventListener('input', () => {
 });
 
 anioInput.addEventListener('input', () => {
-  anioInput.value = String(anioInput.value).replace(/\D/g, '').slice(0, 4);
+  anioInput.value = String(anioInput.value || '').replace(/\D/g, '').slice(0, 4);
 });
 
-exportButton.addEventListener('click', () => {
-  exportExcel();
-});
+exportButton.addEventListener('click', exportExcel);
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -289,27 +236,21 @@ form.addEventListener('submit', async (event) => {
     const data = await response.json();
 
     if (!response.ok) {
-      showMessage(data.error || 'No se pudo registrar.', 'error');
-      return;
+      throw new Error(data.error || 'No se pudo registrar.');
     }
 
-    showMessage(data.message || 'Registro actualizado.', 'success');
+    showMessage(data.message || 'Registro guardado.', 'success');
     renderRecords(data.registrosHoy || []);
-
     form.reset();
     updateEspacios();
     autocompleteStatus.textContent = 'Escribe 3 o más dígitos del RUN para consultar la matriz.';
     runInput.focus();
   } catch (error) {
-    showMessage('Ocurrió un error inesperado al registrar.', 'error');
+    showMessage(error.message || 'No se pudo registrar.', 'error');
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = 'Registrar';
   }
-});
-
-exportButton.addEventListener('click', () => {
-  exportExcel();
 });
 
 updateEspacios();
