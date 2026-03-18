@@ -1,17 +1,11 @@
 {
-  "name": "ciac-registro-mvp",
+  "name": "ciac-registro",
   "version": "1.0.0",
   "private": true,
-  "description": "MVP CIAC listo para desplegar en Vercel con Supabase.",
-  "scripts": {
-    "dev": "vercel dev",
-    "start": "vercel dev",
-    "check": "node --check api/buscar.js && node --check api/registrar.js && node --check api/registros-hoy.js && node --check api/exportar-excel.js && node --check lib/supabase.js && node --check lib/rut.js && node --check public/app.js"
-  },
+  "description": "MVP CIAC Registro - asistencia con Supabase y exportación Excel",
+  "license": "MIT",
   "dependencies": {
+    "node-fetch": "^2.6.7",
     "xlsx": "^0.18.5"
-  },
-  "devDependencies": {
-    "vercel": "^39.4.0"
   }
 }
