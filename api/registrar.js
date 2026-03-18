@@ -44,8 +44,13 @@ function getChileDateInfo(date = new Date()) {
   const iso = `${dia}T${parts.hour}:${parts.minute}:${parts.second}-03:00`;
 
   return {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
     dia,
     timestamp: new Date(iso).toISOString(),
+=======
+    dia: `${parts.year}-${parts.month}-${parts.day}`,
+    hora: `${parts.hour}:${parts.minute}:${parts.second}`,
+>>>>>>> main
   };
 }
 
@@ -61,7 +66,11 @@ async function getOpenRecord(dia, run) {
   const data = await supabaseRequest({
     path: 'attendance_records',
     query: {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
       select: RECORD_SELECT,
+=======
+      select: 'id',
+>>>>>>> main
       dia: `eq.${dia}`,
       run: `eq.${run}`,
       estado: 'eq.Dentro',
@@ -74,10 +83,17 @@ async function getOpenRecord(dia, run) {
 }
 
 async function getTodayRecords(dia) {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
   const data = await supabaseRequest({
     path: 'attendance_records',
     query: {
       select: RECORD_SELECT,
+=======
+  return supabaseRequest({
+    path: 'attendance_records',
+    query: {
+      select: 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado',
+>>>>>>> main
       dia: `eq.${dia}`,
       order: 'hora_entrada.desc',
     },
@@ -131,13 +147,28 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes seleccionar una actividad válida.' });
     }
 
+    if (!tematica) {
+      return res.status(400).json({ error: 'Debes ingresar la temática.' });
+    }
+
+    if (!observaciones) {
+      return res.status(400).json({ error: 'Debes ingresar las observaciones.' });
+    }
+
     if (!SPACE_OPTIONS[campus].includes(espacio)) {
       return res.status(400).json({ error: 'Debes seleccionar un espacio válido para el campus elegido.' });
     }
 
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
     const now = getChileDateInfo();
     const openRecord = await getOpenRecord(now.dia, run);
     let action = 'entrada';
+=======
+    const now = getChileDateTime();
+    const openRecord = await getOpenRecord(now.dia, run);
+
+    let action;
+>>>>>>> main
 
     if (openRecord) {
       await supabaseRequest({
@@ -147,12 +178,21 @@ module.exports = async function handler(req, res) {
           id: `eq.${openRecord.id}`,
         },
         body: {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
           hora_salida: now.timestamp,
           estado: 'Fuera',
           dv,
           carrera,
           sede: campus,
           anio_ingreso: Number(anioIngreso),
+=======
+          hora_salida: now.hora,
+          estado: 'Finalizado',
+          dv,
+          carrera,
+          sede: campus,
+          anio_ingreso: anioIngreso,
+>>>>>>> main
           actividad,
           tematica,
           observaciones,
@@ -167,18 +207,30 @@ module.exports = async function handler(req, res) {
         method: 'POST',
         body: {
           dia: now.dia,
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
           hora_entrada: now.timestamp,
+=======
+          hora_entrada: now.hora,
+>>>>>>> main
           hora_salida: null,
           run,
           dv,
           carrera,
           sede: campus,
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
           anio_ingreso: Number(anioIngreso),
+=======
+          anio_ingreso: anioIngreso,
+>>>>>>> main
           actividad,
           tematica,
           observaciones,
           espacio,
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
           estado: 'Dentro',
+=======
+          estado: 'Abierto',
+>>>>>>> main
         },
         prefer: 'return=minimal',
       });

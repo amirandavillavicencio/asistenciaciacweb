@@ -17,6 +17,7 @@ const exportButton = document.getElementById('export-button');
 const messageBox = document.getElementById('message');
 const autocompleteStatus = document.getElementById('autocomplete-status');
 const submitButton = document.getElementById('submit-button');
+const exportButton = document.getElementById('export-button');
 const recordsBody = document.getElementById('records-body');
 const recordsCount = document.getElementById('records-count');
 
@@ -88,7 +89,11 @@ function updateEspacios() {
 
 function renderRecords(records) {
   if (!Array.isArray(records) || records.length === 0) {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
     recordsBody.innerHTML = '<tr><td colspan="13" class="empty">No hay registros hoy.</td></tr>';
+=======
+    recordsBody.innerHTML = '<tr><td colspan="12" class="empty">No hay registros hoy.</td></tr>';
+>>>>>>> main
     recordsCount.textContent = '0 registros';
     return;
   }
@@ -99,8 +104,13 @@ function renderRecords(records) {
     return `
       <tr>
         <td>${escapeHtml(item.dia || '')}</td>
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
         <td>${formatDateTime(item.hora_entrada)}</td>
         <td>${formatDateTime(item.hora_salida)}</td>
+=======
+        <td>${escapeHtml(item.hora_entrada || '')}</td>
+        <td>${escapeHtml(item.hora_salida || '')}</td>
+>>>>>>> main
         <td>${escapeHtml(item.run || '')}</td>
         <td>${escapeHtml(item.dv || '')}</td>
         <td>${escapeHtml(item.carrera || '')}</td>
@@ -109,7 +119,10 @@ function renderRecords(records) {
         <td>${escapeHtml(item.actividad || '')}</td>
         <td>${escapeHtml(item.tematica || '')}</td>
         <td>${escapeHtml(item.observaciones || '')}</td>
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
         <td>${escapeHtml(item.espacio || '')}</td>
+=======
+>>>>>>> main
         <td><span class="estado ${estadoClass}">${escapeHtml(item.estado || '')}</span></td>
       </tr>
     `;
@@ -148,6 +161,9 @@ async function lookupStudent(runValue) {
     }
 
     if (!data.alumno) {
+      dvInput.value = '';
+      carreraInput.value = '';
+      anioInput.value = '';
       autocompleteStatus.textContent = 'RUN sin coincidencia en la matriz. Completa DV, carrera y año ingreso manualmente.';
       return;
     }
@@ -157,14 +173,24 @@ async function lookupStudent(runValue) {
     anioInput.value = data.alumno.anio_ingreso || '';
     autocompleteStatus.textContent = 'Datos encontrados en la matriz: DV, carrera y año ingreso completados.';
   } catch (error) {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
     autocompleteStatus.textContent = 'No se pudo consultar students_matrix en este momento.';
+=======
+    autocompleteStatus.textContent = 'No se pudo consultar la matriz en este momento.';
+>>>>>>> main
   }
 }
 
 async function exportExcel() {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
   exportButton.disabled = true;
   exportButton.textContent = 'Exportando...';
   clearMessage();
+=======
+  clearMessage();
+  exportButton.disabled = true;
+  exportButton.textContent = 'Exportando...';
+>>>>>>> main
 
   try {
     const response = await fetch('/api/exportar-excel');
@@ -176,7 +202,11 @@ async function exportExcel() {
 
     const blob = await response.blob();
     const disposition = response.headers.get('Content-Disposition') || '';
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
     const match = disposition.match(/filename="?([^\"]+)"?/i);
+=======
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+>>>>>>> main
     const filename = match ? match[1] : 'ciac-registros.xlsx';
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -187,9 +217,15 @@ async function exportExcel() {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
     showMessage('Excel exportado correctamente desde attendance_records.', 'success');
   } catch (error) {
     showMessage(error.message || 'No se pudo exportar el Excel.', 'error');
+=======
+    showMessage('Archivo Excel exportado correctamente.', 'success');
+  } catch (error) {
+    showMessage(error.message || 'No se pudo exportar el archivo Excel.', 'error');
+>>>>>>> main
   } finally {
     exportButton.disabled = false;
     exportButton.textContent = 'Exportar Excel';
@@ -270,6 +306,10 @@ form.addEventListener('submit', async (event) => {
     submitButton.disabled = false;
     submitButton.textContent = 'Registrar';
   }
+});
+
+exportButton.addEventListener('click', () => {
+  exportExcel();
 });
 
 updateEspacios();

@@ -21,6 +21,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const dia = getChileDate();
+
     const data = await supabaseRequest({
       path: 'attendance_records',
       query: {
@@ -30,7 +31,9 @@ module.exports = async function handler(req, res) {
       },
     });
 
-    return res.status(200).json({ registros: Array.isArray(data) ? data : [] });
+    return res.status(200).json({
+      registros: Array.isArray(data) ? data : [],
+    });
   } catch (error) {
     return res.status(error.status || 500).json({
       error: 'No se pudieron cargar los registros de hoy desde Supabase.',
