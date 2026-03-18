@@ -12,7 +12,11 @@
       <div>
         <p class="eyebrow">Registro diario</p>
         <h1>CIAC Registro</h1>
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+        <p class="hero__text">Registro de entrada y salida con autocompletado por RUN desde students_matrix y persistencia real en Supabase.</p>
+=======
         <p class="hero__text">Registro de entrada y salida con autocompletado por RUN y exportación directa a Excel.</p>
+>>>>>>> main
       </div>
     </header>
 
@@ -20,8 +24,13 @@
       <div class="panel__header">
         <div>
           <h2>Formulario principal</h2>
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+          <p>Completa el RUN, revisa el autocompletado y registra entrada o salida según corresponda.</p>
+=======
           <p>El RUN busca en la matriz desde 3 dígitos, completa DV, carrera y año de ingreso, y valida el RUT solo al registrar.</p>
+>>>>>>> main
         </div>
+        <button id="export-button" class="button button--secondary" type="button">Exportar Excel</button>
       </div>
 
       <div id="message" class="message" aria-live="polite"></div>
@@ -81,7 +90,11 @@
         <div class="grid grid--2">
           <label>
             <span>Temática</span>
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+            <input id="tematica" name="tematica" type="text" autocomplete="off" placeholder="Describe la temática">
+=======
             <input id="tematica" name="tematica" type="text" autocomplete="off" placeholder="Ingresa la temática" required>
+>>>>>>> main
           </label>
 
           <label>
@@ -94,6 +107,12 @@
 
         <label>
           <span>Observaciones</span>
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+          <textarea id="observaciones" name="observaciones" rows="4" placeholder="Observaciones del registro"></textarea>
+        </label>
+
+        <button id="submit-button" class="button" type="submit">Registrar</button>
+=======
           <textarea id="observaciones" name="observaciones" rows="4" placeholder="Ingresa observaciones" required></textarea>
         </label>
 
@@ -101,14 +120,20 @@
           <button id="submit-button" type="submit">Registrar</button>
           <button id="export-button" type="button" class="button-secondary">Exportar Excel</button>
         </div>
+>>>>>>> main
       </form>
     </section>
 
     <section class="panel">
       <div class="panel__header panel__header--table">
         <div>
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+          <h2>Registros del día</h2>
+          <p>Vista operativa sincronizada con attendance_records.</p>
+=======
           <h2>Tabla del día</h2>
           <p>Vista operativa de los registros creados hoy.</p>
+>>>>>>> main
         </div>
         <span id="records-count" class="badge">0 registros</span>
       </div>
@@ -128,12 +153,20 @@
               <th>Actividad</th>
               <th>Temática</th>
               <th>Observaciones</th>
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+              <th>Espacio</th>
+=======
+>>>>>>> main
               <th>Estado</th>
             </tr>
           </thead>
           <tbody id="records-body">
             <tr>
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+              <td colspan="13" class="empty">No hay registros hoy.</td>
+=======
               <td colspan="12" class="empty">No hay registros hoy.</td>
+>>>>>>> main
             </tr>
           </tbody>
         </table>

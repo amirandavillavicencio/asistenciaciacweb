@@ -29,7 +29,11 @@ textarea {
 }
 
 .app-shell {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+  max-width: 1380px;
+=======
   max-width: 1400px;
+>>>>>>> main
   margin: 0 auto;
   padding: 24px 16px 40px;
   display: grid;
@@ -124,8 +128,13 @@ textarea {
 }
 
 textarea {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+  resize: vertical;
+  min-height: 110px;
+=======
   min-height: 110px;
   resize: vertical;
+>>>>>>> main
 }
 
 input:focus,
@@ -140,6 +149,7 @@ select:disabled {
   color: #94a3b8;
 }
 
+.button,
 button {
   min-height: 48px;
   border: 0;
@@ -148,7 +158,15 @@ button {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+  padding: 0 16px;
+}
+
+.button--secondary {
+  background: #0f172a;
+=======
   padding: 0 18px;
+>>>>>>> main
 }
 
 button:disabled {

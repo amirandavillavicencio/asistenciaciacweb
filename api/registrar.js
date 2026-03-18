@@ -13,11 +13,12 @@ const ACTIVITY_OPTIONS = [
   'Uso de sala',
 ];
 const SPACE_OPTIONS = {
-  Vitacura: ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
-  'San Joaquín': ['Espacio común'],
+  Vitacura: ['Espacio común'],
+  'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
 };
+const RECORD_SELECT = 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado,created_at';
 
-function getChileDateTime(date = new Date()) {
+function getChileParts(date = new Date()) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: CHILE_TIMEZONE,
     year: 'numeric',
@@ -29,15 +30,27 @@ function getChileDateTime(date = new Date()) {
     hourCycle: 'h23',
   });
 
-  const parts = Object.fromEntries(
-    formatter.formatToParts(date)
+  return Object.fromEntries(
+    formatter
+      .formatToParts(date)
       .filter((part) => part.type !== 'literal')
       .map((part) => [part.type, part.value]),
   );
+}
+
+function getChileDateInfo(date = new Date()) {
+  const parts = getChileParts(date);
+  const dia = `${parts.year}-${parts.month}-${parts.day}`;
+  const iso = `${dia}T${parts.hour}:${parts.minute}:${parts.second}-03:00`;
 
   return {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+    dia,
+    timestamp: new Date(iso).toISOString(),
+=======
     dia: `${parts.year}-${parts.month}-${parts.day}`,
     hora: `${parts.hour}:${parts.minute}:${parts.second}`,
+>>>>>>> main
   };
 }
 
@@ -53,10 +66,14 @@ async function getOpenRecord(dia, run) {
   const data = await supabaseRequest({
     path: 'attendance_records',
     query: {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+      select: RECORD_SELECT,
+=======
       select: 'id',
+>>>>>>> main
       dia: `eq.${dia}`,
       run: `eq.${run}`,
-      hora_salida: 'is.null',
+      estado: 'eq.Dentro',
       order: 'hora_entrada.desc',
       limit: '1',
     },
@@ -66,14 +83,23 @@ async function getOpenRecord(dia, run) {
 }
 
 async function getTodayRecords(dia) {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+  const data = await supabaseRequest({
+    path: 'attendance_records',
+    query: {
+      select: RECORD_SELECT,
+=======
   return supabaseRequest({
     path: 'attendance_records',
     query: {
       select: 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado',
+>>>>>>> main
       dia: `eq.${dia}`,
       order: 'hora_entrada.desc',
     },
   });
+
+  return Array.isArray(data) ? data : [];
 }
 
 module.exports = async function handler(req, res) {
@@ -84,8 +110,8 @@ module.exports = async function handler(req, res) {
   try {
     const body = parseBody(req);
     const campus = String(body.campus || '').trim();
-    const run = cleanRun(body.run);
-    const dv = cleanDv(body.dv);
+    const run = cleanRun(body.run || '');
+    const dv = cleanDv(body.dv || '');
     const carrera = String(body.carrera || '').trim();
     const anioIngreso = String(body.anio_ingreso || '').trim();
     const actividad = String(body.actividad || '').trim();
@@ -106,7 +132,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (!isValidRut(run, dv)) {
-      return res.status(400).json({ error: 'El RUN/DV no es válido.' });
+      return res.status(400).json({ error: 'El RUN y DV no son válidos.' });
     }
 
     if (!carrera) {
@@ -130,13 +156,19 @@ module.exports = async function handler(req, res) {
     }
 
     if (!SPACE_OPTIONS[campus].includes(espacio)) {
-      return res.status(400).json({ error: 'Debes seleccionar un espacio válido para el campus.' });
+      return res.status(400).json({ error: 'Debes seleccionar un espacio válido para el campus elegido.' });
     }
 
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+    const now = getChileDateInfo();
+    const openRecord = await getOpenRecord(now.dia, run);
+    let action = 'entrada';
+=======
     const now = getChileDateTime();
     const openRecord = await getOpenRecord(now.dia, run);
 
     let action;
+>>>>>>> main
 
     if (openRecord) {
       await supabaseRequest({
@@ -146,12 +178,21 @@ module.exports = async function handler(req, res) {
           id: `eq.${openRecord.id}`,
         },
         body: {
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+          hora_salida: now.timestamp,
+          estado: 'Fuera',
+          dv,
+          carrera,
+          sede: campus,
+          anio_ingreso: Number(anioIngreso),
+=======
           hora_salida: now.hora,
           estado: 'Finalizado',
           dv,
           carrera,
           sede: campus,
           anio_ingreso: anioIngreso,
+>>>>>>> main
           actividad,
           tematica,
           observaciones,
@@ -166,22 +207,33 @@ module.exports = async function handler(req, res) {
         method: 'POST',
         body: {
           dia: now.dia,
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+          hora_entrada: now.timestamp,
+=======
           hora_entrada: now.hora,
+>>>>>>> main
           hora_salida: null,
           run,
           dv,
           carrera,
           sede: campus,
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+          anio_ingreso: Number(anioIngreso),
+=======
           anio_ingreso: anioIngreso,
+>>>>>>> main
           actividad,
           tematica,
           observaciones,
           espacio,
+<<<<<<< codex/fix-supabase-integration-and-implement-ciac-registro
+          estado: 'Dentro',
+=======
           estado: 'Abierto',
+>>>>>>> main
         },
         prefer: 'return=minimal',
       });
-      action = 'entrada';
     }
 
     const registrosHoy = await getTodayRecords(now.dia);
@@ -189,12 +241,16 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       action,
-      registrosHoy: registrosHoy || [],
+      registrosHoy,
       message: action === 'entrada'
-        ? 'Entrada registrada correctamente.'
-        : 'Salida registrada correctamente.',
+        ? 'Entrada registrada correctamente en Supabase.'
+        : 'Salida registrada correctamente en Supabase.',
     });
   } catch (error) {
-    return res.status(500).json({ error: 'No se pudo registrar la asistencia.', detail: error.message });
+    return res.status(error.status || 500).json({
+      error: 'No se pudo registrar la asistencia en Supabase.',
+      detail: error.message,
+      supabase: error.details || null,
+    });
   }
 };

@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
       },
     });
 
-    const alumno = Array.isArray(data) ? data[0] : null;
+    const alumno = Array.isArray(data) ? data[0] || null : null;
 
     if (!alumno) {
       return res.status(200).json({ alumno: null });
@@ -30,14 +30,17 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       alumno: {
-        run: alumno.rut,
-        dv: alumno.dv || '',
-        carrera: alumno.carrera_ingreso || '',
-        anio_ingreso: alumno.cohorte ? String(alumno.cohorte) : '',
-        sede: alumno.sede || '',
+        run: String(alumno.rut || ''),
+        dv: String(alumno.dv || ''),
+        carrera: String(alumno.carrera_ingreso || ''),
+        anio_ingreso: alumno.cohorte === null || alumno.cohorte === undefined ? '' : String(alumno.cohorte),
+        sede: String(alumno.sede || ''),
       },
     });
   } catch (error) {
-    return res.status(500).json({ error: 'No se pudo buscar en la matriz.', detail: error.message });
+    return res.status(500).json({
+      error: 'No se pudo buscar en students_matrix.',
+      detail: error.message,
+    });
   }
 };
