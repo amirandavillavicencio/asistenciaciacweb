@@ -6,9 +6,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const run = String(req.query.run || '').replace(/\D/g, '').trim();
+    const run = String(req.query.run || '').replace(/\D/g, '');
 
-    if (!run || run.length < 3) {
+    // No bloquear, solo no buscar si es muy corto
+    if (run.length < 3) {
       return res.status(200).json({ alumno: null });
     }
 
@@ -21,27 +22,27 @@ module.exports = async function handler(req, res) {
       },
     });
 
-    const alumno = Array.isArray(data) && data.length > 0 ? data[0] : null;
-
-    if (!alumno) {
+    if (!Array.isArray(data) || data.length === 0) {
       return res.status(200).json({ alumno: null });
     }
 
+    const alumno = data[0];
+
     return res.status(200).json({
       alumno: {
-        run: alumno.rut ? String(alumno.rut) : '',
-        dv: alumno.dv ? String(alumno.dv) : '',
-        carrera: alumno.carrera_ingreso ? String(alumno.carrera_ingreso) : '',
-        anio_ingreso: alumno.cohorte ? String(alumno.cohorte) : '',
-        sede: alumno.sede ? String(alumno.sede) : '',
+        run: alumno.rut || '',
+        dv: alumno.dv || '',
+        carrera: alumno.carrera_ingreso || '',
+        anio_ingreso: alumno.cohorte || '',
+        sede: alumno.sede || '',
       },
     });
   } catch (error) {
-    console.error('Error en /api/buscar:', error);
+    console.error('ERROR BUSCAR:', error);
 
+    // 👇 clave: NO romper frontend
     return res.status(200).json({
       alumno: null,
-      error: 'No fue posible consultar los datos del estudiante.',
     });
   }
 };
