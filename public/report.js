@@ -198,20 +198,20 @@ function renderCharts(data) {
     'chart-actividad',
     (data.by_actividad || []).map((item) => item.actividad),
     (data.by_actividad || []).map((item) => item.cantidad),
-    '#003b71'
+    '#003b71',
   );
 
   createBarChart(
     'chart-tematica',
     (data.by_tematica || []).map((item) => item.tematica),
     (data.by_tematica || []).map((item) => item.cantidad),
-    '#4d7ea8'
+    '#4d7ea8',
   );
 
   createDoughnutChart(
     'chart-campus',
     (data.by_campus || []).map((item) => item.campus),
-    (data.by_campus || []).map((item) => item.cantidad)
+    (data.by_campus || []).map((item) => item.cantidad),
   );
 }
 
@@ -237,15 +237,16 @@ async function loadReport() {
     reportCampusNode.textContent = data.campus || 'Todos los campus';
     renderMetric(data.summary || {});
     renderTables(data);
+    renderCharts(data);
+
+    contentNode.hidden = false;
 
     if (!data.summary || !data.summary.total_registros) {
-      setStatus('No hay registros para el período consultado. El informe se muestra en estado vacío.', 'empty');
-    } else {
-      hideStatus();
+      setStatus('No hay registros para la fecha consultada. El informe se muestra en estado vacío.', 'empty');
+      return;
     }
 
-    renderCharts(data);
-    contentNode.hidden = false;
+    hideStatus();
   } catch (error) {
     setStatus(error.message || 'No fue posible cargar el informe de uso.', 'error');
     contentNode.hidden = true;

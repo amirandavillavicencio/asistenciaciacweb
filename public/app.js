@@ -7,6 +7,10 @@ const MIN_LOOKUP_LENGTH = 3;
 const LOOKUP_DEBOUNCE_MS = 400;
 const AUTH_STORAGE_KEY = 'ciac_auth';
 const ACCESS_PASSWORD = 'Suna.2011';
+const MIN_RUN_LENGTH = 7;
+const MAX_RUN_LENGTH = 8;
+const MIN_YEAR = 1990;
+const ROWS_PER_PAGE = 15;
 
 const authGate = document.getElementById('auth-gate');
 const authForm = document.getElementById('auth-form');
@@ -28,6 +32,7 @@ const exportButton = document.getElementById('export-button');
 const exportReportButton = document.getElementById('export-report-button');
 const messageBox = document.getElementById('message');
 const autocompleteStatus = document.getElementById('autocomplete-status');
+const runStatusText = document.getElementById('run-status-text');
 const suggestionsList = document.getElementById('run-suggestions');
 const runClearButton = document.getElementById('run-clear');
 const submitButton = document.getElementById('submit-button');
@@ -36,13 +41,31 @@ const recordsCount = document.getElementById('records-count');
 const currentDate = document.getElementById('current-date');
 const currentTime = document.getElementById('current-time');
 const currentSemesterBadge = document.getElementById('current-semester');
+const searchInput = document.getElementById('records-search');
+const paginationPrevButton = document.getElementById('pagination-prev');
+const paginationNextButton = document.getElementById('pagination-next');
+const paginationStatus = document.getElementById('pagination-status');
+const formLiveRegion = document.getElementById('form-live-region');
+
+const fieldDefinitions = {
+  campus: { input: campusHeaderInput, errorNode: null },
+  run: { input: runInput, errorNode: document.getElementById('run-error') },
+  dv: { input: dvInput, errorNode: document.getElementById('dv-error') },
+  carrera: { input: carreraInput, errorNode: document.getElementById('carrera-error') },
+  anio_ingreso: { input: anioInput, errorNode: document.getElementById('anio_ingreso-error') },
+  actividad: { input: actividadInput, errorNode: document.getElementById('actividad-error') },
+  tematica: { input: tematicaInput, errorNode: document.getElementById('tematica-error') },
+  espacio: { input: espacioInput, errorNode: document.getElementById('espacio-error') },
+};
 
 let lookupTimer = null;
 let activeCampusFilter = '';
 let currentSuggestions = [];
 let highlightedSuggestionIndex = -1;
 let latestLookupToken = 0;
-
+let currentRecords = [];
+let searchTerm = '';
+let currentPage = 1;
 
 function isAuthenticated() {
   return window.sessionStorage.getItem(AUTH_STORAGE_KEY) === 'true';
@@ -85,19 +108,22 @@ function failAuthentication() {
 
 function handleAuthSubmit(event) {
   event.preventDefault();
+  authSubmitButton.disabled = true;
 
   if (authPasswordInput.value === ACCESS_PASSWORD) {
     setAuthenticated(true);
     applyAuthState(true);
+    authSubmitButton.disabled = false;
     return;
   }
 
   setAuthenticated(false);
   failAuthentication();
+  authSubmitButton.disabled = false;
 }
 
 function sanitizeRun(value) {
-  return String(value || '').replace(/\D/g, '');
+  return String(value || '').replace(/\D/g, '').slice(0, MAX_RUN_LENGTH);
 }
 
 function sanitizeDv(value) {
@@ -105,13 +131,8 @@ function sanitizeDv(value) {
 }
 
 function formatRun(value) {
-  const digits = sanitizeRun(value).slice(0, 8);
-
-  if (!digits) {
-    return '';
-  }
-
-  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const digits = sanitizeRun(value);
+  return digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
 }
 
 function calculateDv(runValue) {
@@ -142,6 +163,17 @@ function calculateDv(runValue) {
   return String(remainder);
 }
 
+function isValidRun(runValue, dvValue) {
+  const run = sanitizeRun(runValue);
+  const dv = sanitizeDv(dvValue);
+
+  if (!run || run.length < MIN_RUN_LENGTH || run.length > MAX_RUN_LENGTH || !dv) {
+    return false;
+  }
+
+  return calculateDv(run) === dv;
+}
+
 function escapeHtml(value) {
   return String(value || '')
     .replaceAll('&', '&amp;')
@@ -154,11 +186,13 @@ function escapeHtml(value) {
 function showMessage(text, type) {
   messageBox.textContent = text;
   messageBox.className = `message is-visible message--${type}`;
+  messageBox.setAttribute('role', type === 'error' ? 'alert' : 'status');
 }
 
 function clearMessage() {
   messageBox.textContent = '';
   messageBox.className = 'message';
+  messageBox.setAttribute('role', 'status');
 }
 
 function buildApiError(data, fallback) {
@@ -178,14 +212,21 @@ function syncCampus(value) {
   activeCampusFilter = value;
 }
 
+function getCurrentYear() {
+  return new Date().getUTCFullYear();
+}
+
 function updateEspacios() {
   const selectedCampus = getSelectedCampus();
   const spaces = CAMPUS_SPACES[selectedCampus] || [];
   const previousValue = espacioInput.value;
 
+  clearFieldError('espacio');
+
   if (!spaces.length) {
     espacioInput.innerHTML = '<option value="">Selecciona primero el campus superior</option>';
     espacioInput.disabled = true;
+    espacioInput.setAttribute('aria-disabled', 'true');
     return;
   }
 
@@ -193,6 +234,7 @@ function updateEspacios() {
     .concat(spaces.map((space) => `<option value="${escapeHtml(space)}">${escapeHtml(space)}</option>`))
     .join('');
   espacioInput.disabled = false;
+  espacioInput.setAttribute('aria-disabled', 'false');
 
   if (spaces.includes(previousValue)) {
     espacioInput.value = previousValue;
@@ -265,23 +307,53 @@ function getRunLabel(item) {
 }
 
 function getVisibleRecords(records) {
-  if (!activeCampusFilter) {
-    return records;
+  const campusFiltered = activeCampusFilter
+    ? records.filter((item) => item.sede === activeCampusFilter)
+    : records;
+
+  if (!searchTerm) {
+    return campusFiltered;
   }
 
-  return records.filter((item) => item.sede === activeCampusFilter);
+  const normalizedQuery = searchTerm.toLocaleLowerCase('es-CL');
+
+  return campusFiltered.filter((item) => {
+    const runLabel = [sanitizeRun(item.run), item.dv || ''].join('-').toLocaleLowerCase('es-CL');
+    const formattedRun = getRunLabel(item).toLocaleLowerCase('es-CL');
+    const career = String(item.carrera || '').toLocaleLowerCase('es-CL');
+    return runLabel.includes(normalizedQuery) || formattedRun.includes(normalizedQuery) || career.includes(normalizedQuery);
+  });
+}
+
+function updatePagination(totalItems) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / ROWS_PER_PAGE));
+
+  if (currentPage > totalPages) {
+    currentPage = totalPages;
+  }
+
+  paginationStatus.textContent = `Página ${currentPage} de ${totalPages}`;
+  paginationPrevButton.disabled = currentPage <= 1;
+  paginationNextButton.disabled = currentPage >= totalPages;
 }
 
 function renderRecords(records) {
-  const visibleRecords = getVisibleRecords(Array.isArray(records) ? records : []);
+  currentRecords = Array.isArray(records) ? records : [];
+  const visibleRecords = getVisibleRecords(currentRecords);
+  updatePagination(visibleRecords.length);
+
+  const totalPages = Math.max(1, Math.ceil(visibleRecords.length / ROWS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStart = (safePage - 1) * ROWS_PER_PAGE;
+  const paginatedRecords = visibleRecords.slice(pageStart, pageStart + ROWS_PER_PAGE);
 
   if (visibleRecords.length === 0) {
-    recordsBody.innerHTML = '<tr><td colspan="11" class="empty">No hay registros para el campus seleccionado hoy.</td></tr>';
+    recordsBody.innerHTML = `<tr><td colspan="11" class="empty">${searchTerm ? 'No hay resultados para la búsqueda aplicada.' : 'No hay registros para el campus seleccionado hoy.'}</td></tr>`;
     recordsCount.textContent = '0 registros';
     return;
   }
 
-  recordsBody.innerHTML = visibleRecords.map((item) => {
+  recordsBody.innerHTML = paginatedRecords.map((item) => {
     const isOpen = !item.hora_salida;
     const estadoClass = isOpen ? 'estado--activo' : 'estado--cerrado';
     const estadoText = isOpen ? 'Entrada activa' : 'Salida registrada';
@@ -331,11 +403,18 @@ function clearStudentFields(options = {}) {
   dvInput.value = '';
   carreraInput.value = '';
   anioInput.value = '';
+  runStatusText.textContent = '';
+  runStatusText.className = 'field-status';
 
   if (!preserveStatus) {
     autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
     autocompleteStatus.className = 'hint';
   }
+
+  clearFieldError('run');
+  clearFieldError('dv');
+  clearFieldError('carrera');
+  clearFieldError('anio_ingreso');
 }
 
 function syncRunFieldState() {
@@ -404,13 +483,93 @@ function updateHighlightedSuggestion(index) {
   }
 }
 
+function setFieldError(fieldName, message) {
+  const field = fieldDefinitions[fieldName];
+
+  if (!field || !field.input) {
+    return;
+  }
+
+  field.input.classList.add('field-invalid');
+  field.input.setAttribute('aria-invalid', 'true');
+
+  if (field.errorNode) {
+    field.errorNode.textContent = message;
+    field.errorNode.hidden = false;
+  }
+}
+
+function clearFieldError(fieldName) {
+  const field = fieldDefinitions[fieldName];
+
+  if (!field || !field.input) {
+    return;
+  }
+
+  field.input.classList.remove('field-invalid');
+  field.input.setAttribute('aria-invalid', 'false');
+
+  if (field.errorNode) {
+    field.errorNode.textContent = '';
+    field.errorNode.hidden = true;
+  }
+}
+
+function clearAllFieldErrors() {
+  Object.keys(fieldDefinitions).forEach(clearFieldError);
+}
+
+function updateRunValidationFeedback() {
+  const run = sanitizeRun(runInput.value);
+  const dv = sanitizeDv(dvInput.value);
+
+  if (!run && !dv) {
+    runStatusText.textContent = '';
+    runStatusText.className = 'field-status';
+    clearFieldError('run');
+    clearFieldError('dv');
+    return;
+  }
+
+  if (run.length < MIN_RUN_LENGTH || run.length > MAX_RUN_LENGTH) {
+    runStatusText.textContent = 'El RUN debe tener entre 7 y 8 dígitos.';
+    runStatusText.className = 'field-status field-status--error';
+    if (run) {
+      setFieldError('run', 'Ingresa un RUN válido de 7 u 8 dígitos.');
+    }
+    return;
+  }
+
+  if (!dv) {
+    runStatusText.textContent = 'Ingresa el dígito verificador para validar el RUN.';
+    runStatusText.className = 'field-status';
+    clearFieldError('run');
+    clearFieldError('dv');
+    return;
+  }
+
+  if (!isValidRun(run, dv)) {
+    const expectedDv = calculateDv(run);
+    runStatusText.textContent = 'RUN inválido. Verifica el dígito verificador.';
+    runStatusText.className = 'field-status field-status--error';
+    setFieldError('run', `El RUN ingresado no coincide con el dígito verificador esperado (${expectedDv}).`);
+    setFieldError('dv', 'El dígito verificador no corresponde al RUN ingresado.');
+    return;
+  }
+
+  runStatusText.textContent = 'RUN válido.';
+  runStatusText.className = 'field-status field-status--success';
+  clearFieldError('run');
+  clearFieldError('dv');
+}
+
 function fillStudentFields(student, statusMessage = 'Datos del estudiante completados correctamente.') {
   if (!student) {
     return;
   }
 
   runInput.value = formatRun(student.run || runInput.value);
-  dvInput.value = sanitizeDv(student.dv || (sanitizeRun(student.run).length >= 7 ? calculateDv(student.run) : ''));
+  dvInput.value = sanitizeDv(student.dv || (sanitizeRun(student.run).length >= MIN_RUN_LENGTH ? calculateDv(student.run) : ''));
   carreraInput.value = student.carrera || '';
   anioInput.value = student.anio_ingreso || '';
 
@@ -421,6 +580,9 @@ function fillStudentFields(student, statusMessage = 'Datos del estudiante comple
 
   autocompleteStatus.textContent = statusMessage;
   autocompleteStatus.className = 'hint hint--success';
+  updateRunValidationFeedback();
+  clearFieldError('carrera');
+  clearFieldError('anio_ingreso');
   syncRunFieldState();
 }
 
@@ -455,12 +617,14 @@ async function lookupStudent(runValue) {
     setLookupLoading(false);
     closeSuggestions();
     clearStudentFields({ preserveRun: true, preserveStatus: false });
+    updateRunValidationFeedback();
     syncRunFieldState();
     return;
   }
 
-  if (run.length >= 7) {
+  if (run.length >= MIN_RUN_LENGTH) {
     dvInput.value = calculateDv(run);
+    updateRunValidationFeedback();
   } else {
     dvInput.value = '';
   }
@@ -478,7 +642,7 @@ async function lookupStudent(runValue) {
     }
 
     if (!response.ok) {
-      throw new Error(buildApiError(data, 'No se pudo consultar el estudiante.'));
+      throw new Error(buildApiError(data, 'No se pudo consultar al estudiante.'));
     }
 
     const matches = Array.isArray(data.coincidencias) ? data.coincidencias : [];
@@ -487,7 +651,7 @@ async function lookupStudent(runValue) {
       carreraInput.value = '';
       anioInput.value = '';
       closeSuggestions();
-      autocompleteStatus.textContent = 'Estudiante no encontrado.';
+      autocompleteStatus.textContent = 'No se encontraron datos del estudiante.';
       autocompleteStatus.className = 'hint hint--error';
       return;
     }
@@ -536,7 +700,7 @@ async function downloadExport() {
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(buildApiError(data, 'No se pudo exportar el archivo CSV.'));
+      throw new Error(buildApiError(data, 'No fue posible exportar el archivo CSV.'));
     }
 
     const blob = await response.blob();
@@ -554,7 +718,7 @@ async function downloadExport() {
     window.URL.revokeObjectURL(url);
     showMessage('El archivo CSV fue exportado correctamente.', 'success');
   } catch (error) {
-    showMessage(error.message || 'No se pudo exportar el archivo CSV.', 'error');
+    showMessage(error.message || 'No fue posible exportar el archivo CSV.', 'error');
   } finally {
     exportButton.disabled = false;
     exportButton.textContent = 'Exportar registros CSV';
@@ -585,13 +749,13 @@ async function registerExit(id) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(buildApiError(data, 'No se pudo registrar la salida.'));
+      throw new Error(buildApiError(data, 'No fue posible registrar la salida.'));
     }
 
     renderRecords(data.registrosHoy || []);
     showMessage(data.message || 'Salida registrada correctamente.', 'success');
   } catch (error) {
-    showMessage(error.message || 'No se pudo registrar la salida.', 'error');
+    showMessage(error.message || 'No fue posible registrar la salida.', 'error');
   }
 }
 
@@ -614,10 +778,115 @@ function updateClock() {
   currentSemesterBadge.textContent = `Semestre ${getCurrentSemester(now)}`;
 }
 
+function validateYear() {
+  const yearValue = String(anioInput.value || '').trim();
+  const currentYear = getCurrentYear();
+
+  if (!yearValue) {
+    setFieldError('anio_ingreso', 'Debes ingresar el año de ingreso.');
+    return false;
+  }
+
+  if (!/^\d{4}$/.test(yearValue)) {
+    setFieldError('anio_ingreso', 'Ingresa un año con cuatro dígitos.');
+    return false;
+  }
+
+  const year = Number(yearValue);
+
+  if (year < MIN_YEAR || year > currentYear) {
+    setFieldError('anio_ingreso', `Ingresa un año entre ${MIN_YEAR} y ${currentYear}.`);
+    return false;
+  }
+
+  clearFieldError('anio_ingreso');
+  return true;
+}
+
+function validateForm() {
+  clearAllFieldErrors();
+  const errors = [];
+
+  if (!getSelectedCampus()) {
+    errors.push({ field: 'campus', message: 'Debes seleccionar el campus superior.' });
+  }
+
+  const run = sanitizeRun(runInput.value);
+  const dv = sanitizeDv(dvInput.value);
+
+  if (!run) {
+    errors.push({ field: 'run', message: 'Debes ingresar el RUN.' });
+  } else if (run.length < MIN_RUN_LENGTH || run.length > MAX_RUN_LENGTH) {
+    errors.push({ field: 'run', message: 'Ingresa un RUN válido de 7 u 8 dígitos.' });
+  }
+
+  if (!dv) {
+    errors.push({ field: 'dv', message: 'Debes ingresar el dígito verificador.' });
+  }
+
+  if (run && dv && !isValidRun(run, dv)) {
+    errors.push({ field: 'run', message: 'El RUN y el dígito verificador no son válidos.' });
+    errors.push({ field: 'dv', message: 'El dígito verificador no corresponde al RUN ingresado.' });
+  }
+
+  if (!carreraInput.value.trim()) {
+    errors.push({ field: 'carrera', message: 'Debes ingresar la carrera.' });
+  }
+
+  if (!validateYear()) {
+    errors.push({ field: 'anio_ingreso', message: fieldDefinitions.anio_ingreso.errorNode.textContent || 'Debes ingresar un año válido.' });
+  }
+
+  if (!actividadInput.value) {
+    errors.push({ field: 'actividad', message: 'Debes seleccionar una actividad.' });
+  }
+
+  if (!tematicaInput.value) {
+    errors.push({ field: 'tematica', message: 'Debes seleccionar una temática.' });
+  }
+
+  if (!getSelectedCampus()) {
+    espacioInput.disabled = true;
+  }
+
+  if (!espacioInput.value) {
+    errors.push({ field: 'espacio', message: 'Debes seleccionar un espacio.' });
+  }
+
+  const handled = new Set();
+  errors.forEach(({ field, message }) => {
+    if (handled.has(field)) {
+      return;
+    }
+
+    handled.add(field);
+    setFieldError(field, message);
+  });
+
+  if (errors.length) {
+    const firstField = errors.find(({ field }) => fieldDefinitions[field]?.input)?.field;
+    if (firstField && fieldDefinitions[firstField]) {
+      fieldDefinitions[firstField].input.focus();
+    }
+
+    const summaryMessage = errors[0].field === 'campus'
+      ? 'Revisa el formulario antes de registrar la entrada. Debes seleccionar el campus y completar los campos obligatorios.'
+      : 'Revisa el formulario antes de registrar la entrada. Hay campos obligatorios pendientes o inválidos.';
+
+    formLiveRegion.textContent = summaryMessage;
+    showMessage(summaryMessage, 'error');
+    return false;
+  }
+
+  formLiveRegion.textContent = '';
+  return true;
+}
+
 campusHeaderInput.addEventListener('change', () => {
   syncCampus(campusHeaderInput.value);
   updateEspacios();
   clearMessage();
+  renderRecords(currentRecords);
   loadTodayRecords().catch((error) => {
     showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
   });
@@ -628,7 +897,10 @@ runInput.addEventListener('input', () => {
   clearMessage();
   syncRunFieldState();
   closeSuggestions();
+  clearFieldError('run');
+  clearFieldError('dv');
   window.clearTimeout(lookupTimer);
+  updateRunValidationFeedback();
   lookupTimer = window.setTimeout(() => lookupStudent(runInput.value), LOOKUP_DEBOUNCE_MS);
 });
 
@@ -700,10 +972,60 @@ authPasswordInput.addEventListener('input', () => {
 dvInput.addEventListener('input', () => {
   dvInput.value = sanitizeDv(dvInput.value);
   clearMessage();
+  updateRunValidationFeedback();
+});
+
+carreraInput.addEventListener('input', () => {
+  clearFieldError('carrera');
+  clearMessage();
 });
 
 anioInput.addEventListener('input', () => {
   anioInput.value = String(anioInput.value || '').replace(/\D/g, '').slice(0, 4);
+  clearFieldError('anio_ingreso');
+  clearMessage();
+});
+
+actividadInput.addEventListener('change', () => {
+  clearFieldError('actividad');
+  clearMessage();
+});
+
+tematicaInput.addEventListener('change', () => {
+  clearFieldError('tematica');
+  clearMessage();
+});
+
+espacioInput.addEventListener('change', () => {
+  clearFieldError('espacio');
+  clearMessage();
+});
+
+searchInput.addEventListener('input', () => {
+  searchTerm = searchInput.value.trim();
+  currentPage = 1;
+  renderRecords(currentRecords);
+});
+
+paginationPrevButton.addEventListener('click', () => {
+  if (currentPage <= 1) {
+    return;
+  }
+
+  currentPage -= 1;
+  renderRecords(currentRecords);
+});
+
+paginationNextButton.addEventListener('click', () => {
+  const visibleRecords = getVisibleRecords(currentRecords);
+  const totalPages = Math.max(1, Math.ceil(visibleRecords.length / ROWS_PER_PAGE));
+
+  if (currentPage >= totalPages) {
+    return;
+  }
+
+  currentPage += 1;
+  renderRecords(currentRecords);
 });
 
 exportButton.addEventListener('click', downloadExport);
@@ -727,6 +1049,11 @@ recordsBody.addEventListener('click', (event) => {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   clearMessage();
+  updateRunValidationFeedback();
+
+  if (!validateForm()) {
+    return;
+  }
 
   const payload = {
     campus: getSelectedCampus(),
@@ -753,7 +1080,7 @@ form.addEventListener('submit', async (event) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(buildApiError(data, 'No se pudo registrar la asistencia.'));
+      throw new Error(buildApiError(data, 'No fue posible registrar la entrada.'));
     }
 
     showMessage(data.message || 'Entrada registrada correctamente.', 'success');
@@ -763,15 +1090,18 @@ form.addEventListener('submit', async (event) => {
     const selectedActividad = actividadInput.value;
 
     form.reset();
+    clearAllFieldErrors();
     syncCampus(selectedCampus);
     actividadInput.value = selectedActividad;
     updateEspacios();
     closeSuggestions();
     clearStudentFields();
     syncRunFieldState();
+    formLiveRegion.textContent = 'Entrada registrada correctamente.';
     runInput.focus();
   } catch (error) {
-    showMessage(error.message || 'No se pudo registrar la asistencia.', 'error');
+    showMessage(error.message || 'No fue posible registrar la entrada.', 'error');
+    formLiveRegion.textContent = error.message || 'No fue posible registrar la entrada.';
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = 'Registrar entrada';

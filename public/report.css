@@ -183,7 +183,6 @@ tbody td {
   vertical-align: top;
 }
 tbody tr:last-child td { border-bottom: none; }
-.td-muted { color: var(--ink-muted); }
 .status-pill {
   display: inline-flex;
   padding: 4px 10px;
