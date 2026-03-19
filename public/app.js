@@ -5,7 +5,15 @@ const CAMPUS_SPACES = {
 
 const MIN_LOOKUP_LENGTH = 3;
 const LOOKUP_DEBOUNCE_MS = 400;
+const AUTH_STORAGE_KEY = 'ciac_auth';
+const ACCESS_PASSWORD = 'Suna.2011';
 
+const authGate = document.getElementById('auth-gate');
+const authForm = document.getElementById('auth-form');
+const authPasswordInput = document.getElementById('auth-password');
+const authSubmitButton = document.getElementById('auth-submit');
+const authError = document.getElementById('auth-error');
+const appShell = document.getElementById('app-shell');
 const form = document.getElementById('registro-form');
 const campusHeaderInput = document.getElementById('campus-header');
 const runInput = document.getElementById('run');
@@ -34,6 +42,59 @@ let activeCampusFilter = '';
 let currentSuggestions = [];
 let highlightedSuggestionIndex = -1;
 let latestLookupToken = 0;
+
+
+function isAuthenticated() {
+  return window.sessionStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+}
+
+function setAuthenticated(isAuth) {
+  if (isAuth) {
+    window.sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
+    return;
+  }
+
+  window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+}
+
+function applyAuthState(isAuth) {
+  authGate.hidden = isAuth;
+  appShell.setAttribute('aria-hidden', String(!isAuth));
+  document.body.classList.toggle('auth-locked', !isAuth);
+
+  if (isAuth) {
+    authError.textContent = '';
+    authPasswordInput.classList.remove('is-shaking');
+    runInput.focus();
+    return;
+  }
+
+  window.setTimeout(() => {
+    authPasswordInput.focus();
+  }, 0);
+}
+
+function failAuthentication() {
+  authError.textContent = 'Contraseña incorrecta';
+  authPasswordInput.value = '';
+  authPasswordInput.classList.remove('is-shaking');
+  void authPasswordInput.offsetWidth;
+  authPasswordInput.classList.add('is-shaking');
+  authPasswordInput.focus();
+}
+
+function handleAuthSubmit(event) {
+  event.preventDefault();
+
+  if (authPasswordInput.value === ACCESS_PASSWORD) {
+    setAuthenticated(true);
+    applyAuthState(true);
+    return;
+  }
+
+  setAuthenticated(false);
+  failAuthentication();
+}
 
 function sanitizeRun(value) {
   return String(value || '').replace(/\D/g, '');
@@ -627,6 +688,15 @@ suggestionsList.addEventListener('mousedown', (event) => {
   runInput.focus();
 });
 
+authForm.addEventListener('submit', handleAuthSubmit);
+authPasswordInput.addEventListener('input', () => {
+  if (authError.textContent) {
+    authError.textContent = '';
+  }
+
+  authPasswordInput.classList.remove('is-shaking');
+});
+
 dvInput.addEventListener('input', () => {
   dvInput.value = sanitizeDv(dvInput.value);
   clearMessage();
@@ -712,6 +782,7 @@ syncCampus(getSelectedCampus());
 updateEspacios();
 updateClock();
 syncRunFieldState();
+applyAuthState(isAuthenticated());
 loadTodayRecords().catch((error) => {
   showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
 });

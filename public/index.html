@@ -10,7 +10,38 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main class="app-shell">
+  <div id="auth-gate" class="auth-gate" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="auth-gate__panel">
+      <div class="auth-gate__brand">
+        <div class="brand-logo-wrap auth-gate__logo" aria-hidden="true">
+          <img
+            class="brand-logo"
+            src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
+            alt=""
+          >
+        </div>
+
+        <div class="brand-copy">
+          <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
+          <div class="brand-title-group">
+            <h1 id="auth-title">CIAC Registro</h1>
+            <p class="brand-subtitle">Ingresa la contraseña de acceso para continuar.</p>
+          </div>
+        </div>
+      </div>
+
+      <form id="auth-form" class="auth-form" novalidate>
+        <label for="auth-password">
+          <span>Contraseña de acceso</span>
+          <input id="auth-password" name="auth-password" type="password" autocomplete="current-password" required>
+        </label>
+        <button id="auth-submit" class="button" type="submit">Ingresar</button>
+        <p id="auth-error" class="auth-form__error" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+
+  <main class="app-shell" id="app-shell" aria-hidden="true">
     <header class="topbar" aria-label="Encabezado institucional">
       <div class="topbar__surface">
         <div class="topbar__meta">
