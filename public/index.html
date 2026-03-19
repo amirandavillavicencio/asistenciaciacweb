@@ -1,755 +1,216 @@
-:root {
-  --usm-blue: #003b71;
-  --usm-blue-deep: #002a4e;
-  --usm-blue-ink: #15314b;
-  --usm-blue-soft: #edf3f8;
-  --usm-green: #1d6b46;
-  --usm-red: #a62932;
-  --usm-yellow: #9a6a00;
-  --ink-strong: #132433;
-  --ink-muted: #526272;
-  --border: #cfd9e2;
-  --border-strong: #afbcc9;
-  --surface: #ffffff;
-  --surface-muted: #f6f8fa;
-  --surface-subtle: #eef2f5;
-  --shell-max-width: 1640px;
-  --shell-padding-x: clamp(18px, 2vw, 34px);
-  --shell-padding-y: 14px;
-  --panel-padding: clamp(18px, 1.7vw, 24px);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  background: #e9eef3;
-  overflow-x: hidden;
-}
-
-body {
-  margin: 0;
-  font-family: 'Source Sans 3', Arial, sans-serif;
-  color: var(--ink-strong);
-  background: #e9eef3;
-  overflow-x: hidden;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-.app-shell {
-  width: min(100%, var(--shell-max-width));
-  margin: 0 auto;
-  padding: var(--shell-padding-y) var(--shell-padding-x) 28px;
-}
-
-.topbar {
-  width: 100%;
-}
-
-.topbar__surface {
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.72fr) minmax(360px, 0.95fr);
-  gap: 22px;
-  align-items: center;
-  width: 100%;
-  padding: var(--panel-padding);
-  border: 1px solid #0f2f4f;
-  background: linear-gradient(135deg, var(--usm-blue-deep) 0%, var(--usm-blue) 58%, #0a4c86 100%);
-  color: #fff;
-}
-
-.topbar__brand {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  min-width: 0;
-}
-
-.brand-logo-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: clamp(124px, 12vw, 160px);
-  min-width: 124px;
-  min-height: 84px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  flex-shrink: 0;
-}
-
-.brand-logo {
-  display: block;
-  width: 100%;
-  max-width: 138px;
-  height: auto;
-  object-fit: contain;
-}
-
-.brand-copy,
-.panel,
-.panel__header > *,
-.table-wrap,
-.student-cell,
-.header-datetime > div {
-  min-width: 0;
-}
-
-.brand-copy {
-  display: grid;
-  gap: 10px;
-}
-
-.brand-kicker,
-.brand-subtitle {
-  margin: 0;
-}
-
-.brand-kicker {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.brand-title-group {
-  display: grid;
-  gap: 8px;
-}
-
-.topbar h1 {
-  margin: 0;
-  font-size: clamp(2.1rem, 2.6vw, 3rem);
-  line-height: 0.98;
-  font-weight: 700;
-  letter-spacing: 0.005em;
-}
-
-.brand-subtitle {
-  max-width: 48ch;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.98rem;
-  line-height: 1.35;
-}
-
-.topbar__campus,
-.topbar__actions {
-  min-width: 0;
-}
-
-.topbar__campus {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.topbar__actions {
-  display: flex;
-  align-items: stretch;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.header-field,
-.header-datetime {
-  min-width: 0;
-}
-
-.header-field {
-  display: grid;
-  gap: 8px;
-}
-
-.header-field--campus {
-  width: min(100%, 255px);
-}
-
-.header-field span,
-.header-meta__label {
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.header-field select,
-.button--header {
-  min-height: 48px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-.header-field select {
-  padding: 0 14px;
-  border-radius: 0;
-}
-
-.header-field select option {
-  color: #111;
-}
-
-.header-datetime {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(84px, auto);
-  gap: 12px;
-  width: min(100%, 250px);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #fff;
-}
-
-.header-datetime > div {
-  display: grid;
-  gap: 2px;
-  align-content: center;
-}
-
-.header-datetime strong {
-  font-size: 0.94rem;
-  font-weight: 700;
-  line-height: 1.15;
-  color: #fff;
-}
-
-.button--header {
-  min-width: 0;
-  width: auto;
-  padding: 0 16px;
-  white-space: nowrap;
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  justify-self: auto;
-  flex-shrink: 0;
-}
-
-.button--header:hover {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.28);
-}
-
-.dashboard-layout {
-  display: grid;
-  grid-template-columns: minmax(300px, 26%) minmax(0, 74%);
-  gap: 20px;
-  width: 100%;
-  margin-top: 18px;
-  align-items: start;
-}
-
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-
-.panel--form,
-.panel--table {
-  width: 100%;
-  padding: var(--panel-padding);
-}
-
-.panel__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
-}
-
-.panel__header h2,
-.form-section__header h3 {
-  margin: 0;
-  color: var(--usm-blue-ink);
-  font-size: 1.55rem;
-  line-height: 1.1;
-}
-
-.form-section__header h3 {
-  font-size: 1.05rem;
-}
-
-.panel__header p,
-.form-section__header p,
-.hint {
-  margin: 6px 0 0;
-  color: var(--ink-muted);
-  line-height: 1.35;
-}
-
-.section-tag {
-  margin: 0 0 6px;
-  color: var(--usm-blue);
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.form {
-  display: grid;
-  gap: 18px;
-}
-
-.form-section {
-  display: grid;
-  gap: 14px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  background: var(--surface-muted);
-}
-
-.grid {
-  display: grid;
-  gap: 14px;
-}
-
-.grid--2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.grid--run {
-  grid-template-columns: minmax(0, 1fr) 96px;
-}
-
-.grid--details {
-  align-items: start;
-}
-
-label {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-}
-
-label span {
-  color: var(--usm-blue-ink);
-  font-size: 0.94rem;
-  font-weight: 700;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  min-width: 0;
-  min-height: 46px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: 0;
-  background: #fff;
-  color: var(--ink-strong);
-}
-
-textarea {
-  min-height: 114px;
-  resize: vertical;
-  line-height: 1.4;
-}
-
-textarea::placeholder,
-input::placeholder {
-  color: #6d7c8a;
-  opacity: 1;
-  white-space: normal;
-  line-height: 1.35;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: 2px solid rgba(0, 59, 113, 0.18);
-  outline-offset: 1px;
-  border-color: var(--usm-blue);
-}
-
-select:disabled {
-  color: #718191;
-  background: #f0f3f6;
-}
-
-.button,
-button {
-  min-height: 48px;
-  max-width: 100%;
-  padding: 0 18px;
-  border: 1px solid var(--usm-blue);
-  border-radius: 0;
-  background: var(--usm-blue);
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
-}
-
-button:hover {
-  background: var(--usm-blue-deep);
-  border-color: var(--usm-blue-deep);
-}
-
-button:disabled {
-  opacity: 0.72;
-  cursor: wait;
-}
-
-.message {
-  display: none;
-  width: 100%;
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-left: 4px solid transparent;
-  background: #fff;
-}
-
-.message.is-visible {
-  display: block;
-}
-
-.message--success {
-  border-color: var(--usm-green);
-  color: #174d34;
-}
-
-.message--error {
-  border-color: var(--usm-red);
-  color: #7f2028;
-}
-
-.table-summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.summary-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid #b8c8d6;
-  background: var(--usm-blue-soft);
-  color: var(--usm-blue-ink);
-  font-size: 0.84rem;
-  font-weight: 700;
-}
-
-.summary-chip--secondary {
-  background: var(--surface-subtle);
-  border-color: #d4dce3;
-}
-
-.table-wrap {
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0;
-  border: 1px solid var(--border);
-  background: #fff;
-}
-
-.records-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: auto;
-  min-width: 0;
-}
-
-.records-table .col-run {
-  width: 8%;
-}
-
-.records-table .col-student {
-  width: 23%;
-}
-
-.records-table .col-campus {
-  width: 10%;
-}
-
-.records-table .col-activity {
-  width: 11%;
-}
-
-.records-table .col-topic {
-  width: 11%;
-}
-
-.records-table .col-space {
-  width: 9%;
-}
-
-.records-table .col-semester {
-  width: 8%;
-}
-
-.records-table .col-entry,
-.records-table .col-exit {
-  width: 8%;
-}
-
-.records-table .col-status {
-  width: 7%;
-}
-
-.records-table .col-action {
-  width: 7%;
-}
-
-thead th {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border-strong);
-  background: #f1f5f8;
-  color: var(--usm-blue-ink);
-  font-size: 0.74rem;
-  text-align: left;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-tbody tr:nth-child(even) {
-  background: #fafcfd;
-}
-
-tbody tr:hover {
-  background: #f5f8fb;
-}
-
-td {
-  padding: 11px 12px;
-  border-top: 1px solid var(--border);
-  vertical-align: top;
-  font-size: 0.91rem;
-  line-height: 1.32;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-  hyphens: none;
-}
-
-td:first-child,
-th:first-child {
-  padding-left: 14px;
-}
-
-td:last-child,
-th:last-child {
-  padding-right: 14px;
-}
-
-.empty {
-  padding: 24px 12px;
-  text-align: center;
-  color: var(--ink-muted);
-}
-
-.student-cell {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.student-cell strong {
-  font-weight: 700;
-  color: var(--ink-strong);
-  line-height: 1.25;
-}
-
-.student-cell__meta,
-.student-cell__notes {
-  display: block;
-}
-
-.student-cell__meta {
-  color: #3d5366;
-  font-size: 0.84rem;
-}
-
-.student-cell__notes {
-  color: var(--ink-muted);
-  font-size: 0.82rem;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-
-.estado {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 2px 8px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-.estado--activo {
-  border-color: #d8c48d;
-  background: #f7f1df;
-  color: #765100;
-}
-
-.estado--cerrado {
-  border-color: #b8d4c4;
-  background: #edf6f0;
-  color: #1d6b46;
-}
-
-.table-action {
-  min-width: 78px;
-  min-height: 32px;
-  padding: 0 10px;
-  border-color: var(--usm-blue);
-  background: var(--usm-blue);
-}
-
-.table-action--muted {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #d5dde5;
-  background: #f3f6f8;
-  color: #697a8a;
-}
-
-.cell-run {
-  white-space: nowrap;
-  font-weight: 600;
-}
-
-.records-table td:nth-child(3),
-.records-table td:nth-child(4),
-.records-table td:nth-child(5),
-.records-table td:nth-child(6) {
-  white-space: normal;
-}
-
-.records-table td:nth-child(7),
-.records-table td:nth-child(8),
-.records-table td:nth-child(9),
-.records-table td:nth-child(10),
-.records-table td:nth-child(11) {
-  white-space: nowrap;
-}
-
-.table-datetime {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-  white-space: nowrap;
-}
-
-.table-datetime__date {
-  font-weight: 600;
-  color: var(--ink-strong);
-}
-
-.table-datetime__time {
-  color: var(--ink-muted);
-  font-size: 0.83rem;
-}
-
-@media (max-width: 1320px) {
-  .topbar__surface {
-    grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.8fr);
-  }
-
-  .topbar__actions {
-    grid-column: 1 / -1;
-    justify-content: space-between;
-  }
-
-  .dashboard-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 1180px) {
-  .records-table {
-    min-width: 1080px;
-  }
-}
-
-@media (max-width: 900px) {
-  .panel__header {
-    flex-direction: column;
-  }
-
-  .table-summary {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 820px) {
-  .app-shell {
-    padding: 14px 12px 24px;
-  }
-
-  .topbar__surface,
-  .panel--form,
-  .panel--table {
-    padding: 16px;
-  }
-
-  .topbar__surface {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .topbar__brand {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .brand-logo-wrap {
-    width: 100%;
-    min-width: 0;
-    justify-content: flex-start;
-  }
-
-  .topbar__campus {
-    justify-content: flex-start;
-  }
-
-  .header-field--campus,
-  .header-datetime,
-  .button--header {
-    width: 100%;
-  }
-
-  .topbar__actions,
-  .grid--2,
-  .grid--run {
-    flex-direction: column;
-    grid-template-columns: 1fr;
-  }
-
-  .header-datetime {
-    grid-template-columns: 1fr;
-  }
-
-  .records-table {
-    min-width: 960px;
-  }
-
-  .table-summary {
-    justify-content: flex-start;
-  }
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIAC Registro | Universidad Técnica Federico Santa María</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar" aria-label="Encabezado institucional">
+      <div class="topbar__surface">
+        <div class="topbar__brand">
+          <div class="brand-logo-wrap" aria-hidden="true">
+            <img
+              class="brand-logo"
+              src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
+              alt=""
+            >
+          </div>
+
+          <div class="brand-copy">
+            <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
+            <div class="brand-title-group">
+              <h1>CIAC Registro</h1>
+              <p class="brand-subtitle">Control diario de atenciones, uso de espacios y permanencia estudiantil.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar__campus">
+          <label class="header-field header-field--campus" for="campus-header">
+            <span>Campus</span>
+            <select id="campus-header" aria-label="Campus principal">
+              <option value="">Selecciona campus</option>
+              <option value="Vitacura">Vitacura</option>
+              <option value="San Joaquín">San Joaquín</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="topbar__actions">
+          <div class="header-datetime" aria-live="polite">
+            <div>
+              <span class="header-meta__label">Fecha</span>
+              <strong id="current-date">--</strong>
+            </div>
+            <div>
+              <span class="header-meta__label">Hora</span>
+              <strong id="current-time">--</strong>
+            </div>
+          </div>
+
+          <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="message" class="message" aria-live="polite"></div>
+
+    <section class="dashboard-layout">
+      <article class="panel panel--form">
+        <div class="panel__header panel__header--stacked">
+          <div>
+            <p class="section-tag">Registro de atención</p>
+            <h2>Ingreso de estudiante</h2>
+            <p>Registro operativo para atención CIAC. Los datos académicos se completan automáticamente desde el RUN.</p>
+          </div>
+        </div>
+
+        <form id="registro-form" class="form" novalidate>
+          <section class="form-section">
+            <div class="form-section__header">
+              <h3>Identificación</h3>
+              <p>Ingresa RUN y DV para consultar carrera y año de ingreso.</p>
+            </div>
+
+            <div class="grid grid--run">
+              <label>
+                <span>RUN</span>
+                <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números" required>
+              </label>
+
+              <label>
+                <span>DV</span>
+                <input id="dv" name="dv" type="text" maxlength="1" autocomplete="off" placeholder="K" required>
+              </label>
+            </div>
+
+            <p id="autocomplete-status" class="hint">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
+
+            <div class="grid grid--2">
+              <label>
+                <span>Carrera</span>
+                <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Carrera del estudiante" required>
+              </label>
+
+              <label>
+                <span>Año de ingreso</span>
+                <input id="anio_ingreso" name="anio_ingreso" type="text" inputmode="numeric" autocomplete="off" placeholder="AAAA" maxlength="4" required>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="form-section__header">
+              <h3>Detalle de atención</h3>
+              <p>Completa únicamente los antecedentes operativos del registro.</p>
+            </div>
+
+            <div class="grid grid--2">
+              <label>
+                <span>Actividad</span>
+                <select id="actividad" name="actividad" required>
+                  <option value="">Selecciona actividad</option>
+                  <option value="Reforzamiento">Reforzamiento</option>
+                  <option value="Consultoría">Consultoría</option>
+                  <option value="Tutoría par integral">Tutoría par integral</option>
+                  <option value="Mentoría">Mentoría</option>
+                  <option value="Psicoeducativo individual">Psicoeducativo individual</option>
+                  <option value="Psicoeducativo grupal">Psicoeducativo grupal</option>
+                  <option value="Uso de sala">Uso de sala</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Temática</span>
+                <select id="tematica" name="tematica" required>
+                  <option value="">Selecciona temática</option>
+                  <option value="Matemática">Matemática</option>
+                  <option value="Química">Química</option>
+                  <option value="Física">Física</option>
+                  <option value="Programación">Programación</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid grid--2 grid--details">
+              <label>
+                <span>Espacio</span>
+                <select id="espacio" name="espacio" required disabled>
+                  <option value="">Selecciona primero el campus superior</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Observaciones</span>
+                <textarea id="observaciones" name="observaciones" rows="4" placeholder="Antecedentes relevantes del registro"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <button id="submit-button" class="button" type="submit">Registrar entrada</button>
+        </form>
+      </article>
+
+      <article class="panel panel--table">
+        <div class="panel__header panel__header--table">
+          <div>
+            <p class="section-tag">Control diario</p>
+            <h2>Registros del día</h2>
+            <p>Listado operacional de entradas y salidas registradas en la jornada.</p>
+          </div>
+          <div class="table-summary">
+            <span id="records-count" class="summary-chip">0 registros</span>
+            <span id="current-semester" class="summary-chip summary-chip--secondary">Semestre --</span>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="records-table">
+            <colgroup>
+              <col class="col-run">
+              <col class="col-student">
+              <col class="col-campus">
+              <col class="col-activity">
+              <col class="col-topic">
+              <col class="col-space">
+              <col class="col-semester">
+              <col class="col-entry">
+              <col class="col-exit">
+              <col class="col-status">
+              <col class="col-action">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>RUN</th>
+                <th>Detalle estudiante</th>
+                <th>Campus</th>
+                <th>Actividad</th>
+                <th>Temática</th>
+                <th>Espacio</th>
+                <th>Semestre</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="records-body">
+              <tr>
+                <td colspan="11" class="empty">No hay registros hoy.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
