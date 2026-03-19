@@ -92,19 +92,10 @@
           <section class="form-section">
             <div class="form-section__header">
               <h3>Detalle de atención</h3>
-              <p>Selecciona la información académica y el espacio utilizado.</p>
+              <p>Selecciona la información académica y el espacio utilizado según el campus elegido arriba.</p>
             </div>
 
             <div class="grid grid--2">
-              <label>
-                <span>Campus</span>
-                <select id="campus" name="campus" required>
-                  <option value="">Selecciona campus</option>
-                  <option value="Vitacura">Vitacura</option>
-                  <option value="San Joaquín">San Joaquín</option>
-                </select>
-              </label>
-
               <label>
                 <span>Actividad</span>
                 <select id="actividad" name="actividad" required>
@@ -118,9 +109,7 @@
                   <option value="Uso de sala">Uso de sala</option>
                 </select>
               </label>
-            </div>
 
-            <div class="grid grid--2">
               <label>
                 <span>Temática</span>
                 <select id="tematica" name="tematica" required>
@@ -131,19 +120,21 @@
                   <option value="Programación">Programación</option>
                 </select>
               </label>
+            </div>
 
+            <div class="grid grid--2">
               <label>
                 <span>Espacio</span>
                 <select id="espacio" name="espacio" required disabled>
-                  <option value="">Selecciona primero el campus</option>
+                  <option value="">Selecciona primero el campus superior</option>
                 </select>
               </label>
-            </div>
 
-            <label>
-              <span>Observaciones</span>
-              <textarea id="observaciones" name="observaciones" rows="4" placeholder="Información adicional del registro"></textarea>
-            </label>
+              <label>
+                <span>Observaciones</span>
+                <textarea id="observaciones" name="observaciones" rows="4" placeholder="Información adicional del registro"></textarea>
+              </label>
+            </div>
           </section>
 
           <button id="submit-button" class="button" type="submit">Registrar entrada</button>
