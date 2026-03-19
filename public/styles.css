@@ -13,8 +13,8 @@
   --surface: #ffffff;
   --surface-muted: #f6f8fa;
   --surface-subtle: #eef2f5;
-  --shell-max-width: 1400px;
-  --shell-padding-x: clamp(16px, 2.4vw, 32px);
+  --shell-max-width: 1500px;
+  --shell-padding-x: clamp(18px, 2vw, 36px);
   --shell-padding-y: 20px;
   --panel-padding: clamp(18px, 2vw, 24px);
 }
@@ -236,8 +236,8 @@ textarea {
 
 .dashboard-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(320px, 28%) minmax(0, 72%);
+  gap: 24px;
   width: 100%;
   margin-top: 18px;
   align-items: start;
@@ -441,7 +441,7 @@ button:disabled {
 
 .table-wrap {
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: hidden;
   padding: 0;
   border: 1px solid var(--border);
@@ -451,28 +451,41 @@ button:disabled {
 .records-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed;
+  min-width: 1120px;
 }
 
 .records-table .col-run {
-  width: 7%;
+  width: 8%;
 }
 
 .records-table .col-student {
-  width: 21%;
+  width: 24%;
 }
 
-.records-table .col-campus,
+.records-table .col-campus {
+  width: 11%;
+}
+
 .records-table .col-activity,
-.records-table .col-topic,
-.records-table .col-entry,
-.records-table .col-exit {
-  width: 10%;
+.records-table .col-topic {
+  width: 12%;
 }
 
 .records-table .col-space,
-.records-table .col-semester,
-.records-table .col-status,
+.records-table .col-semester {
+  width: 9%;
+}
+
+.records-table .col-entry,
+.records-table .col-exit {
+  width: 8%;
+}
+
+.records-table .col-status {
+  width: 10%;
+}
+
 .records-table .col-action {
   width: 8%;
 }
@@ -504,7 +517,9 @@ td {
   vertical-align: top;
   font-size: 0.92rem;
   line-height: 1.3;
-  word-break: break-word;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
 }
 
 td:first-child,
@@ -549,6 +564,7 @@ th:last-child {
   color: var(--ink-muted);
   font-size: 0.82rem;
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .estado {
@@ -563,6 +579,7 @@ th:last-child {
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .estado--activo {
@@ -599,6 +616,21 @@ th:last-child {
   font-weight: 600;
 }
 
+.records-table td:nth-child(3),
+.records-table td:nth-child(4),
+.records-table td:nth-child(5),
+.records-table td:nth-child(6) {
+  white-space: normal;
+}
+
+.records-table td:nth-child(7),
+.records-table td:nth-child(8),
+.records-table td:nth-child(9),
+.records-table td:nth-child(10),
+.records-table td:nth-child(11) {
+  white-space: nowrap;
+}
+
 .table-datetime {
   display: grid;
   gap: 1px;
@@ -632,10 +664,6 @@ th:last-child {
 }
 
 @media (max-width: 1024px) {
-  .table-wrap {
-    overflow-x: auto;
-  }
-
   .records-table {
     min-width: 960px;
   }
