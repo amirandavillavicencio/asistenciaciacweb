@@ -16,7 +16,6 @@ const espacioInput = document.getElementById('espacio');
 const exportButton = document.getElementById('export-button');
 const exportReportButton = document.getElementById('export-report-button');
 const messageBox = document.getElementById('message');
-const autocompleteStatus = document.getElementById('autocomplete-status');
 const submitButton = document.getElementById('submit-button');
 const recordsBody = document.getElementById('records-body');
 const recordsCount = document.getElementById('records-count');
@@ -24,7 +23,6 @@ const currentDate = document.getElementById('current-date');
 const currentTime = document.getElementById('current-time');
 const currentSemesterBadge = document.getElementById('current-semester');
 
-let lookupTimer = null;
 let activeCampusFilter = '';
 
 function sanitizeRun(value) {
@@ -221,50 +219,6 @@ async function loadTodayRecords() {
   renderRecords(data.registros || []);
 }
 
-async function lookupStudent(runValue) {
-  const run = sanitizeRun(runValue);
-
-  if (run.length < 3) {
-    autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
-    dvInput.value = '';
-    carreraInput.value = '';
-    anioInput.value = '';
-    return;
-  }
-
-  autocompleteStatus.textContent = 'Buscando estudiante...';
-
-  try {
-    const response = await fetch(`/api/buscar?run=${encodeURIComponent(run)}`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(buildApiError(data, 'No se pudo consultar el estudiante.'));
-    }
-
-    if (!data.alumno) {
-      dvInput.value = '';
-      carreraInput.value = '';
-      anioInput.value = '';
-      autocompleteStatus.textContent = 'No se encontró información para este RUN.';
-      return;
-    }
-
-    dvInput.value = data.alumno.dv || '';
-    carreraInput.value = data.alumno.carrera || '';
-    anioInput.value = data.alumno.anio_ingreso || '';
-
-    if (data.alumno.sede && !getSelectedCampus()) {
-      syncCampus(data.alumno.sede);
-      updateEspacios();
-    }
-
-    autocompleteStatus.textContent = 'Datos del estudiante completados correctamente.';
-  } catch {
-    autocompleteStatus.textContent = 'No fue posible consultar los datos del estudiante.';
-  }
-}
-
 async function downloadExport() {
   clearMessage();
   exportButton.disabled = true;
@@ -389,8 +343,6 @@ campusHeaderInput.addEventListener('change', () => {
 runInput.addEventListener('input', () => {
   runInput.value = sanitizeRun(runInput.value);
   clearMessage();
-  window.clearTimeout(lookupTimer);
-  lookupTimer = window.setTimeout(() => lookupStudent(runInput.value), 300);
 });
 
 dvInput.addEventListener('input', () => {
@@ -462,7 +414,6 @@ form.addEventListener('submit', async (event) => {
     syncCampus(selectedCampus);
     actividadInput.value = selectedActividad;
     updateEspacios();
-    autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
     runInput.focus();
   } catch (error) {
     showMessage(error.message || 'No se pudo registrar la asistencia.', 'error');

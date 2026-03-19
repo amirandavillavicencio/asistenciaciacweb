@@ -6,7 +6,6 @@ MVP mínimo y limpio de **CIAC Registro** preparado para **GitHub + Vercel**, co
 
 ```text
 /api
-  buscar.js
   registrar.js
   registros-hoy.js
 
@@ -17,7 +16,6 @@ MVP mínimo y limpio de **CIAC Registro** preparado para **GitHub + Vercel**, co
 
 /lib
   alumnos-data.js
-  rut.js
   registros-store.js
 
 package.json
@@ -30,7 +28,7 @@ README.md
 Este MVP hace solo lo necesario:
 
 1. permite ingresar RUN completo sin cortarlo
-2. autocompleta DV, carrera y año de ingreso desde una fuente textual dentro del repo
+2. permite registrar DV, carrera y año de ingreso de forma manual
 3. registra entrada y salida
 4. muestra los registros del día sin recargar la página
 
@@ -38,39 +36,20 @@ Este MVP hace solo lo necesario:
 
 - **Frontend:** HTML + CSS + JavaScript nativo
 - **Backend:** funciones serverless dentro de `/api`
-- **Fuente de alumnos:** `lib/alumnos-data.js`
-- **Validación de RUT:** `lib/rut.js`
 - **Persistencia temporal del MVP:** `lib/registros-store.js`
 
 No se usa servidor persistente tipo Express.
 No se usa base binaria en runtime.
 No hay arquitectura de escritorio ni mezcla de proyectos anteriores.
 
-## 4. Fuente de datos del alumno
+## 4. Datos del alumno
 
-La fuente usada en el repo contiene estos campos reales:
+Los datos del estudiante se ingresan manualmente en el formulario:
 
-- `rut`
+- `run`
 - `dv`
-- `cohorte`
-- `carrera_ingreso`
-- `sede`
-
-Mapeo aplicado en la app:
-
-- `rut` -> `run`
-- `dv` -> `dv`
-- `carrera_ingreso` -> `carrera`
-- `cohorte` -> `anio_ingreso`
-
-### Importante sobre el nombre
-
-**El nombre no viene en la fuente real.**
-Por eso:
-
-- **no se autocompleta**
-- **no se inventa**
-- **queda como ingreso manual y editable**
+- `carrera`
+- `anio_ingreso`
 
 ## 5. Cómo ejecutar localmente
 
@@ -114,10 +93,6 @@ vercel
 
 ## 8. Endpoints incluidos
 
-### `GET /api/buscar?run=123`
-- busca por RUN con mínimo 3 dígitos
-- devuelve coincidencia si existe
-
 ### `POST /api/registrar`
 Recibe:
 ```json
@@ -130,9 +105,8 @@ Recibe:
 }
 ```
 
-Valida RUT y decide:
+Valida campos obligatorios y registra:
 - entrada si no hay registro abierto hoy
-- salida si ya hay registro abierto hoy
 
 ### `GET /api/registros-hoy`
 - devuelve el arreglo de registros del día
@@ -152,7 +126,7 @@ Eso significa:
 
 - RUN sin corte incorrecto
 - sin salto automático al DV
-- autocompletado de DV, carrera y año de ingreso
+- ingreso manual de DV, carrera y año de ingreso
 - nombre manual
 - alternancia entrada/salida
 - tabla actualizada sin recargar

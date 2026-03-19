@@ -1,5 +1,4 @@
 const { supabaseGet, supabasePost } = require('../lib/supabase');
-const { cleanRun, cleanDv } = require('../lib/rut');
 
 const CHILE_TIMEZONE = 'America/Santiago';
 const CAMPUS_OPTIONS = ['Vitacura', 'San Joaquín'];
@@ -87,8 +86,8 @@ module.exports = async function handler(req, res) {
   try {
     const body = parseBody(req);
     const campus = String(body.campus || '').trim();
-    const run = cleanRun(body.run || '');
-    const dv = cleanDv(body.dv || '');
+    const run = String(body.run || '').replace(/\D/g, '');
+    const dv = String(body.dv || '').trim().toUpperCase().replace(/[^0-9K]/g, '').slice(0, 1);
     const carrera = String(body.carrera || '').trim();
     const anioIngreso = String(body.anio_ingreso || '').trim();
     const actividad = String(body.actividad || '').trim();
