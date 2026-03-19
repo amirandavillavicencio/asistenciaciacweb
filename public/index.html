@@ -13,6 +13,19 @@
   <main class="app-shell">
     <header class="topbar" aria-label="Encabezado institucional">
       <div class="topbar__surface">
+        <div class="topbar__meta">
+          <div class="header-datetime" aria-live="polite">
+            <div>
+              <span class="header-meta__label">Fecha</span>
+              <strong id="current-date">--</strong>
+            </div>
+            <div>
+              <span class="header-meta__label">Hora</span>
+              <strong id="current-time">--</strong>
+            </div>
+          </div>
+        </div>
+
         <div class="topbar__brand">
           <div class="brand-logo-wrap" aria-hidden="true">
             <img
@@ -43,17 +56,6 @@
         </div>
 
         <div class="topbar__actions">
-          <div class="header-datetime" aria-live="polite">
-            <div>
-              <span class="header-meta__label">Fecha</span>
-              <strong id="current-date">--</strong>
-            </div>
-            <div>
-              <span class="header-meta__label">Hora</span>
-              <strong id="current-time">--</strong>
-            </div>
-          </div>
-
           <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
           <button id="export-report-button" class="button button--header" type="button">Exportar informe de uso</button>
         </div>

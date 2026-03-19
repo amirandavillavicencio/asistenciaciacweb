@@ -54,15 +54,25 @@ textarea {
 }
 
 .topbar__surface {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.72fr) minmax(360px, 0.95fr);
   gap: 22px;
   align-items: center;
   width: 100%;
-  padding: var(--panel-padding);
+  padding: calc(var(--panel-padding) + 22px) var(--panel-padding) var(--panel-padding);
   border: 1px solid #0f2f4f;
   background: linear-gradient(135deg, var(--usm-blue-deep) 0%, var(--usm-blue) 58%, #0a4c86 100%);
   color: #fff;
+}
+
+.topbar__meta {
+  position: absolute;
+  top: 14px;
+  right: var(--panel-padding);
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
 }
 
 .topbar__brand {
@@ -155,6 +165,7 @@ textarea {
   align-items: stretch;
   justify-content: flex-end;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .header-field,
@@ -198,39 +209,40 @@ textarea {
 }
 
 .header-datetime {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(84px, auto);
-  gap: 12px;
-  width: min(100%, 250px);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #fff;
+  display: inline-grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 14px;
+  width: auto;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 30, 53, 0.18);
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
 }
 
 .header-datetime > div {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   align-content: center;
 }
 
 .header-datetime strong {
-  font-size: 0.94rem;
-  font-weight: 700;
-  line-height: 1.15;
-  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .button--header {
   min-width: 0;
   width: auto;
   padding: 0 16px;
-  white-space: nowrap;
+  white-space: normal;
   border-color: rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
   justify-self: auto;
-  flex-shrink: 0;
+  flex: 1 1 190px;
 }
 
 .button--header:hover {
@@ -700,9 +712,13 @@ th:last-child {
     grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.8fr);
   }
 
+  .topbar__campus {
+    justify-content: flex-start;
+  }
+
   .topbar__actions {
     grid-column: 1 / -1;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .dashboard-layout {
@@ -740,6 +756,13 @@ th:last-child {
   .topbar__surface {
     grid-template-columns: 1fr;
     gap: 16px;
+    padding-top: 64px;
+  }
+
+  .topbar__meta {
+    left: 16px;
+    right: 16px;
+    justify-content: flex-start;
   }
 
   .topbar__brand {
@@ -758,7 +781,6 @@ th:last-child {
   }
 
   .header-field--campus,
-  .header-datetime,
   .button--header {
     width: 100%;
   }
@@ -771,6 +793,7 @@ th:last-child {
 
   .header-datetime {
     grid-template-columns: 1fr;
+    width: min(100%, 220px);
   }
 
   .records-table {
