@@ -31,18 +31,17 @@
           </div>
         </div>
 
-        <div class="topbar__campus">
-          <label class="header-field header-field--campus" for="campus-header">
-            <span>Campus</span>
-            <select id="campus-header" aria-label="Campus principal">
-              <option value="">Selecciona campus</option>
-              <option value="Vitacura">Vitacura</option>
-              <option value="San Joaquín">San Joaquín</option>
-            </select>
-          </label>
-        </div>
-
         <div class="topbar__actions">
+          <div class="topbar__campus">
+            <label class="header-field header-field--campus" for="campus-header">
+              <span>Campus</span>
+              <select id="campus-header" aria-label="Campus principal">
+                <option value="">Selecciona campus</option>
+                <option value="Vitacura">Vitacura</option>
+                <option value="San Joaquín">San Joaquín</option>
+              </select>
+            </label>
+          </div>
           <div class="header-datetime" aria-live="polite">
             <div>
               <span class="header-meta__label">Fecha</span>
@@ -158,14 +157,20 @@
       </article>
 
       <article class="panel panel--table">
-        <div class="panel__header panel__header--table">
-          <div>
-            <p class="section-tag">Control diario</p>
-            <h2>Registros del día</h2>
-            <p>Listado operacional de entradas y salidas registradas en la jornada.</p>
+        <div class="panel__header panel__header--table table-section-head">
+          <div class="table-section-head__top">
+            <div class="table-section-head__title">
+              <p class="section-tag">Control diario</p>
+              <h2>Registros del día</h2>
+            </div>
+            <div class="table-summary">
+              <span id="records-count" class="summary-chip">0 registros</span>
+            </div>
           </div>
-          <div class="table-summary">
-            <span id="records-count" class="summary-chip">0 registros</span>
+          <div class="table-section-head__bottom">
+            <div class="table-section-head__meta">
+              <p>Listado operacional de entradas y salidas registradas en la jornada.</p>
+            </div>
             <span id="current-semester" class="summary-chip summary-chip--secondary">Semestre --</span>
           </div>
         </div>
