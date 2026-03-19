@@ -23,6 +23,8 @@ module.exports = async function handler(req, res) {
 
     const dia = getChileDate();
     const campus = String(req.query?.campus || '').trim();
+    const motivo = String(req.query?.motivo || req.query?.tematica || '').trim();
+    const actividad = String(req.query?.actividad || '').trim();
     const query = {
       select: RECORD_SELECT,
       dia: `eq.${dia}`,
@@ -31,6 +33,14 @@ module.exports = async function handler(req, res) {
 
     if (campus) {
       query.sede = `eq.${campus}`;
+    }
+
+    if (motivo) {
+      query.tematica = `eq.${motivo}`;
+    }
+
+    if (actividad) {
+      query.actividad = `eq.${actividad}`;
     }
 
     const registros = await supabaseGet('attendance_records', query);

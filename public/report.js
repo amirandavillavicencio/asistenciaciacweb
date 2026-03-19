@@ -18,15 +18,24 @@ const accessForm = document.getElementById('report-access-form');
 const accessInput = document.getElementById('report-access-password');
 const accessError = document.getElementById('report-access-error');
 const accessButton = document.getElementById('report-access-submit');
+const campusFilter = document.getElementById('report-filter-campus');
+const topicFilter = document.getElementById('report-filter-topic');
+const activityFilter = document.getElementById('report-filter-activity');
+const clearFiltersButton = document.getElementById('report-clear-filters');
 
 const REPORT_AUTH_STORAGE_KEY = 'ciac-report-authenticated';
-const REPORT_AUTH_HEADER = 'x-report-password';
 const params = new URLSearchParams(window.location.search);
-const selectedCampus = params.get('campus') || '';
+const REPORT_AUTH_HEADER = 'x-report-password';
+const DEFAULT_FILTERS = {
+  campus: params.get('campus') || '',
+  topic: params.get('motivo') || params.get('tematica') || '',
+  activity: params.get('actividad') || '',
+};
 
 window.__REPORT_RECORDS__ = [];
 let reportPassword = sessionStorage.getItem(REPORT_AUTH_STORAGE_KEY) || '';
 let reportUnlocked = Boolean(reportPassword);
+let activeFilters = { ...DEFAULT_FILTERS };
 
 function escapeHtml(value) {
   return String(value || '')
@@ -99,22 +108,6 @@ function clearAccessError() {
   accessError.hidden = true;
 }
 
-function renderBlockedState() {
-  reportBody.innerHTML = '<tr><td colspan="9" class="empty">Debes ingresar la clave de acceso para ver este informe.</td></tr>';
-  reportCount.textContent = '0';
-  reportOpenCount.textContent = '0';
-  reportClosedCount.textContent = '0';
-  reportDurationAverage.textContent = '—';
-  reportCampus.textContent = `Campus: ${selectedCampus || 'Todos'}`;
-  reportDate.textContent = `Fecha ${formatDateLabel()}`;
-  createBars(activityBars, {}, 'Acceso bloqueado hasta ingresar la clave.');
-  createBars(campusBars, {}, 'Acceso bloqueado hasta ingresar la clave.');
-  activityTotal.textContent = '0 categorías';
-  campusTotal.textContent = '0 sedes';
-  renderHighlights([]);
-  drawHourlyChart([]);
-}
-
 function formatDateLabel(date = new Date()) {
   return new Intl.DateTimeFormat('es-CL', {
     day: '2-digit',
@@ -172,17 +165,83 @@ function normalizeState(record) {
   return record.hora_salida ? 'salida' : 'entrada';
 }
 
-function getVisibleRecords(records) {
-  if (!selectedCampus) {
-    return records;
+function normalizeLabel(value, fallback) {
+  return String(value || fallback).trim() || fallback;
+}
+
+function getUniqueValues(records, key, fallbackLabel) {
+  return [...new Set(records.map((record) => normalizeLabel(record[key], fallbackLabel)))].sort((a, b) => a.localeCompare(b, 'es-CL'));
+}
+
+function fillSelectOptions(select, values, placeholder) {
+  if (!select) {
+    return;
   }
 
-  return records.filter((record) => record.sede === selectedCampus);
+  const currentValue = select.value;
+  const options = [`<option value="">${escapeHtml(placeholder)}</option>`]
+    .concat(values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`));
+
+  select.innerHTML = options.join('');
+  select.value = values.includes(currentValue) ? currentValue : '';
+}
+
+function syncFilterControls() {
+  if (campusFilter) {
+    campusFilter.value = activeFilters.campus;
+  }
+  if (topicFilter) {
+    topicFilter.value = activeFilters.topic;
+  }
+  if (activityFilter) {
+    activityFilter.value = activeFilters.activity;
+  }
+}
+
+function updateFilterOptions(records) {
+  fillSelectOptions(campusFilter, getUniqueValues(records, 'sede', 'Sin sede'), 'Todos los campus');
+  fillSelectOptions(topicFilter, getUniqueValues(records, 'tematica', 'Sin motivo'), 'Todos los motivos');
+  fillSelectOptions(activityFilter, getUniqueValues(records, 'actividad', 'Sin actividad'), 'Todas las actividades');
+  syncFilterControls();
+}
+
+function updateUrlFilters() {
+  const nextParams = new URLSearchParams(window.location.search);
+  const mappings = [
+    ['campus', activeFilters.campus],
+    ['motivo', activeFilters.topic],
+    ['actividad', activeFilters.activity],
+  ];
+
+  mappings.forEach(([key, value]) => {
+    if (value) {
+      nextParams.set(key, value);
+    } else {
+      nextParams.delete(key);
+    }
+  });
+  nextParams.delete('tematica');
+
+  const nextQuery = nextParams.toString();
+  const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+  window.history.replaceState({}, '', nextUrl);
+}
+
+function getVisibleRecords(records) {
+  return records.filter((record) => {
+    const campusLabel = normalizeLabel(record.sede, 'Sin sede');
+    const topicLabel = normalizeLabel(record.tematica, 'Sin motivo');
+    const activityLabel = normalizeLabel(record.actividad, 'Sin actividad');
+
+    return (!activeFilters.campus || campusLabel === activeFilters.campus)
+      && (!activeFilters.topic || topicLabel === activeFilters.topic)
+      && (!activeFilters.activity || activityLabel === activeFilters.activity);
+  });
 }
 
 function summarizeCounts(records, key, fallbackLabel) {
   return records.reduce((acc, record) => {
-    const label = String(record[key] || fallbackLabel).trim() || fallbackLabel;
+    const label = normalizeLabel(record[key], fallbackLabel);
     acc[label] = (acc[label] || 0) + 1;
     return acc;
   }, {});
@@ -376,14 +435,47 @@ function renderHighlights(records) {
   reportHighlights.innerHTML = items.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
 }
 
+function getActiveFilterSummary() {
+  const labels = [];
+
+  if (activeFilters.campus) {
+    labels.push(activeFilters.campus);
+  }
+  if (activeFilters.topic) {
+    labels.push(`Motivo: ${activeFilters.topic}`);
+  }
+  if (activeFilters.activity) {
+    labels.push(`Actividad: ${activeFilters.activity}`);
+  }
+
+  return labels.length ? labels.join(' · ') : 'Todos';
+}
+
+function renderBlockedState() {
+  reportBody.innerHTML = '<tr><td colspan="9" class="empty">Debes ingresar la clave de acceso para ver este informe.</td></tr>';
+  reportCount.textContent = '0';
+  reportOpenCount.textContent = '0';
+  reportClosedCount.textContent = '0';
+  reportDurationAverage.textContent = '—';
+  reportCampus.textContent = `Filtros: ${getActiveFilterSummary()}`;
+  reportDate.textContent = `Fecha ${formatDateLabel()}`;
+  createBars(activityBars, {}, 'Acceso bloqueado hasta ingresar la clave.');
+  createBars(campusBars, {}, 'Acceso bloqueado hasta ingresar la clave.');
+  activityTotal.textContent = '0 categorías';
+  campusTotal.textContent = '0 sedes';
+  renderHighlights([]);
+  drawHourlyChart([]);
+}
+
 function renderRecords(records) {
   window.__REPORT_RECORDS__ = Array.isArray(records) ? records : [];
+  updateFilterOptions(window.__REPORT_RECORDS__);
   const visibleRecords = getVisibleRecords(window.__REPORT_RECORDS__);
   const openRecords = visibleRecords.filter((record) => !record.hora_salida).length;
   const closedRecords = visibleRecords.length - openRecords;
   const averageDuration = getAverageDuration(visibleRecords);
 
-  reportCampus.textContent = `Campus: ${selectedCampus || 'Todos'}`;
+  reportCampus.textContent = `Filtros: ${getActiveFilterSummary()}`;
   reportCount.textContent = String(visibleRecords.length);
   reportOpenCount.textContent = String(openRecords);
   reportClosedCount.textContent = String(closedRecords);
@@ -398,7 +490,7 @@ function renderRecords(records) {
   drawHourlyChart(visibleRecords);
 
   if (!visibleRecords.length) {
-    reportBody.innerHTML = '<tr><td colspan="9" class="empty">No hay registros del día para el filtro seleccionado.</td></tr>';
+    reportBody.innerHTML = '<tr><td colspan="9" class="empty">No hay registros del día para los filtros seleccionados.</td></tr>';
     return;
   }
 
@@ -417,6 +509,11 @@ function renderRecords(records) {
   `).join('');
 }
 
+function applyFilters() {
+  updateUrlFilters();
+  renderRecords(window.__REPORT_RECORDS__ || []);
+}
+
 async function verifyPassword(password) {
   const response = await fetch('/api/report-auth', {
     method: 'POST',
@@ -432,6 +529,22 @@ async function verifyPassword(password) {
   return true;
 }
 
+function buildReportQuery() {
+  const query = new URLSearchParams();
+
+  if (activeFilters.campus) {
+    query.set('campus', activeFilters.campus);
+  }
+  if (activeFilters.topic) {
+    query.set('motivo', activeFilters.topic);
+  }
+  if (activeFilters.activity) {
+    query.set('actividad', activeFilters.activity);
+  }
+
+  return query.toString();
+}
+
 async function loadRecords() {
   clearMessage();
 
@@ -441,7 +554,8 @@ async function loadRecords() {
     return;
   }
 
-  const response = await fetch(`/api/report-data?campus=${encodeURIComponent(selectedCampus)}`, {
+  const query = buildReportQuery();
+  const response = await fetch(`/api/report-data${query ? `?${query}` : ''}`, {
     headers: getAuthHeaders(),
   });
   const data = await response.json();
@@ -474,7 +588,8 @@ async function exportReport() {
   exportButton.textContent = 'Exportando...';
 
   try {
-    const response = await fetch(`/api/export-report?campus=${encodeURIComponent(selectedCampus)}`, {
+    const query = buildReportQuery();
+    const response = await fetch(`/api/export-report${query ? `?${query}` : ''}`, {
       headers: getAuthHeaders(),
     });
     const contentType = response.headers.get('Content-Type') || '';
@@ -511,6 +626,28 @@ async function exportReport() {
   }
 }
 
+[campusFilter, topicFilter, activityFilter].forEach((element) => {
+  element?.addEventListener('change', () => {
+    activeFilters = {
+      campus: campusFilter?.value || '',
+      topic: topicFilter?.value || '',
+      activity: activityFilter?.value || '',
+    };
+    loadRecords().catch((error) => {
+      showMessage(error.message || 'No se pudieron cargar los registros del informe.', 'error');
+    });
+  });
+});
+
+clearFiltersButton?.addEventListener('click', () => {
+  activeFilters = { campus: '', topic: '', activity: '' };
+  syncFilterControls();
+  applyFilters();
+  loadRecords().catch((error) => {
+    showMessage(error.message || 'No se pudieron cargar los registros del informe.', 'error');
+  });
+});
+
 accessForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   clearAccessError();
@@ -539,6 +676,7 @@ accessForm?.addEventListener('submit', async (event) => {
 exportButton.addEventListener('click', exportReport);
 window.addEventListener('resize', () => drawHourlyChart(getVisibleRecords(window.__REPORT_RECORDS__ || [])));
 
+syncFilterControls();
 renderBlockedState();
 if (reportUnlocked) {
   loadRecords().catch((error) => {

@@ -33,8 +33,9 @@ function buildDetailRows(records) {
     DV: record.dv || '',
     Carrera: record.carrera || '',
     Sede: record.sede || '',
+    Actividad: record.actividad || '',
+    'Motivo consulta': record.tematica || '',
     'Año Ingreso': record.anio_ingreso || '',
-    Temática: record.tematica || '',
     Estado: normalizeState(record),
     'Hora Entrada': record.hora_entrada || '',
     'Hora Salida': record.hora_salida || '',
@@ -51,6 +52,8 @@ module.exports = async function handler(req, res) {
 
     const dia = getChileDate();
     const campus = String(req.query?.campus || '').trim();
+    const motivo = String(req.query?.motivo || req.query?.tematica || '').trim();
+    const actividad = String(req.query?.actividad || '').trim();
     const query = {
       select: RECORD_SELECT,
       dia: `eq.${dia}`,
@@ -61,10 +64,18 @@ module.exports = async function handler(req, res) {
       query.sede = `eq.${campus}`;
     }
 
+    if (motivo) {
+      query.tematica = `eq.${motivo}`;
+    }
+
+    if (actividad) {
+      query.actividad = `eq.${actividad}`;
+    }
+
     const registros = await supabaseGet('attendance_records', query);
     const rows = buildDetailRows(Array.isArray(registros) ? registros : []);
     const worksheet = XLSX.utils.json_to_sheet(rows, {
-      header: ['RUN', 'DV', 'Carrera', 'Sede', 'Año Ingreso', 'Temática', 'Estado', 'Hora Entrada', 'Hora Salida'],
+      header: ['RUN', 'DV', 'Carrera', 'Sede', 'Actividad', 'Motivo consulta', 'Año Ingreso', 'Estado', 'Hora Entrada', 'Hora Salida'],
     });
 
     worksheet['!cols'] = [
@@ -72,8 +83,9 @@ module.exports = async function handler(req, res) {
       { wch: 6 },
       { wch: 28 },
       { wch: 20 },
-      { wch: 14 },
+      { wch: 24 },
       { wch: 28 },
+      { wch: 14 },
       { wch: 14 },
       { wch: 24 },
       { wch: 24 },
@@ -82,7 +94,8 @@ module.exports = async function handler(req, res) {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Informe');
     const workbookBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    const filenameSuffix = campus ? `-${slugifyFilename(campus)}` : '';
+    const filenameParts = [campus, motivo, actividad].filter(Boolean).map(slugifyFilename).filter(Boolean);
+    const filenameSuffix = filenameParts.length ? `-${filenameParts.join('-')}` : '';
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="informe-uso-ciac-${dia}${filenameSuffix}.xlsx"`);
