@@ -3,25 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CIAC Registro</title>
+  <title>CIAC Registro | Universidad Técnica Federico Santa María</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <main class="app-shell">
-    <header class="topbar">
-      <div class="brand-block">
-        <div class="brand-mark" aria-hidden="true">USM</div>
-        <div>
+    <header class="topbar" aria-label="Encabezado institucional">
+      <div class="topbar__brand">
+        <div class="brand-logo-wrap" aria-hidden="true">
+          <img
+            class="brand-logo"
+            src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
+            alt=""
+          >
+        </div>
+
+        <div class="brand-copy">
           <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
-          <h1>CIAC Registro</h1>
-          <p class="brand-subtitle">Sistema de control diario de atenciones y uso de espacios CIAC.</p>
+          <div class="brand-title-group">
+            <h1>CIAC Registro</h1>
+            <p class="brand-subtitle">Control diario de atenciones, uso de espacios y permanencia estudiantil.</p>
+          </div>
         </div>
       </div>
 
-      <div class="topbar-tools">
+      <div class="topbar__controls">
         <label class="header-field" for="campus-header">
           <span>Campus</span>
           <select id="campus-header" aria-label="Campus principal">
@@ -31,14 +40,18 @@
           </select>
         </label>
 
-        <div class="header-meta" aria-live="polite">
-          <span class="header-meta__label">Fecha</span>
-          <strong id="current-date">--</strong>
-          <span class="header-meta__label">Hora</span>
-          <strong id="current-time">--</strong>
+        <div class="header-datetime" aria-live="polite">
+          <div>
+            <span class="header-meta__label">Fecha</span>
+            <strong id="current-date">--</strong>
+          </div>
+          <div>
+            <span class="header-meta__label">Hora</span>
+            <strong id="current-time">--</strong>
+          </div>
         </div>
 
-        <button id="export-button" class="button button--header" type="button">Exportar CSV</button>
+        <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
       </div>
     </header>
 
@@ -48,18 +61,17 @@
       <article class="panel panel--form">
         <div class="panel__header panel__header--stacked">
           <div>
-            <p class="section-tag">Registro diario</p>
+            <p class="section-tag">Registro de atención</p>
             <h2>Ingreso de estudiante</h2>
-            <p>Completa los antecedentes del alumno para registrar una nueva entrada.</p>
+            <p>Registro operativo para atención CIAC. Los datos académicos se completan automáticamente desde el RUN.</p>
           </div>
-          <div class="panel__pill">MVP operativo</div>
         </div>
 
         <form id="registro-form" class="form" novalidate>
           <section class="form-section">
             <div class="form-section__header">
-              <h3>Identificación del estudiante</h3>
-              <p>Consulta automática de datos según RUN.</p>
+              <h3>Identificación</h3>
+              <p>Ingresa RUN y DV para consultar carrera y año de ingreso.</p>
             </div>
 
             <div class="grid grid--run">
@@ -92,7 +104,7 @@
           <section class="form-section">
             <div class="form-section__header">
               <h3>Detalle de atención</h3>
-              <p>Selecciona la información académica y el espacio utilizado según el campus elegido arriba.</p>
+              <p>Completa únicamente los antecedentes operativos del registro.</p>
             </div>
 
             <div class="grid grid--2">
@@ -122,7 +134,7 @@
               </label>
             </div>
 
-            <div class="grid grid--2">
+            <div class="grid grid--2 grid--details">
               <label>
                 <span>Espacio</span>
                 <select id="espacio" name="espacio" required disabled>
@@ -132,7 +144,7 @@
 
               <label>
                 <span>Observaciones</span>
-                <textarea id="observaciones" name="observaciones" rows="4" placeholder="Información adicional del registro"></textarea>
+                <textarea id="observaciones" name="observaciones" rows="4" placeholder="Antecedentes relevantes del registro"></textarea>
               </label>
             </div>
           </section>
@@ -146,11 +158,11 @@
           <div>
             <p class="section-tag">Control diario</p>
             <h2>Registros del día</h2>
-            <p>Listado actualizado de entradas y salidas registradas durante la jornada.</p>
+            <p>Listado operacional de entradas y salidas registradas en la jornada.</p>
           </div>
           <div class="table-summary">
-            <span id="records-count" class="badge">0 registros</span>
-            <span id="current-semester" class="badge badge--secondary">Semestre --</span>
+            <span id="records-count" class="summary-chip">0 registros</span>
+            <span id="current-semester" class="summary-chip summary-chip--secondary">Semestre --</span>
           </div>
         </div>
 
@@ -159,7 +171,7 @@
             <thead>
               <tr>
                 <th>RUN</th>
-                <th>Alumno</th>
+                <th>Detalle estudiante</th>
                 <th>Campus</th>
                 <th>Actividad</th>
                 <th>Temática</th>
