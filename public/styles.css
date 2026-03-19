@@ -810,3 +810,39 @@ th:last-child {
     grid-template-columns: 1fr;
   }
 }
+
+
+.report-shell {
+  width: min(1200px, calc(100vw - 32px));
+  margin: 32px auto;
+}
+
+.report-panel {
+  gap: 20px;
+}
+
+.report-panel__header {
+  gap: 16px;
+}
+
+.report-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.report-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.report-table-wrap {
+  overflow-x: auto;
+}
+
+.report-table th,
+.report-table td {
+  white-space: nowrap;
+}

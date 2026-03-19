@@ -5,7 +5,7 @@ const { execFileSync } = require('child_process');
 const { supabaseGet } = require('../lib/supabase');
 
 const CHILE_TIMEZONE = 'America/Santiago';
-const RECORD_SELECT = 'dia,hora_entrada,hora_salida,sede,actividad,tematica';
+const RECORD_SELECT = 'dia,hora_entrada,hora_salida,run,dv,carrera,sede,actividad,tematica,estado';
 
 function getChileDate(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -210,6 +210,29 @@ function createWorkbookBuffer(sheets) {
   }
 }
 
+function slugifyFilename(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function buildDetailRows(records) {
+  return records.map((record) => ({
+    run: record.run || '',
+    dv: record.dv || '',
+    carrera: record.carrera || '',
+    sede: record.sede || '',
+    hora_entrada: record.hora_entrada || '',
+    hora_salida: record.hora_salida || '',
+    actividad: record.actividad || '',
+    tematica: record.tematica || '',
+    estado: record.estado || (record.hora_salida ? 'salida' : 'entrada'),
+  }));
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Método no permitido.' });
@@ -217,25 +240,34 @@ module.exports = async function handler(req, res) {
 
   try {
     const dia = getChileDate();
-    const registros = await supabaseGet('attendance_records', {
+    const campus = String(req.query?.campus || '').trim();
+    const query = {
       select: RECORD_SELECT,
       dia: `eq.${dia}`,
       order: 'hora_entrada.desc',
-    });
+    };
+
+    if (campus) {
+      query.sede = `eq.${campus}`;
+    }
+
+    const registros = await supabaseGet('attendance_records', query);
 
     const rows = Array.isArray(registros) ? registros : [];
     const workbookBuffer = createWorkbookBuffer([
+      {
+        name: 'Registros',
+        headers: ['run', 'dv', 'carrera', 'sede', 'hora_entrada', 'hora_salida', 'actividad', 'tematica', 'estado'],
+        rows: buildDetailRows(rows),
+      },
       {
         name: 'Resumen',
         headers: ['metrica', 'valor'],
         rows: [
           { metrica: 'Fecha del informe', valor: dia },
+          { metrica: 'Campus', valor: campus || 'Todos' },
           { metrica: 'Total registros', valor: rows.length },
-          { metrica: 'Total atenciones', valor: rows.length },
           { metrica: 'Promedio duración', valor: formatAverageDuration(rows) },
-          { metrica: 'Gráfico actividad', valor: 'Preparado como tabla para gráfico de barras en Excel' },
-          { metrica: 'Gráfico temática', valor: 'Preparado como tabla para gráfico de barras en Excel' },
-          { metrica: 'Gráfico campus', valor: 'Preparado como tabla para gráfico de torta en Excel' },
         ],
       },
       {
@@ -255,8 +287,10 @@ module.exports = async function handler(req, res) {
       },
     ]);
 
+    const filenameSuffix = campus ? `-${slugifyFilename(campus)}` : '';
+
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="informe_uso_ciac.xlsx"');
+    res.setHeader('Content-Disposition', `attachment; filename="informe-uso-ciac-${dia}${filenameSuffix}.xlsx"`);
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Length', workbookBuffer.length);
 
