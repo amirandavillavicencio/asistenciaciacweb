@@ -28,6 +28,28 @@
       <div id="report-message" class="message" aria-live="polite"></div>
       <p class="hint">Este informe requiere una clave fija antes de mostrar los registros o habilitar la exportación a Excel.</p>
 
+      <section class="report-filters" aria-label="Filtros del informe">
+        <label class="field report-filters__field">
+          <span>Campus</span>
+          <select id="report-filter-campus" name="report-filter-campus">
+            <option value="">Todos los campus</option>
+          </select>
+        </label>
+        <label class="field report-filters__field">
+          <span>Motivo consulta</span>
+          <select id="report-filter-topic" name="report-filter-topic">
+            <option value="">Todos los motivos</option>
+          </select>
+        </label>
+        <label class="field report-filters__field">
+          <span>Actividad a la que asististe</span>
+          <select id="report-filter-activity" name="report-filter-activity">
+            <option value="">Todas las actividades</option>
+          </select>
+        </label>
+        <button id="report-clear-filters" class="button" type="button">Limpiar filtros</button>
+      </section>
+
       <section class="report-kpis" aria-label="Resumen del día">
         <article class="report-kpi">
           <span class="report-kpi__label">Registros totales</span>

@@ -855,6 +855,24 @@ th:last-child {
   gap: 24px;
 }
 
+
+.report-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  align-items: end;
+  margin: 18px 0 22px;
+}
+
+.report-filters__field {
+  display: grid;
+  gap: 8px;
+}
+
+.report-filters__field select {
+  width: 100%;
+}
+
 .report-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -971,6 +989,7 @@ th:last-child {
 }
 
 @media (max-width: 1024px) {
+  .report-filters,
   .report-kpis,
   .report-grid {
     grid-template-columns: 1fr 1fr;
@@ -988,6 +1007,7 @@ th:last-child {
     margin: 16px auto;
   }
 
+  .report-filters,
   .report-kpis,
   .report-grid {
     grid-template-columns: 1fr;
