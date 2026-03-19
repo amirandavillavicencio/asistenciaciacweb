@@ -50,21 +50,25 @@ textarea {
 }
 
 .topbar {
+  width: 100%;
+}
+
+.topbar__surface {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  gap: 24px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1.7fr) minmax(240px, 0.9fr) minmax(320px, 1.05fr);
+  gap: 20px;
+  align-items: center;
   width: 100%;
   padding: var(--panel-padding);
   border: 1px solid #0f2f4f;
-  background: var(--usm-blue);
+  background: linear-gradient(135deg, var(--usm-blue-deep) 0%, var(--usm-blue) 58%, #0a4c86 100%);
   color: #fff;
 }
 
 .topbar__brand {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 20px;
   min-width: 0;
 }
 
@@ -72,11 +76,11 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(152px, 18vw, 220px);
-  min-width: 152px;
-  min-height: 88px;
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.04);
+  width: clamp(128px, 14vw, 172px);
+  min-width: 128px;
+  min-height: 84px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.16);
   flex-shrink: 0;
 }
@@ -84,7 +88,7 @@ textarea {
 .brand-logo {
   display: block;
   width: 100%;
-  max-width: 180px;
+  max-width: 146px;
   height: auto;
   object-fit: contain;
 }
@@ -98,15 +102,19 @@ textarea {
   min-width: 0;
 }
 
+.brand-copy {
+  display: grid;
+  gap: 10px;
+}
+
 .brand-kicker,
 .brand-subtitle {
   margin: 0;
 }
 
 .brand-kicker {
-  margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.82rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -118,30 +126,39 @@ textarea {
 
 .topbar h1 {
   margin: 0;
-  font-size: clamp(2rem, 2.7vw, 2.7rem);
-  line-height: 1;
+  font-size: clamp(2.2rem, 3.1vw, 3rem);
+  line-height: 0.98;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
 .brand-subtitle {
-  max-width: 620px;
+  max-width: 52ch;
   color: rgba(255, 255, 255, 0.82);
-  font-size: 1rem;
+  font-size: 0.98rem;
   line-height: 1.35;
 }
 
-.topbar__controls {
-  display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(220px, 1fr) minmax(0, auto);
-  gap: 14px;
-  align-items: end;
+.topbar__campus,
+.topbar__actions {
   min-width: 0;
+}
+
+.topbar__campus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar__actions {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .header-field,
 .header-datetime {
-  align-self: stretch;
   min-width: 0;
 }
 
@@ -150,20 +167,25 @@ textarea {
   gap: 8px;
 }
 
+.header-field--campus {
+  width: min(100%, 280px);
+}
+
 .header-field span,
 .header-meta__label {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .header-field select,
-.header-datetime {
-  min-height: 56px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.06);
+.header-datetime,
+.button--header {
+  min-height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
@@ -178,20 +200,38 @@ textarea {
 
 .header-datetime {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.45fr) minmax(92px, auto);
   gap: 12px;
-  padding: 10px 14px;
+  width: min(100%, 285px);
+  padding: 8px 12px;
 }
 
 .header-datetime > div {
   display: grid;
   gap: 2px;
+  align-content: center;
 }
 
 .header-datetime strong {
-  font-size: 1rem;
+  font-size: 0.94rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
+}
+
+.button--header {
+  min-width: 0;
+  width: auto;
+  padding: 0 16px;
+  white-space: nowrap;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  justify-self: auto;
+}
+
+.button--header:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .dashboard-layout {
@@ -350,19 +390,6 @@ button:disabled {
   cursor: wait;
 }
 
-.button--header {
-  min-width: 0;
-  width: 100%;
-  border-color: #fff;
-  background: #fff;
-  color: var(--usm-blue);
-  justify-self: stretch;
-}
-
-.button--header:hover {
-  background: #eef3f8;
-  border-color: #eef3f8;
-}
 
 .message {
   display: none;
@@ -512,12 +539,13 @@ td {
 }
 
 @media (max-width: 1180px) {
-  .topbar {
-    grid-template-columns: 1fr;
+  .topbar__surface {
+    grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.85fr);
   }
 
-  .topbar__controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .topbar__actions {
+    grid-column: 1 / -1;
+    justify-content: space-between;
   }
 
   .dashboard-layout {
@@ -540,10 +568,15 @@ td {
     padding: 14px 12px 24px;
   }
 
-  .topbar,
+  .topbar__surface,
   .panel--form,
   .panel--table {
     padding: 16px;
+  }
+
+  .topbar__surface {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .topbar__brand {
@@ -557,9 +590,20 @@ td {
     justify-content: flex-start;
   }
 
-  .topbar__controls,
+  .topbar__campus {
+    justify-content: flex-start;
+  }
+
+  .header-field--campus,
+  .header-datetime,
+  .button--header {
+    width: 100%;
+  }
+
+  .topbar__actions,
   .grid--2,
   .grid--run {
+    flex-direction: column;
     grid-template-columns: 1fr;
   }
 

@@ -12,46 +12,50 @@
 <body>
   <main class="app-shell">
     <header class="topbar" aria-label="Encabezado institucional">
-      <div class="topbar__brand">
-        <div class="brand-logo-wrap" aria-hidden="true">
-          <img
-            class="brand-logo"
-            src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
-            alt=""
-          >
-        </div>
-
-        <div class="brand-copy">
-          <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
-          <div class="brand-title-group">
-            <h1>CIAC Registro</h1>
-            <p class="brand-subtitle">Control diario de atenciones, uso de espacios y permanencia estudiantil.</p>
+      <div class="topbar__surface">
+        <div class="topbar__brand">
+          <div class="brand-logo-wrap" aria-hidden="true">
+            <img
+              class="brand-logo"
+              src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
+              alt=""
+            >
           </div>
-        </div>
-      </div>
 
-      <div class="topbar__controls">
-        <label class="header-field" for="campus-header">
-          <span>Campus</span>
-          <select id="campus-header" aria-label="Campus principal">
-            <option value="">Selecciona campus</option>
-            <option value="Vitacura">Vitacura</option>
-            <option value="San Joaquín">San Joaquín</option>
-          </select>
-        </label>
-
-        <div class="header-datetime" aria-live="polite">
-          <div>
-            <span class="header-meta__label">Fecha</span>
-            <strong id="current-date">--</strong>
-          </div>
-          <div>
-            <span class="header-meta__label">Hora</span>
-            <strong id="current-time">--</strong>
+          <div class="brand-copy">
+            <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
+            <div class="brand-title-group">
+              <h1>CIAC Registro</h1>
+              <p class="brand-subtitle">Control diario de atenciones, uso de espacios y permanencia estudiantil.</p>
+            </div>
           </div>
         </div>
 
-        <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
+        <div class="topbar__campus">
+          <label class="header-field header-field--campus" for="campus-header">
+            <span>Campus</span>
+            <select id="campus-header" aria-label="Campus principal">
+              <option value="">Selecciona campus</option>
+              <option value="Vitacura">Vitacura</option>
+              <option value="San Joaquín">San Joaquín</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="topbar__actions">
+          <div class="header-datetime" aria-live="polite">
+            <div>
+              <span class="header-meta__label">Fecha</span>
+              <strong id="current-date">--</strong>
+            </div>
+            <div>
+              <span class="header-meta__label">Hora</span>
+              <strong id="current-time">--</strong>
+            </div>
+          </div>
+
+          <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
+        </div>
       </div>
     </header>
 
