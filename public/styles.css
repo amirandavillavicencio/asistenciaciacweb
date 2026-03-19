@@ -441,40 +441,80 @@ button:disabled {
 
 .table-wrap {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
-  padding: 0 10px 10px;
+  padding: 0;
   border: 1px solid var(--border);
   background: #fff;
 }
 
-table {
+.records-table {
   width: 100%;
-  min-width: 1080px;
   border-collapse: collapse;
+  table-layout: auto;
+}
+
+.records-table .col-run {
+  width: 7%;
+}
+
+.records-table .col-student {
+  width: 21%;
+}
+
+.records-table .col-campus,
+.records-table .col-activity,
+.records-table .col-topic,
+.records-table .col-entry,
+.records-table .col-exit {
+  width: 10%;
+}
+
+.records-table .col-space,
+.records-table .col-semester,
+.records-table .col-status,
+.records-table .col-action {
+  width: 8%;
 }
 
 thead th {
-  padding: 12px 10px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border-strong);
-  background: #eef3f7;
+  background: #f1f5f8;
   color: var(--usm-blue-ink);
-  font-size: 0.79rem;
+  font-size: 0.76rem;
   text-align: left;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  white-space: nowrap;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  white-space: normal;
 }
 
 tbody tr:nth-child(even) {
-  background: #fbfcfd;
+  background: #fafcfd;
+}
+
+tbody tr:hover {
+  background: #f5f8fb;
 }
 
 td {
-  padding: 12px 10px;
+  padding: 10px 12px;
   border-top: 1px solid var(--border);
   vertical-align: top;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+td:first-child,
+th:first-child {
+  padding-left: 14px;
+}
+
+td:last-child,
+th:last-child {
+  padding-right: 14px;
 }
 
 .empty {
@@ -485,28 +525,44 @@ td {
 
 .student-cell {
   display: grid;
-  gap: 3px;
+  gap: 2px;
+  min-width: 0;
 }
 
 .student-cell strong {
   font-weight: 700;
+  color: var(--ink-strong);
+  line-height: 1.25;
 }
 
-.student-cell span {
+.student-cell__meta,
+.student-cell__notes {
+  display: block;
+}
+
+.student-cell__meta {
+  color: #3d5366;
+  font-size: 0.84rem;
+}
+
+.student-cell__notes {
   color: var(--ink-muted);
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   line-height: 1.3;
 }
 
 .estado {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 8px;
+  justify-content: center;
+  min-height: 24px;
+  padding: 2px 8px;
   border: 1px solid transparent;
-  font-size: 0.78rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
 }
 
 .estado--activo {
@@ -522,9 +578,9 @@ td {
 }
 
 .table-action {
-  min-width: 88px;
-  min-height: 36px;
-  padding: 0 12px;
+  min-width: 78px;
+  min-height: 32px;
+  padding: 0 10px;
   border-color: var(--usm-blue);
   background: var(--usm-blue);
 }
@@ -536,6 +592,28 @@ td {
   border: 1px solid #d5dde5;
   background: #f3f6f8;
   color: #697a8a;
+}
+
+.cell-run {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.table-datetime {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.table-datetime__date {
+  font-weight: 600;
+  color: var(--ink-strong);
+}
+
+.table-datetime__time {
+  color: var(--ink-muted);
+  font-size: 0.83rem;
 }
 
 @media (max-width: 1180px) {
@@ -550,6 +628,16 @@ td {
 
   .dashboard-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .records-table {
+    min-width: 960px;
   }
 }
 
