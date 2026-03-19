@@ -846,3 +846,156 @@ th:last-child {
 .report-table td {
   white-space: nowrap;
 }
+
+.report-shell--dashboard {
+  width: min(1400px, calc(100vw - 32px));
+}
+
+.report-dashboard {
+  gap: 24px;
+}
+
+.report-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.report-kpi,
+.report-card {
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fb 100%);
+}
+
+.report-kpi {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.report-kpi__label,
+.report-card__meta {
+  color: var(--ink-muted);
+  font-size: 0.84rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.report-kpi__value {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1;
+  color: var(--usm-blue-deep);
+}
+
+.report-kpi__hint {
+  color: var(--ink-muted);
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+  gap: 16px;
+}
+
+.report-card {
+  padding: 18px;
+}
+
+.report-card--chart,
+.report-card--table {
+  grid-column: 1 / -1;
+}
+
+.report-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.report-card__header h2 {
+  margin: 0;
+}
+
+.report-canvas {
+  width: 100%;
+  min-height: 280px;
+  background: #fff;
+}
+
+.report-bars {
+  display: grid;
+  gap: 14px;
+}
+
+.report-bar-row {
+  display: grid;
+  gap: 8px;
+}
+
+.report-bar-row__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.report-bar-track {
+  overflow: hidden;
+  width: 100%;
+  height: 12px;
+  background: #e6edf3;
+}
+
+.report-bar-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--usm-blue) 0%, #0b73b8 100%);
+}
+
+.report-highlights {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 10px;
+  color: var(--ink-strong);
+}
+
+.report-empty {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.report-card--table {
+  padding-top: 20px;
+}
+
+@media (max-width: 1024px) {
+  .report-kpis,
+  .report-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .report-card--chart,
+  .report-card--table {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .report-shell--dashboard {
+    width: min(100%, calc(100vw - 16px));
+    margin: 16px auto;
+  }
+
+  .report-kpis,
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-card__header,
+  .report-panel__actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
