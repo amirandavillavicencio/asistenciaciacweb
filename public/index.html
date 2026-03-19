@@ -10,38 +10,7 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <div id="auth-gate" class="auth-gate" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-    <div class="auth-gate__panel">
-      <div class="auth-gate__brand">
-        <div class="brand-logo-wrap auth-gate__logo" aria-hidden="true">
-          <img
-            class="brand-logo"
-            src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
-            alt=""
-          >
-        </div>
-
-        <div class="brand-copy">
-          <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
-          <div class="brand-title-group">
-            <h1 id="auth-title">CIAC Registro</h1>
-            <p class="brand-subtitle">Ingresa la contraseña de acceso para continuar.</p>
-          </div>
-        </div>
-      </div>
-
-      <form id="auth-form" class="auth-form" novalidate>
-        <label for="auth-password">
-          <span>Contraseña de acceso</span>
-          <input id="auth-password" name="auth-password" type="password" autocomplete="current-password" required>
-        </label>
-        <button id="auth-submit" class="button" type="submit">Ingresar</button>
-        <p id="auth-error" class="auth-form__error" aria-live="polite"></p>
-      </form>
-    </div>
-  </div>
-
-  <main class="app-shell" id="app-shell" aria-hidden="true">
+  <main class="app-shell">
     <header class="topbar" aria-label="Encabezado institucional">
       <div class="topbar__surface">
         <div class="topbar__meta">
@@ -78,23 +47,22 @@
         <div class="topbar__campus">
           <label class="header-field header-field--campus" for="campus-header">
             <span>Campus</span>
-            <select id="campus-header" aria-label="Campus principal" aria-describedby="campus-header-help" required>
+            <select id="campus-header" aria-label="Campus principal">
               <option value="">Selecciona campus</option>
               <option value="Vitacura">Vitacura</option>
               <option value="San Joaquín">San Joaquín</option>
             </select>
           </label>
-          <span id="campus-header-help" class="sr-only">Selecciona el campus antes de registrar una atención.</span>
         </div>
 
         <div class="topbar__actions">
           <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
-          <button id="export-report-button" class="button button--header" type="button">Ver informe de uso</button>
+          <button id="export-report-button" class="button button--header" type="button">Exportar informe de uso</button>
         </div>
       </div>
     </header>
 
-    <div id="message" class="message" aria-live="polite" role="status"></div>
+    <div id="message" class="message" aria-live="polite"></div>
 
     <section class="dashboard-layout">
       <article class="panel panel--form">
@@ -107,48 +75,35 @@
         </div>
 
         <form id="registro-form" class="form" novalidate>
-          <div id="form-live-region" class="sr-only" aria-live="assertive"></div>
-
           <section class="form-section">
             <div class="form-section__header">
               <h3>Identificación</h3>
-              <p>Ingresa RUN y dígito verificador para consultar carrera y año de ingreso.</p>
+              <p>Ingresa RUN y DV para consultar carrera y año de ingreso.</p>
             </div>
 
             <div class="grid grid--run">
-              <label for="run">
+              <label>
                 <span>RUN</span>
-                <div class="input-shell">
-                  <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números" required aria-autocomplete="list" aria-expanded="false" aria-controls="run-suggestions" aria-describedby="run-help run-error autocomplete-status">
-                  <button id="run-clear" class="input-clear" type="button" aria-label="Limpiar RUN" hidden>×</button>
-                </div>
-                <small id="run-help" class="hint hint--static">Ingresa RUN sin puntos ni guion.</small>
-                <p id="run-error" class="field-error" hidden></p>
-                <ul id="run-suggestions" class="autocomplete" role="listbox" hidden></ul>
+                <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números" required>
               </label>
 
-              <label for="dv">
+              <label>
                 <span>DV</span>
-                <input id="dv" name="dv" type="text" maxlength="1" autocomplete="off" placeholder="K" required aria-describedby="dv-help dv-error">
-                <small id="dv-help" class="hint hint--static">Puede ser número o K.</small>
-                <p id="dv-error" class="field-error" hidden></p>
+                <input id="dv" name="dv" type="text" maxlength="1" autocomplete="off" placeholder="K" required>
               </label>
             </div>
 
-            <p id="autocomplete-status" class="hint" aria-live="polite">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
+            <p id="autocomplete-status" class="hint">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
 
             <div class="grid grid--2">
-              <label for="carrera">
+              <label>
                 <span>Carrera</span>
-                <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Carrera del estudiante" required aria-describedby="carrera-error">
-                <p id="carrera-error" class="field-error" hidden></p>
+                <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Carrera del estudiante" required>
               </label>
 
-              <label for="anio_ingreso">
+              <label>
                 <span>Año de ingreso</span>
-                <input id="anio_ingreso" name="anio_ingreso" type="number" inputmode="numeric" autocomplete="off" placeholder="AAAA" min="1990" step="1" required aria-describedby="anio_ingreso-help anio_ingreso-error">
-                <small id="anio_ingreso-help" class="hint hint--static">Rango permitido: 1990 a año actual.</small>
-                <p id="anio_ingreso-error" class="field-error" hidden></p>
+                <input id="anio_ingreso" name="anio_ingreso" type="text" inputmode="numeric" autocomplete="off" placeholder="AAAA" maxlength="4" required>
               </label>
             </div>
           </section>
@@ -160,9 +115,9 @@
             </div>
 
             <div class="grid grid--2">
-              <label for="actividad">
+              <label>
                 <span>Actividad</span>
-                <select id="actividad" name="actividad" required aria-describedby="actividad-error">
+                <select id="actividad" name="actividad" required>
                   <option value="">Selecciona actividad</option>
                   <option value="Reforzamiento">Reforzamiento</option>
                   <option value="Consultoría">Consultoría</option>
@@ -172,33 +127,29 @@
                   <option value="Psicoeducativo grupal">Psicoeducativo grupal</option>
                   <option value="Uso de sala">Uso de sala</option>
                 </select>
-                <p id="actividad-error" class="field-error" hidden></p>
               </label>
 
-              <label for="tematica">
+              <label>
                 <span>Temática</span>
-                <select id="tematica" name="tematica" required aria-describedby="tematica-error">
+                <select id="tematica" name="tematica" required>
                   <option value="">Selecciona temática</option>
                   <option value="Matemática">Matemática</option>
                   <option value="Química">Química</option>
                   <option value="Física">Física</option>
                   <option value="Programación">Programación</option>
                 </select>
-                <p id="tematica-error" class="field-error" hidden></p>
               </label>
             </div>
 
             <div class="grid grid--2 grid--details">
-              <label for="espacio">
+              <label>
                 <span>Espacio</span>
-                <select id="espacio" name="espacio" required disabled aria-describedby="espacio-help espacio-error">
+                <select id="espacio" name="espacio" required disabled>
                   <option value="">Selecciona primero el campus superior</option>
                 </select>
-                <small id="espacio-help" class="hint hint--static">Disponible según el campus seleccionado.</small>
-                <p id="espacio-error" class="field-error" hidden></p>
               </label>
 
-              <label for="observaciones">
+              <label>
                 <span>Observaciones</span>
                 <textarea id="observaciones" name="observaciones" rows="4" placeholder="Antecedentes relevantes del registro"></textarea>
               </label>
@@ -220,14 +171,6 @@
             <span id="records-count" class="summary-chip">0 registros</span>
             <span id="current-semester" class="summary-chip summary-chip--secondary">Semestre --</span>
           </div>
-        </div>
-
-        <div class="table-toolbar">
-          <label class="table-search" for="records-search">
-            <span>Buscar registro</span>
-            <input id="records-search" type="search" placeholder="Buscar por RUN o carrera" autocomplete="off" aria-describedby="records-search-help">
-          </label>
-          <p id="records-search-help" class="hint hint--static">La búsqueda filtra antes de paginar.</p>
         </div>
 
         <div class="table-wrap">
@@ -266,12 +209,6 @@
               </tr>
             </tbody>
           </table>
-        </div>
-
-        <div class="table-pagination" aria-label="Paginación de registros">
-          <button id="pagination-prev" class="button button--secondary" type="button">Anterior</button>
-          <span id="pagination-status" class="pagination-status" aria-live="polite">Página 1 de 1</span>
-          <button id="pagination-next" class="button button--secondary" type="button">Siguiente</button>
         </div>
       </article>
     </section>

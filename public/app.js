@@ -3,19 +3,6 @@ const CAMPUS_SPACES = {
   'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
 };
 
-const MIN_LOOKUP_LENGTH = 3;
-const LOOKUP_DEBOUNCE_MS = 400;
-const AUTH_STORAGE_KEY = 'ciac_auth';
-const ACCESS_PASSWORD = 'Suna.2011';
-const MIN_YEAR = 1990;
-const ROWS_PER_PAGE = 15;
-
-const authGate = document.getElementById('auth-gate');
-const authForm = document.getElementById('auth-form');
-const authPasswordInput = document.getElementById('auth-password');
-const authSubmitButton = document.getElementById('auth-submit');
-const authError = document.getElementById('auth-error');
-const appShell = document.getElementById('app-shell');
 const form = document.getElementById('registro-form');
 const campusHeaderInput = document.getElementById('campus-header');
 const runInput = document.getElementById('run');
@@ -30,94 +17,15 @@ const exportButton = document.getElementById('export-button');
 const exportReportButton = document.getElementById('export-report-button');
 const messageBox = document.getElementById('message');
 const autocompleteStatus = document.getElementById('autocomplete-status');
-const suggestionsList = document.getElementById('run-suggestions');
-const runClearButton = document.getElementById('run-clear');
 const submitButton = document.getElementById('submit-button');
 const recordsBody = document.getElementById('records-body');
 const recordsCount = document.getElementById('records-count');
 const currentDate = document.getElementById('current-date');
 const currentTime = document.getElementById('current-time');
 const currentSemesterBadge = document.getElementById('current-semester');
-const searchInput = document.getElementById('records-search');
-const paginationPrevButton = document.getElementById('pagination-prev');
-const paginationNextButton = document.getElementById('pagination-next');
-const paginationStatus = document.getElementById('pagination-status');
-const formLiveRegion = document.getElementById('form-live-region');
-
-const fieldDefinitions = {
-  campus: { input: campusHeaderInput, errorNode: null },
-  run: { input: runInput, errorNode: document.getElementById('run-error') },
-  dv: { input: dvInput, errorNode: document.getElementById('dv-error') },
-  carrera: { input: carreraInput, errorNode: document.getElementById('carrera-error') },
-  anio_ingreso: { input: anioInput, errorNode: document.getElementById('anio_ingreso-error') },
-  actividad: { input: actividadInput, errorNode: document.getElementById('actividad-error') },
-  tematica: { input: tematicaInput, errorNode: document.getElementById('tematica-error') },
-  espacio: { input: espacioInput, errorNode: document.getElementById('espacio-error') },
-};
 
 let lookupTimer = null;
 let activeCampusFilter = '';
-let currentSuggestions = [];
-let highlightedSuggestionIndex = -1;
-let latestLookupToken = 0;
-let currentRecords = [];
-let searchTerm = '';
-let currentPage = 1;
-
-function isAuthenticated() {
-  return window.sessionStorage.getItem(AUTH_STORAGE_KEY) === 'true';
-}
-
-function setAuthenticated(isAuth) {
-  if (isAuth) {
-    window.sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
-    return;
-  }
-
-  window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
-}
-
-function applyAuthState(isAuth) {
-  authGate.hidden = isAuth;
-  appShell.setAttribute('aria-hidden', String(!isAuth));
-  document.body.classList.toggle('auth-locked', !isAuth);
-
-  if (isAuth) {
-    authError.textContent = '';
-    authPasswordInput.classList.remove('is-shaking');
-    runInput.focus();
-    return;
-  }
-
-  window.setTimeout(() => {
-    authPasswordInput.focus();
-  }, 0);
-}
-
-function failAuthentication() {
-  authError.textContent = 'Contraseña incorrecta';
-  authPasswordInput.value = '';
-  authPasswordInput.classList.remove('is-shaking');
-  void authPasswordInput.offsetWidth;
-  authPasswordInput.classList.add('is-shaking');
-  authPasswordInput.focus();
-}
-
-function handleAuthSubmit(event) {
-  event.preventDefault();
-  authSubmitButton.disabled = true;
-
-  if (authPasswordInput.value === ACCESS_PASSWORD) {
-    setAuthenticated(true);
-    applyAuthState(true);
-    authSubmitButton.disabled = false;
-    return;
-  }
-
-  setAuthenticated(false);
-  failAuthentication();
-  authSubmitButton.disabled = false;
-}
 
 function sanitizeRun(value) {
   return String(value || '').replace(/\D/g, '');
@@ -125,11 +33,6 @@ function sanitizeRun(value) {
 
 function sanitizeDv(value) {
   return String(value || '').trim().toUpperCase().replace(/[^0-9K]/g, '').slice(0, 1);
-}
-
-function formatRun(value) {
-  const digits = sanitizeRun(value);
-  return digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
 }
 
 function escapeHtml(value) {
@@ -144,13 +47,11 @@ function escapeHtml(value) {
 function showMessage(text, type) {
   messageBox.textContent = text;
   messageBox.className = `message is-visible message--${type}`;
-  messageBox.setAttribute('role', type === 'error' ? 'alert' : 'status');
 }
 
 function clearMessage() {
   messageBox.textContent = '';
   messageBox.className = 'message';
-  messageBox.setAttribute('role', 'status');
 }
 
 function buildApiError(data, fallback) {
@@ -170,21 +71,14 @@ function syncCampus(value) {
   activeCampusFilter = value;
 }
 
-function getCurrentYear() {
-  return new Date().getUTCFullYear();
-}
-
 function updateEspacios() {
   const selectedCampus = getSelectedCampus();
   const spaces = CAMPUS_SPACES[selectedCampus] || [];
   const previousValue = espacioInput.value;
 
-  clearFieldError('espacio');
-
   if (!spaces.length) {
     espacioInput.innerHTML = '<option value="">Selecciona primero el campus superior</option>';
     espacioInput.disabled = true;
-    espacioInput.setAttribute('aria-disabled', 'true');
     return;
   }
 
@@ -192,7 +86,6 @@ function updateEspacios() {
     .concat(spaces.map((space) => `<option value="${escapeHtml(space)}">${escapeHtml(space)}</option>`))
     .join('');
   espacioInput.disabled = false;
-  espacioInput.setAttribute('aria-disabled', 'false');
 
   if (spaces.includes(previousValue)) {
     espacioInput.value = previousValue;
@@ -261,57 +154,27 @@ function getCellValue(value) {
 }
 
 function getRunLabel(item) {
-  return [formatRun(item.run), item.dv].filter(Boolean).join('-') || '—';
+  return [item.run, item.dv].filter(Boolean).join('-') || '—';
 }
 
 function getVisibleRecords(records) {
-  const campusFiltered = activeCampusFilter
-    ? records.filter((item) => item.sede === activeCampusFilter)
-    : records;
-
-  if (!searchTerm) {
-    return campusFiltered;
+  if (!activeCampusFilter) {
+    return records;
   }
 
-  const normalizedQuery = searchTerm.toLocaleLowerCase('es-CL');
-
-  return campusFiltered.filter((item) => {
-    const runLabel = [sanitizeRun(item.run), item.dv || ''].join('-').toLocaleLowerCase('es-CL');
-    const formattedRun = getRunLabel(item).toLocaleLowerCase('es-CL');
-    const career = String(item.carrera || '').toLocaleLowerCase('es-CL');
-    return runLabel.includes(normalizedQuery) || formattedRun.includes(normalizedQuery) || career.includes(normalizedQuery);
-  });
-}
-
-function updatePagination(totalItems) {
-  const totalPages = Math.max(1, Math.ceil(totalItems / ROWS_PER_PAGE));
-
-  if (currentPage > totalPages) {
-    currentPage = totalPages;
-  }
-
-  paginationStatus.textContent = `Página ${currentPage} de ${totalPages}`;
-  paginationPrevButton.disabled = currentPage <= 1;
-  paginationNextButton.disabled = currentPage >= totalPages;
+  return records.filter((item) => item.sede === activeCampusFilter);
 }
 
 function renderRecords(records) {
-  currentRecords = Array.isArray(records) ? records : [];
-  const visibleRecords = getVisibleRecords(currentRecords);
-  updatePagination(visibleRecords.length);
-
-  const totalPages = Math.max(1, Math.ceil(visibleRecords.length / ROWS_PER_PAGE));
-  const safePage = Math.min(currentPage, totalPages);
-  const pageStart = (safePage - 1) * ROWS_PER_PAGE;
-  const paginatedRecords = visibleRecords.slice(pageStart, pageStart + ROWS_PER_PAGE);
+  const visibleRecords = getVisibleRecords(Array.isArray(records) ? records : []);
 
   if (visibleRecords.length === 0) {
-    recordsBody.innerHTML = `<tr><td colspan="11" class="empty">${searchTerm ? 'No hay resultados para la búsqueda aplicada.' : 'No hay registros para el campus seleccionado hoy.'}</td></tr>`;
+    recordsBody.innerHTML = '<tr><td colspan="11" class="empty">No hay registros para el campus seleccionado hoy.</td></tr>';
     recordsCount.textContent = '0 registros';
     return;
   }
 
-  recordsBody.innerHTML = paginatedRecords.map((item) => {
+  recordsBody.innerHTML = visibleRecords.map((item) => {
     const isOpen = !item.hora_salida;
     const estadoClass = isOpen ? 'estado--activo' : 'estado--cerrado';
     const estadoText = isOpen ? 'Entrada activa' : 'Salida registrada';
@@ -347,176 +210,6 @@ function renderRecords(records) {
   recordsCount.textContent = `${visibleRecords.length} registro${visibleRecords.length === 1 ? '' : 's'}`;
 }
 
-function setLookupLoading(isLoading) {
-  autocompleteStatus.classList.toggle('hint--loading', isLoading);
-}
-
-function clearStudentFields(options = {}) {
-  const { preserveStatus = false, preserveRun = false, preserveDv = false } = options;
-
-  if (!preserveRun) {
-    runInput.value = '';
-  }
-
-  if (!preserveDv) {
-    dvInput.value = '';
-  }
-
-  carreraInput.value = '';
-  anioInput.value = '';
-
-  if (!preserveStatus) {
-    autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
-    autocompleteStatus.className = 'hint';
-  }
-
-  clearFieldError('run');
-  clearFieldError('dv');
-  clearFieldError('carrera');
-  clearFieldError('anio_ingreso');
-}
-
-function syncRunFieldState() {
-  runClearButton.hidden = !runInput.value;
-}
-
-function closeSuggestions() {
-  currentSuggestions = [];
-  highlightedSuggestionIndex = -1;
-  suggestionsList.hidden = true;
-  suggestionsList.innerHTML = '';
-  runInput.setAttribute('aria-expanded', 'false');
-  runInput.removeAttribute('aria-activedescendant');
-}
-
-function renderSuggestions(items) {
-  currentSuggestions = Array.isArray(items) ? items : [];
-  highlightedSuggestionIndex = currentSuggestions.length ? 0 : -1;
-
-  if (!currentSuggestions.length) {
-    closeSuggestions();
-    return;
-  }
-
-  suggestionsList.innerHTML = currentSuggestions.map((item, index) => {
-    const formatted = [formatRun(item.run), item.dv].filter(Boolean).join('-');
-    return `
-      <li
-        id="run-suggestion-${index}"
-        class="autocomplete__option${index === highlightedSuggestionIndex ? ' is-active' : ''}"
-        role="option"
-        aria-selected="${index === highlightedSuggestionIndex ? 'true' : 'false'}"
-        data-index="${index}"
-      >
-        <span class="autocomplete__option-run">${escapeHtml(formatted || 'RUN sin formato')}</span>
-        <span class="autocomplete__option-name">${escapeHtml(item.nombre || item.carrera || 'Estudiante')}</span>
-      </li>
-    `;
-  }).join('');
-
-  suggestionsList.hidden = false;
-  runInput.setAttribute('aria-expanded', 'true');
-  runInput.setAttribute('aria-activedescendant', `run-suggestion-${highlightedSuggestionIndex}`);
-}
-
-function updateHighlightedSuggestion(index) {
-  if (!currentSuggestions.length) {
-    highlightedSuggestionIndex = -1;
-    runInput.removeAttribute('aria-activedescendant');
-    return;
-  }
-
-  highlightedSuggestionIndex = (index + currentSuggestions.length) % currentSuggestions.length;
-
-  Array.from(suggestionsList.children).forEach((option, optionIndex) => {
-    const isActive = optionIndex === highlightedSuggestionIndex;
-    option.classList.toggle('is-active', isActive);
-    option.setAttribute('aria-selected', isActive ? 'true' : 'false');
-  });
-
-  const activeOption = suggestionsList.children[highlightedSuggestionIndex];
-
-  if (activeOption) {
-    runInput.setAttribute('aria-activedescendant', activeOption.id);
-    activeOption.scrollIntoView({ block: 'nearest' });
-  }
-}
-
-function setFieldError(fieldName, message) {
-  const field = fieldDefinitions[fieldName];
-
-  if (!field || !field.input) {
-    return;
-  }
-
-  field.input.classList.add('field-invalid');
-  field.input.setAttribute('aria-invalid', 'true');
-
-  if (field.errorNode) {
-    field.errorNode.textContent = message;
-    field.errorNode.hidden = false;
-  }
-}
-
-function clearFieldError(fieldName) {
-  const field = fieldDefinitions[fieldName];
-
-  if (!field || !field.input) {
-    return;
-  }
-
-  field.input.classList.remove('field-invalid');
-  field.input.setAttribute('aria-invalid', 'false');
-
-  if (field.errorNode) {
-    field.errorNode.textContent = '';
-    field.errorNode.hidden = true;
-  }
-}
-
-function clearAllFieldErrors() {
-  Object.keys(fieldDefinitions).forEach(clearFieldError);
-}
-
-function fillStudentFields(student) {
-  if (!student) {
-    return;
-  }
-
-  if (student.run) {
-    runInput.value = sanitizeRun(student.run);
-  }
-
-  if (student.dv) {
-    dvInput.value = sanitizeDv(student.dv);
-  }
-
-  carreraInput.value = student.carrera || '';
-  anioInput.value = student.anio_ingreso || '';
-
-  if (student.sede && !getSelectedCampus()) {
-    syncCampus(student.sede);
-    updateEspacios();
-  }
-
-  autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
-  autocompleteStatus.className = 'hint';
-  clearFieldError('carrera');
-  clearFieldError('anio_ingreso');
-  syncRunFieldState();
-}
-
-function applySuggestion(index) {
-  const student = currentSuggestions[index];
-
-  if (!student) {
-    return;
-  }
-
-  fillStudentFields(student);
-  closeSuggestions();
-}
-
 async function loadTodayRecords() {
   const response = await fetch('/api/registros-hoy');
   const data = await response.json();
@@ -530,79 +223,45 @@ async function loadTodayRecords() {
 
 async function lookupStudent(runValue) {
   const run = sanitizeRun(runValue);
-  const lookupToken = latestLookupToken + 1;
-  latestLookupToken = lookupToken;
 
-  if (run.length < MIN_LOOKUP_LENGTH) {
-    setLookupLoading(false);
-    closeSuggestions();
-    clearStudentFields({ preserveRun: true, preserveDv: true, preserveStatus: false });
-    syncRunFieldState();
+  if (run.length < 3) {
+    autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
+    dvInput.value = '';
+    carreraInput.value = '';
+    anioInput.value = '';
     return;
   }
 
-  setLookupLoading(true);
   autocompleteStatus.textContent = 'Buscando estudiante...';
-  autocompleteStatus.className = 'hint hint--loading';
 
   try {
     const response = await fetch(`/api/buscar?run=${encodeURIComponent(run)}`);
     const data = await response.json();
 
-    if (lookupToken !== latestLookupToken) {
-      return;
-    }
-
     if (!response.ok) {
-      throw new Error(buildApiError(data, 'No fue posible consultar los datos del estudiante.'));
+      throw new Error(buildApiError(data, 'No se pudo consultar el estudiante.'));
     }
 
-    const matches = Array.isArray(data.coincidencias) ? data.coincidencias : [];
-
-    if (!data.alumno && !matches.length) {
+    if (!data.alumno) {
+      dvInput.value = '';
       carreraInput.value = '';
       anioInput.value = '';
-      closeSuggestions();
-      autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
-      autocompleteStatus.className = 'hint';
+      autocompleteStatus.textContent = 'No se encontró información para este RUN.';
       return;
     }
 
-    if (data.alumno) {
-      fillStudentFields({
-        carrera: data.alumno.carrera,
-        anio_ingreso: data.alumno.anio_ingreso,
-        sede: data.alumno.sede,
-      });
-    } else {
-      carreraInput.value = '';
-      anioInput.value = '';
-      autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
-      autocompleteStatus.className = 'hint';
+    dvInput.value = data.alumno.dv || '';
+    carreraInput.value = data.alumno.carrera || '';
+    anioInput.value = data.alumno.anio_ingreso || '';
+
+    if (data.alumno.sede && !getSelectedCampus()) {
+      syncCampus(data.alumno.sede);
+      updateEspacios();
     }
 
-    const suggestionItems = data.alumno
-      ? matches.filter((item) => !(item.run === data.alumno.run && item.dv === data.alumno.dv))
-      : matches;
-
-    if (suggestionItems.length) {
-      renderSuggestions(suggestionItems);
-    } else {
-      closeSuggestions();
-    }
+    autocompleteStatus.textContent = 'Datos del estudiante completados correctamente.';
   } catch {
-    if (lookupToken !== latestLookupToken) {
-      return;
-    }
-
-    closeSuggestions();
     autocompleteStatus.textContent = 'No fue posible consultar los datos del estudiante.';
-    autocompleteStatus.className = 'hint hint--error';
-  } finally {
-    if (lookupToken === latestLookupToken) {
-      setLookupLoading(false);
-      syncRunFieldState();
-    }
   }
 }
 
@@ -616,7 +275,7 @@ async function downloadExport() {
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(buildApiError(data, 'No fue posible exportar el archivo CSV.'));
+      throw new Error(buildApiError(data, 'No se pudo exportar el archivo CSV.'));
     }
 
     const blob = await response.blob();
@@ -634,22 +293,46 @@ async function downloadExport() {
     window.URL.revokeObjectURL(url);
     showMessage('El archivo CSV fue exportado correctamente.', 'success');
   } catch (error) {
-    showMessage(error.message || 'No fue posible exportar el archivo CSV.', 'error');
+    showMessage(error.message || 'No se pudo exportar el archivo CSV.', 'error');
   } finally {
     exportButton.disabled = false;
     exportButton.textContent = 'Exportar registros CSV';
   }
 }
 
-function openUsageReport() {
+async function downloadUsageReport() {
   clearMessage();
+  exportReportButton.disabled = true;
+  exportReportButton.textContent = 'Exportando informe...';
 
-  const selectedCampus = getSelectedCampus();
-  const reportUrl = selectedCampus
-    ? `/report.html?campus=${encodeURIComponent(selectedCampus)}`
-    : '/report.html';
+  try {
+    const response = await fetch('/api/export-report');
 
-  window.open(reportUrl, '_blank', 'noopener');
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(buildApiError(data, 'No se pudo generar el informe de uso.'));
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename\*?=(?:UTF-8''|"?)([^";]+)"?/i);
+    const filename = match ? decodeURIComponent(match[1]) : 'informe_uso_ciac.xlsx';
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    showMessage('El informe de uso fue exportado correctamente.', 'success');
+  } catch (error) {
+    showMessage(error.message || 'No se pudo generar el informe de uso.', 'error');
+  } finally {
+    exportReportButton.disabled = false;
+    exportReportButton.textContent = 'Exportar informe de uso';
+  }
 }
 
 async function registerExit(id) {
@@ -665,13 +348,13 @@ async function registerExit(id) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(buildApiError(data, 'No fue posible registrar la salida.'));
+      throw new Error(buildApiError(data, 'No se pudo registrar la salida.'));
     }
 
     renderRecords(data.registrosHoy || []);
     showMessage(data.message || 'Salida registrada correctamente.', 'success');
   } catch (error) {
-    showMessage(error.message || 'No fue posible registrar la salida.', 'error');
+    showMessage(error.message || 'No se pudo registrar la salida.', 'error');
   }
 }
 
@@ -694,108 +377,10 @@ function updateClock() {
   currentSemesterBadge.textContent = `Semestre ${getCurrentSemester(now)}`;
 }
 
-function validateYear() {
-  const yearValue = String(anioInput.value || '').trim();
-  const currentYear = getCurrentYear();
-
-  if (!yearValue) {
-    setFieldError('anio_ingreso', 'Debes ingresar el año de ingreso.');
-    return false;
-  }
-
-  if (!/^\d{4}$/.test(yearValue)) {
-    setFieldError('anio_ingreso', 'Ingresa un año con cuatro dígitos.');
-    return false;
-  }
-
-  const year = Number(yearValue);
-
-  if (year < MIN_YEAR || year > currentYear) {
-    setFieldError('anio_ingreso', `Ingresa un año entre ${MIN_YEAR} y ${currentYear}.`);
-    return false;
-  }
-
-  clearFieldError('anio_ingreso');
-  return true;
-}
-
-function validateForm() {
-  clearAllFieldErrors();
-  const errors = [];
-
-  if (!getSelectedCampus()) {
-    errors.push({ field: 'campus', message: 'Debes seleccionar el campus superior.' });
-  }
-
-  const run = sanitizeRun(runInput.value);
-  const dv = sanitizeDv(dvInput.value);
-
-  if (!run) {
-    errors.push({ field: 'run', message: 'Debes ingresar el RUN.' });
-  }
-
-  if (!dv) {
-    errors.push({ field: 'dv', message: 'Debes ingresar el dígito verificador.' });
-  }
-
-  if (!carreraInput.value.trim()) {
-    errors.push({ field: 'carrera', message: 'Debes ingresar la carrera.' });
-  }
-
-  if (!validateYear()) {
-    errors.push({ field: 'anio_ingreso', message: fieldDefinitions.anio_ingreso.errorNode.textContent || 'Debes ingresar un año válido.' });
-  }
-
-  if (!actividadInput.value) {
-    errors.push({ field: 'actividad', message: 'Debes seleccionar una actividad.' });
-  }
-
-  if (!tematicaInput.value) {
-    errors.push({ field: 'tematica', message: 'Debes seleccionar una temática.' });
-  }
-
-  if (!getSelectedCampus()) {
-    espacioInput.disabled = true;
-  }
-
-  if (!espacioInput.value) {
-    errors.push({ field: 'espacio', message: 'Debes seleccionar un espacio.' });
-  }
-
-  const handled = new Set();
-  errors.forEach(({ field, message }) => {
-    if (handled.has(field)) {
-      return;
-    }
-
-    handled.add(field);
-    setFieldError(field, message);
-  });
-
-  if (errors.length) {
-    const firstField = errors.find(({ field }) => fieldDefinitions[field]?.input)?.field;
-    if (firstField && fieldDefinitions[firstField]) {
-      fieldDefinitions[firstField].input.focus();
-    }
-
-    const summaryMessage = errors[0].field === 'campus'
-      ? 'Revisa el formulario antes de registrar la entrada. Debes seleccionar el campus y completar los campos obligatorios.'
-      : 'Revisa el formulario antes de registrar la entrada. Hay campos obligatorios pendientes o inválidos.';
-
-    formLiveRegion.textContent = summaryMessage;
-    showMessage(summaryMessage, 'error');
-    return false;
-  }
-
-  formLiveRegion.textContent = '';
-  return true;
-}
-
 campusHeaderInput.addEventListener('change', () => {
   syncCampus(campusHeaderInput.value);
   updateEspacios();
   clearMessage();
-  renderRecords(currentRecords);
   loadTodayRecords().catch((error) => {
     showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
   });
@@ -804,140 +389,21 @@ campusHeaderInput.addEventListener('change', () => {
 runInput.addEventListener('input', () => {
   runInput.value = sanitizeRun(runInput.value);
   clearMessage();
-  syncRunFieldState();
-  closeSuggestions();
-  clearFieldError('run');
-  clearFieldError('dv');
   window.clearTimeout(lookupTimer);
-  lookupTimer = window.setTimeout(() => lookupStudent(runInput.value), LOOKUP_DEBOUNCE_MS);
-});
-
-runInput.addEventListener('keydown', (event) => {
-  if (!currentSuggestions.length || suggestionsList.hidden) {
-    return;
-  }
-
-  if (event.key === 'ArrowDown') {
-    event.preventDefault();
-    updateHighlightedSuggestion(highlightedSuggestionIndex + 1);
-    return;
-  }
-
-  if (event.key === 'ArrowUp') {
-    event.preventDefault();
-    updateHighlightedSuggestion(highlightedSuggestionIndex - 1);
-    return;
-  }
-
-  if (event.key === 'Enter' && highlightedSuggestionIndex >= 0) {
-    event.preventDefault();
-    applySuggestion(highlightedSuggestionIndex);
-  }
-
-  if (event.key === 'Escape') {
-    closeSuggestions();
-  }
-});
-
-runInput.addEventListener('blur', () => {
-  window.setTimeout(() => {
-    closeSuggestions();
-  }, 120);
-});
-
-runClearButton.addEventListener('click', () => {
-  window.clearTimeout(lookupTimer);
-  latestLookupToken += 1;
-  setLookupLoading(false);
-  closeSuggestions();
-  clearStudentFields();
-  syncRunFieldState();
-  clearMessage();
-  runInput.focus();
-});
-
-suggestionsList.addEventListener('mousedown', (event) => {
-  const option = event.target.closest('[data-index]');
-
-  if (!option) {
-    return;
-  }
-
-  event.preventDefault();
-  applySuggestion(Number(option.dataset.index));
-  runInput.focus();
-});
-
-authForm.addEventListener('submit', handleAuthSubmit);
-authPasswordInput.addEventListener('input', () => {
-  if (authError.textContent) {
-    authError.textContent = '';
-  }
-
-  authPasswordInput.classList.remove('is-shaking');
+  lookupTimer = window.setTimeout(() => lookupStudent(runInput.value), 300);
 });
 
 dvInput.addEventListener('input', () => {
   dvInput.value = sanitizeDv(dvInput.value);
-  clearFieldError('dv');
-  clearMessage();
-});
-
-carreraInput.addEventListener('input', () => {
-  clearFieldError('carrera');
   clearMessage();
 });
 
 anioInput.addEventListener('input', () => {
   anioInput.value = String(anioInput.value || '').replace(/\D/g, '').slice(0, 4);
-  clearFieldError('anio_ingreso');
-  clearMessage();
-});
-
-actividadInput.addEventListener('change', () => {
-  clearFieldError('actividad');
-  clearMessage();
-});
-
-tematicaInput.addEventListener('change', () => {
-  clearFieldError('tematica');
-  clearMessage();
-});
-
-espacioInput.addEventListener('change', () => {
-  clearFieldError('espacio');
-  clearMessage();
-});
-
-searchInput.addEventListener('input', () => {
-  searchTerm = searchInput.value.trim();
-  currentPage = 1;
-  renderRecords(currentRecords);
-});
-
-paginationPrevButton.addEventListener('click', () => {
-  if (currentPage <= 1) {
-    return;
-  }
-
-  currentPage -= 1;
-  renderRecords(currentRecords);
-});
-
-paginationNextButton.addEventListener('click', () => {
-  const visibleRecords = getVisibleRecords(currentRecords);
-  const totalPages = Math.max(1, Math.ceil(visibleRecords.length / ROWS_PER_PAGE));
-
-  if (currentPage >= totalPages) {
-    return;
-  }
-
-  currentPage += 1;
-  renderRecords(currentRecords);
 });
 
 exportButton.addEventListener('click', downloadExport);
-exportReportButton.addEventListener('click', openUsageReport);
+exportReportButton.addEventListener('click', downloadUsageReport);
 
 recordsBody.addEventListener('click', (event) => {
   const button = event.target.closest('[data-action="salida"]');
@@ -957,10 +423,6 @@ recordsBody.addEventListener('click', (event) => {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   clearMessage();
-
-  if (!validateForm()) {
-    return;
-  }
 
   const payload = {
     campus: getSelectedCampus(),
@@ -987,7 +449,7 @@ form.addEventListener('submit', async (event) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(buildApiError(data, 'No fue posible registrar la entrada.'));
+      throw new Error(buildApiError(data, 'No se pudo registrar la asistencia.'));
     }
 
     showMessage(data.message || 'Entrada registrada correctamente.', 'success');
@@ -997,18 +459,13 @@ form.addEventListener('submit', async (event) => {
     const selectedActividad = actividadInput.value;
 
     form.reset();
-    clearAllFieldErrors();
     syncCampus(selectedCampus);
     actividadInput.value = selectedActividad;
     updateEspacios();
-    closeSuggestions();
-    clearStudentFields();
-    syncRunFieldState();
-    formLiveRegion.textContent = 'Entrada registrada correctamente.';
+    autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
     runInput.focus();
   } catch (error) {
-    showMessage(error.message || 'No fue posible registrar la entrada.', 'error');
-    formLiveRegion.textContent = error.message || 'No fue posible registrar la entrada.';
+    showMessage(error.message || 'No se pudo registrar la asistencia.', 'error');
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = 'Registrar entrada';
@@ -1018,8 +475,6 @@ form.addEventListener('submit', async (event) => {
 syncCampus(getSelectedCampus());
 updateEspacios();
 updateClock();
-syncRunFieldState();
-applyAuthState(isAuthenticated());
 loadTodayRecords().catch((error) => {
   showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
 });
