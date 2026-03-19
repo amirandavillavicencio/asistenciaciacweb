@@ -2,19 +2,6 @@ const XLSX = require('xlsx');
 const { supabaseGet } = require('../lib/supabase');
 
 const CHILE_TIMEZONE = 'America/Santiago';
-const EXPORT_HEADERS = [
-  'Día',
-  'Hora Entrada',
-  'Hora Salida',
-  'RUN (sin puntos ni digito verificador)',
-  'Dígito V',
-  'Carrera',
-  'Sede',
-  'Año Ingreso',
-  'Actividad',
-  'Temática',
-  'Observaciones',
-];
 
 function getChileDate(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -25,6 +12,15 @@ function getChileDate(date = new Date()) {
   }).format(date);
 }
 
+function getCurrentSemester(dateString) {
+  const date = dateString ? new Date(`${dateString}T12:00:00`) : new Date();
+  const month = date.getUTCMonth() + 1;
+  const year = date.getUTCFullYear();
+  const term = month <= 6 ? 1 : 2;
+
+  return `${term}-${year}`;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Método no permitido.' });
@@ -33,29 +29,45 @@ module.exports = async function handler(req, res) {
   try {
     const dia = getChileDate();
     const registros = await supabaseGet('attendance_records', {
-      select: 'dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones',
+      select: 'dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado',
       dia: `eq.${dia}`,
       order: 'hora_entrada.desc',
     });
 
-    const rows = [EXPORT_HEADERS].concat(
-      (Array.isArray(registros) ? registros : []).map((item) => [
-        item.dia || '',
-        item.hora_entrada || '',
-        item.hora_salida || '',
-        item.run || '',
-        item.dv || '',
-        item.carrera || '',
-        item.sede || '',
-        item.anio_ingreso || '',
-        item.actividad || '',
-        item.tematica || '',
-        item.observaciones || '',
-      ]),
-    );
+    const rows = (Array.isArray(registros) ? registros : []).map((item) => ({
+      Día: item.dia || '',
+      'Hora entrada': item.hora_entrada || '',
+      'Hora salida': item.hora_salida || '',
+      RUN: item.run || '',
+      DV: item.dv || '',
+      Carrera: item.carrera || '',
+      Sede: item.sede || '',
+      'Año ingreso': item.anio_ingreso || '',
+      Semestre: getCurrentSemester(item.dia || dia),
+      Actividad: item.actividad || '',
+      Temática: item.tematica || '',
+      Espacio: item.espacio || '',
+      Estado: item.hora_salida ? 'Salida registrada' : 'Entrada activa',
+      Observaciones: item.observaciones || '',
+    }));
 
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.aoa_to_sheet(rows);
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header: [
+      'Día',
+      'Hora entrada',
+      'Hora salida',
+      'RUN',
+      'DV',
+      'Carrera',
+      'Sede',
+      'Año ingreso',
+      'Semestre',
+      'Actividad',
+      'Temática',
+      'Espacio',
+      'Estado',
+      'Observaciones',
+    ] });
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
 
     const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });

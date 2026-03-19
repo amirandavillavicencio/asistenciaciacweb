@@ -1,4 +1,4 @@
-const { supabaseGet, supabasePatch, supabasePost } = require('../lib/supabase');
+const { supabaseGet, supabasePost } = require('../lib/supabase');
 const { cleanRun, cleanDv } = require('../lib/rut');
 
 const CHILE_TIMEZONE = 'America/Santiago';
@@ -12,6 +12,7 @@ const ACTIVITY_OPTIONS = [
   'Psicoeducativo grupal',
   'Uso de sala',
 ];
+const TOPIC_OPTIONS = ['Matemática', 'Química', 'Física', 'Programación'];
 const SPACE_OPTIONS = {
   Vitacura: ['Espacio común'],
   'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
@@ -131,6 +132,14 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes seleccionar una actividad válida.' });
     }
 
+    if (!tematica) {
+      return res.status(400).json({ error: 'Debes seleccionar una temática.' });
+    }
+
+    if (!TOPIC_OPTIONS.includes(tematica)) {
+      return res.status(400).json({ error: 'Debes seleccionar una temática válida.' });
+    }
+
     if (!espacio) {
       return res.status(400).json({ error: 'Debes seleccionar un espacio.' });
     }
@@ -141,48 +150,37 @@ module.exports = async function handler(req, res) {
 
     const now = getChileNow();
     const openRecord = await getOpenRecord(now.dia, run);
-    let registroActualizado = null;
-    let message = 'Entrada registrada correctamente.';
 
     if (openRecord) {
-      const updated = await supabasePatch(
-        'attendance_records',
-        { id: `eq.${openRecord.id}`, select: RECORD_SELECT },
-        {
-          hora_salida: now.timestamp,
-          estado: 'Fuera',
-        },
-      );
-
-      registroActualizado = Array.isArray(updated) ? updated[0] || null : updated;
-      message = 'Salida registrada correctamente.';
-    } else {
-      const inserted = await supabasePost(
-        'attendance_records',
-        {
-          dia: now.dia,
-          hora_entrada: now.timestamp,
-          run,
-          dv,
-          carrera,
-          sede: campus,
-          anio_ingreso: Number(anioIngreso),
-          actividad,
-          tematica,
-          observaciones,
-          espacio,
-          estado: 'Dentro',
-        },
-        { select: RECORD_SELECT },
-      );
-
-      registroActualizado = Array.isArray(inserted) ? inserted[0] || null : inserted;
+      return res.status(409).json({
+        error: 'El alumno ya tiene una entrada activa hoy. Registra la salida desde la lista de registros.',
+      });
     }
 
+    const inserted = await supabasePost(
+      'attendance_records',
+      {
+        dia: now.dia,
+        hora_entrada: now.timestamp,
+        run,
+        dv,
+        carrera,
+        sede: campus,
+        anio_ingreso: Number(anioIngreso),
+        actividad,
+        tematica,
+        observaciones,
+        espacio,
+        estado: 'Dentro',
+      },
+      { select: RECORD_SELECT },
+    );
+
+    const registroActualizado = Array.isArray(inserted) ? inserted[0] || null : inserted;
     const registrosHoy = await getTodayRecords(now.dia);
 
     return res.status(200).json({
-      message,
+      message: 'Entrada registrada correctamente.',
       registroActualizado,
       registrosHoy,
     });

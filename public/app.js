@@ -5,6 +5,7 @@ const CAMPUS_SPACES = {
 
 const form = document.getElementById('registro-form');
 const campusInput = document.getElementById('campus');
+const campusHeaderInput = document.getElementById('campus-header');
 const runInput = document.getElementById('run');
 const dvInput = document.getElementById('dv');
 const carreraInput = document.getElementById('carrera');
@@ -19,8 +20,12 @@ const autocompleteStatus = document.getElementById('autocomplete-status');
 const submitButton = document.getElementById('submit-button');
 const recordsBody = document.getElementById('records-body');
 const recordsCount = document.getElementById('records-count');
+const currentDate = document.getElementById('current-date');
+const currentTime = document.getElementById('current-time');
+const currentSemesterBadge = document.getElementById('current-semester');
 
 let lookupTimer = null;
+let activeCampusFilter = '';
 
 function sanitizeRun(value) {
   return String(value || '').replace(/\D/g, '');
@@ -54,27 +59,20 @@ function buildApiError(data, fallback) {
     return fallback;
   }
 
-  const parts = [];
+  return data.error || fallback;
+}
 
-  if (data.error) {
-    parts.push(data.error);
+function syncCampus(source, value) {
+  if (source !== campusInput) {
+    campusInput.value = value;
+    updateEspacios();
   }
 
-  if (data.detail && data.detail !== data.error) {
-    parts.push(data.detail);
+  if (source !== campusHeaderInput) {
+    campusHeaderInput.value = value;
   }
 
-  if (data.supabase) {
-    const supabaseText = typeof data.supabase === 'string'
-      ? data.supabase
-      : JSON.stringify(data.supabase);
-
-    if (supabaseText && supabaseText !== '{}') {
-      parts.push(`Supabase: ${supabaseText}`);
-    }
-  }
-
-  return parts.join(' | ') || fallback;
+  activeCampusFilter = value;
 }
 
 function updateEspacios() {
@@ -97,36 +95,93 @@ function updateEspacios() {
   }
 }
 
+function getCurrentSemester(date = new Date()) {
+  const month = date.getUTCMonth() + 1;
+  const year = date.getUTCFullYear();
+  return `${month <= 6 ? 1 : 2}-${year}`;
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return '—';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat('es-CL', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Santiago',
+  }).format(date);
+}
+
+function getStudentLabel(item) {
+  const parts = [];
+
+  if (item.carrera) {
+    parts.push(item.carrera);
+  }
+
+  if (item.anio_ingreso) {
+    parts.push(`Ingreso ${item.anio_ingreso}`);
+  }
+
+  return parts.join(' · ') || 'Alumno CIAC';
+}
+
+function getVisibleRecords(records) {
+  if (!activeCampusFilter) {
+    return records;
+  }
+
+  return records.filter((item) => item.sede === activeCampusFilter);
+}
+
 function renderRecords(records) {
-  if (!Array.isArray(records) || records.length === 0) {
-    recordsBody.innerHTML = '<tr><td colspan="13" class="empty">No hay registros hoy.</td></tr>';
+  const visibleRecords = getVisibleRecords(Array.isArray(records) ? records : []);
+
+  if (visibleRecords.length === 0) {
+    recordsBody.innerHTML = '<tr><td colspan="11" class="empty">No hay registros para el campus seleccionado hoy.</td></tr>';
     recordsCount.textContent = '0 registros';
     return;
   }
 
-  recordsBody.innerHTML = records.map((item) => {
-    const estadoClass = item.estado === 'Dentro' ? 'estado--activo' : 'estado--cerrado';
+  recordsBody.innerHTML = visibleRecords.map((item) => {
+    const isOpen = !item.hora_salida;
+    const estadoClass = isOpen ? 'estado--activo' : 'estado--cerrado';
+    const estadoText = isOpen ? 'Entrada activa' : 'Salida registrada';
+    const semestre = getCurrentSemester(item.dia ? new Date(`${item.dia}T12:00:00Z`) : new Date());
+    const actionButton = isOpen
+      ? `<button type="button" class="table-action" data-action="salida" data-id="${escapeHtml(item.id)}">Salida</button>`
+      : '<span class="table-action table-action--muted">Completado</span>';
 
     return `
       <tr>
-        <td>${escapeHtml(item.dia)}</td>
-        <td>${escapeHtml(item.hora_entrada)}</td>
-        <td>${escapeHtml(item.hora_salida)}</td>
-        <td>${escapeHtml(item.run)}</td>
-        <td>${escapeHtml(item.dv)}</td>
-        <td>${escapeHtml(item.carrera)}</td>
+        <td>${escapeHtml(item.run)}-${escapeHtml(item.dv)}</td>
+        <td>
+          <div class="student-cell">
+            <strong>${escapeHtml(getStudentLabel(item))}</strong>
+            <span>${escapeHtml(item.observaciones || 'Sin observaciones')}</span>
+          </div>
+        </td>
         <td>${escapeHtml(item.sede)}</td>
-        <td>${escapeHtml(item.anio_ingreso)}</td>
         <td>${escapeHtml(item.actividad)}</td>
         <td>${escapeHtml(item.tematica)}</td>
-        <td>${escapeHtml(item.observaciones)}</td>
         <td>${escapeHtml(item.espacio)}</td>
-        <td><span class="estado ${estadoClass}">${escapeHtml(item.estado)}</span></td>
+        <td>${escapeHtml(semestre)}</td>
+        <td>${escapeHtml(formatDateTime(item.hora_entrada))}</td>
+        <td>${escapeHtml(formatDateTime(item.hora_salida))}</td>
+        <td><span class="estado ${estadoClass}">${escapeHtml(estadoText)}</span></td>
+        <td>${actionButton}</td>
       </tr>
     `;
   }).join('');
 
-  recordsCount.textContent = `${records.length} registro${records.length === 1 ? '' : 's'}`;
+  recordsCount.textContent = `${visibleRecords.length} registro${visibleRecords.length === 1 ? '' : 's'}`;
 }
 
 async function loadTodayRecords() {
@@ -134,7 +189,7 @@ async function loadTodayRecords() {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(buildApiError(data, 'No se pudieron cargar los registros.'));
+    throw new Error(buildApiError(data, 'No se pudieron cargar los registros del día.'));
   }
 
   renderRecords(data.registros || []);
@@ -144,28 +199,28 @@ async function lookupStudent(runValue) {
   const run = sanitizeRun(runValue);
 
   if (run.length < 3) {
-    autocompleteStatus.textContent = 'Escribe 3 o más dígitos del RUN para consultar la matriz.';
+    autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
     dvInput.value = '';
     carreraInput.value = '';
     anioInput.value = '';
     return;
   }
 
-  autocompleteStatus.textContent = 'Buscando en students_matrix...';
+  autocompleteStatus.textContent = 'Buscando estudiante...';
 
   try {
     const response = await fetch(`/api/buscar?run=${encodeURIComponent(run)}`);
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(buildApiError(data, 'No se pudo buscar el RUN.'));
+      throw new Error(buildApiError(data, 'No se pudo consultar el estudiante.'));
     }
 
     if (!data.alumno) {
       dvInput.value = '';
       carreraInput.value = '';
       anioInput.value = '';
-      autocompleteStatus.textContent = 'RUN sin coincidencia en students_matrix.';
+      autocompleteStatus.textContent = 'No se encontró información para este RUN.';
       return;
     }
 
@@ -173,12 +228,11 @@ async function lookupStudent(runValue) {
     carreraInput.value = data.alumno.carrera || '';
     anioInput.value = data.alumno.anio_ingreso || '';
     if (data.alumno.sede && !campusInput.value) {
-      campusInput.value = data.alumno.sede;
-      updateEspacios();
+      syncCampus(campusInput, data.alumno.sede);
     }
-    autocompleteStatus.textContent = 'RUN encontrado y datos autocompletados.';
+    autocompleteStatus.textContent = 'Datos del estudiante completados correctamente.';
   } catch {
-    autocompleteStatus.textContent = 'No se pudo consultar students_matrix en este momento.';
+    autocompleteStatus.textContent = 'No fue posible consultar los datos del estudiante.';
   }
 }
 
@@ -192,7 +246,7 @@ async function exportExcel() {
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(buildApiError(data, 'No se pudo exportar el Excel.'));
+      throw new Error(buildApiError(data, 'No se pudo exportar el archivo Excel.'));
     }
 
     const blob = await response.blob();
@@ -208,18 +262,72 @@ async function exportExcel() {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
-    showMessage('Excel exportado correctamente.', 'success');
+    showMessage('El archivo Excel fue exportado correctamente.', 'success');
   } catch (error) {
-    showMessage(error.message || 'No se pudo exportar el Excel.', 'error');
+    showMessage(error.message || 'No se pudo exportar el archivo Excel.', 'error');
   } finally {
     exportButton.disabled = false;
     exportButton.textContent = 'Exportar Excel';
   }
 }
 
+async function registerExit(id) {
+  clearMessage();
+
+  try {
+    const response = await fetch('/api/registrar-salida', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(buildApiError(data, 'No se pudo registrar la salida.'));
+    }
+
+    renderRecords(data.registrosHoy || []);
+    showMessage(data.message || 'Salida registrada correctamente.', 'success');
+  } catch (error) {
+    showMessage(error.message || 'No se pudo registrar la salida.', 'error');
+  }
+}
+
+function updateClock() {
+  const now = new Date();
+  currentDate.textContent = new Intl.DateTimeFormat('es-CL', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Santiago',
+  }).format(now);
+  currentTime.textContent = new Intl.DateTimeFormat('es-CL', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZone: 'America/Santiago',
+  }).format(now);
+  currentSemesterBadge.textContent = `Semestre ${getCurrentSemester(now)}`;
+}
+
 campusInput.addEventListener('change', () => {
+  syncCampus(campusInput, campusInput.value);
   updateEspacios();
   clearMessage();
+  loadTodayRecords().catch((error) => {
+    showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
+  });
+});
+
+campusHeaderInput.addEventListener('change', () => {
+  syncCampus(campusHeaderInput, campusHeaderInput.value);
+  clearMessage();
+  loadTodayRecords().catch((error) => {
+    showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
+  });
 });
 
 runInput.addEventListener('input', () => {
@@ -240,6 +348,21 @@ anioInput.addEventListener('input', () => {
 
 exportButton.addEventListener('click', exportExcel);
 
+recordsBody.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-action="salida"]');
+
+  if (!button) {
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = 'Guardando...';
+  registerExit(button.dataset.id).finally(() => {
+    button.disabled = false;
+    button.textContent = 'Salida';
+  });
+});
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   clearMessage();
@@ -251,7 +374,7 @@ form.addEventListener('submit', async (event) => {
     carrera: carreraInput.value.trim(),
     anio_ingreso: anioInput.value.trim(),
     actividad: actividadInput.value,
-    tematica: tematicaInput.value.trim(),
+    tematica: tematicaInput.value,
     observaciones: observacionesInput.value.trim(),
     espacio: espacioInput.value,
   };
@@ -272,27 +395,29 @@ form.addEventListener('submit', async (event) => {
       throw new Error(buildApiError(data, 'No se pudo registrar la asistencia.'));
     }
 
-    showMessage(data.message || 'Registro guardado.', 'success');
+    showMessage(data.message || 'Entrada registrada correctamente.', 'success');
     renderRecords(data.registrosHoy || []);
 
     const selectedCampus = campusInput.value;
     const selectedActividad = actividadInput.value;
 
     form.reset();
-    campusInput.value = selectedCampus;
+    syncCampus(campusInput, selectedCampus);
     actividadInput.value = selectedActividad;
     updateEspacios();
-    autocompleteStatus.textContent = 'Escribe 3 o más dígitos del RUN para consultar la matriz.';
+    autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
     runInput.focus();
   } catch (error) {
     showMessage(error.message || 'No se pudo registrar la asistencia.', 'error');
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = 'Registrar';
+    submitButton.textContent = 'Registrar entrada';
   }
 });
 
 updateEspacios();
+updateClock();
+window.setInterval(updateClock, 1000);
 loadTodayRecords().catch((error) => {
   showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
 });
