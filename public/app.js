@@ -309,8 +309,18 @@ async function downloadUsageReport() {
     const response = await fetch('/api/export-report');
 
     if (!response.ok) {
-      const data = await response.json();
-      throw new Error(buildApiError(data, 'No se pudo generar el informe de uso.'));
+      const contentType = response.headers.get('Content-Type') || '';
+      let errorMessage = 'Error exportando informe';
+
+      if (contentType.includes('application/json')) {
+        const data = await response.json();
+        errorMessage = data.error || data.detail || errorMessage;
+      } else {
+        const text = await response.text();
+        errorMessage = text || errorMessage;
+      }
+
+      throw new Error(errorMessage);
     }
 
     const blob = await response.blob();
@@ -328,7 +338,7 @@ async function downloadUsageReport() {
     window.URL.revokeObjectURL(url);
     showMessage('El informe de uso fue exportado correctamente.', 'success');
   } catch (error) {
-    showMessage(error.message || 'No se pudo generar el informe de uso.', 'error');
+    showMessage(error.message || 'Error exportando informe', 'error');
   } finally {
     exportReportButton.disabled = false;
     exportReportButton.textContent = 'Exportar informe de uso';
