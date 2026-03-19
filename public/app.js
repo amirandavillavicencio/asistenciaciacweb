@@ -7,8 +7,6 @@ const MIN_LOOKUP_LENGTH = 3;
 const LOOKUP_DEBOUNCE_MS = 400;
 const AUTH_STORAGE_KEY = 'ciac_auth';
 const ACCESS_PASSWORD = 'Suna.2011';
-const MIN_RUN_LENGTH = 7;
-const MAX_RUN_LENGTH = 8;
 const MIN_YEAR = 1990;
 const ROWS_PER_PAGE = 15;
 
@@ -32,7 +30,6 @@ const exportButton = document.getElementById('export-button');
 const exportReportButton = document.getElementById('export-report-button');
 const messageBox = document.getElementById('message');
 const autocompleteStatus = document.getElementById('autocomplete-status');
-const runStatusText = document.getElementById('run-status-text');
 const suggestionsList = document.getElementById('run-suggestions');
 const runClearButton = document.getElementById('run-clear');
 const submitButton = document.getElementById('submit-button');
@@ -123,7 +120,7 @@ function handleAuthSubmit(event) {
 }
 
 function sanitizeRun(value) {
-  return String(value || '').replace(/\D/g, '').slice(0, MAX_RUN_LENGTH);
+  return String(value || '').replace(/\D/g, '');
 }
 
 function sanitizeDv(value) {
@@ -133,45 +130,6 @@ function sanitizeDv(value) {
 function formatRun(value) {
   const digits = sanitizeRun(value);
   return digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
-}
-
-function calculateDv(runValue) {
-  const run = sanitizeRun(runValue);
-
-  if (!run) {
-    return '';
-  }
-
-  let sum = 0;
-  let multiplier = 2;
-
-  for (let index = run.length - 1; index >= 0; index -= 1) {
-    sum += Number(run[index]) * multiplier;
-    multiplier = multiplier === 7 ? 2 : multiplier + 1;
-  }
-
-  const remainder = 11 - (sum % 11);
-
-  if (remainder === 11) {
-    return '0';
-  }
-
-  if (remainder === 10) {
-    return 'K';
-  }
-
-  return String(remainder);
-}
-
-function isValidRun(runValue, dvValue) {
-  const run = sanitizeRun(runValue);
-  const dv = sanitizeDv(dvValue);
-
-  if (!run || run.length < MIN_RUN_LENGTH || run.length > MAX_RUN_LENGTH || !dv) {
-    return false;
-  }
-
-  return calculateDv(run) === dv;
 }
 
 function escapeHtml(value) {
@@ -394,17 +352,18 @@ function setLookupLoading(isLoading) {
 }
 
 function clearStudentFields(options = {}) {
-  const { preserveStatus = false, preserveRun = false } = options;
+  const { preserveStatus = false, preserveRun = false, preserveDv = false } = options;
 
   if (!preserveRun) {
     runInput.value = '';
   }
 
-  dvInput.value = '';
+  if (!preserveDv) {
+    dvInput.value = '';
+  }
+
   carreraInput.value = '';
   anioInput.value = '';
-  runStatusText.textContent = '';
-  runStatusText.className = 'field-status';
 
   if (!preserveStatus) {
     autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
@@ -519,57 +478,19 @@ function clearAllFieldErrors() {
   Object.keys(fieldDefinitions).forEach(clearFieldError);
 }
 
-function updateRunValidationFeedback() {
-  const run = sanitizeRun(runInput.value);
-  const dv = sanitizeDv(dvInput.value);
-
-  if (!run && !dv) {
-    runStatusText.textContent = '';
-    runStatusText.className = 'field-status';
-    clearFieldError('run');
-    clearFieldError('dv');
-    return;
-  }
-
-  if (run.length < MIN_RUN_LENGTH || run.length > MAX_RUN_LENGTH) {
-    runStatusText.textContent = 'El RUN debe tener entre 7 y 8 dígitos.';
-    runStatusText.className = 'field-status field-status--error';
-    if (run) {
-      setFieldError('run', 'Ingresa un RUN válido de 7 u 8 dígitos.');
-    }
-    return;
-  }
-
-  if (!dv) {
-    runStatusText.textContent = 'Ingresa el dígito verificador para validar el RUN.';
-    runStatusText.className = 'field-status';
-    clearFieldError('run');
-    clearFieldError('dv');
-    return;
-  }
-
-  if (!isValidRun(run, dv)) {
-    const expectedDv = calculateDv(run);
-    runStatusText.textContent = 'RUN inválido. Verifica el dígito verificador.';
-    runStatusText.className = 'field-status field-status--error';
-    setFieldError('run', `El RUN ingresado no coincide con el dígito verificador esperado (${expectedDv}).`);
-    setFieldError('dv', 'El dígito verificador no corresponde al RUN ingresado.');
-    return;
-  }
-
-  runStatusText.textContent = 'RUN válido.';
-  runStatusText.className = 'field-status field-status--success';
-  clearFieldError('run');
-  clearFieldError('dv');
-}
-
-function fillStudentFields(student, statusMessage = 'Datos del estudiante completados correctamente.') {
+function fillStudentFields(student) {
   if (!student) {
     return;
   }
 
-  runInput.value = formatRun(student.run || runInput.value);
-  dvInput.value = sanitizeDv(student.dv || (sanitizeRun(student.run).length >= MIN_RUN_LENGTH ? calculateDv(student.run) : ''));
+  if (student.run) {
+    runInput.value = sanitizeRun(student.run);
+  }
+
+  if (student.dv) {
+    dvInput.value = sanitizeDv(student.dv);
+  }
+
   carreraInput.value = student.carrera || '';
   anioInput.value = student.anio_ingreso || '';
 
@@ -578,9 +499,8 @@ function fillStudentFields(student, statusMessage = 'Datos del estudiante comple
     updateEspacios();
   }
 
-  autocompleteStatus.textContent = statusMessage;
-  autocompleteStatus.className = 'hint hint--success';
-  updateRunValidationFeedback();
+  autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
+  autocompleteStatus.className = 'hint';
   clearFieldError('carrera');
   clearFieldError('anio_ingreso');
   syncRunFieldState();
@@ -593,7 +513,7 @@ function applySuggestion(index) {
     return;
   }
 
-  fillStudentFields(student, 'Estudiante seleccionado desde las sugerencias.');
+  fillStudentFields(student);
   closeSuggestions();
 }
 
@@ -616,17 +536,9 @@ async function lookupStudent(runValue) {
   if (run.length < MIN_LOOKUP_LENGTH) {
     setLookupLoading(false);
     closeSuggestions();
-    clearStudentFields({ preserveRun: true, preserveStatus: false });
-    updateRunValidationFeedback();
+    clearStudentFields({ preserveRun: true, preserveDv: true, preserveStatus: false });
     syncRunFieldState();
     return;
-  }
-
-  if (run.length >= MIN_RUN_LENGTH) {
-    dvInput.value = calculateDv(run);
-    updateRunValidationFeedback();
-  } else {
-    dvInput.value = '';
   }
 
   setLookupLoading(true);
@@ -642,7 +554,7 @@ async function lookupStudent(runValue) {
     }
 
     if (!response.ok) {
-      throw new Error(buildApiError(data, 'No se pudo consultar al estudiante.'));
+      throw new Error(buildApiError(data, 'No fue posible consultar los datos del estudiante.'));
     }
 
     const matches = Array.isArray(data.coincidencias) ? data.coincidencias : [];
@@ -651,17 +563,21 @@ async function lookupStudent(runValue) {
       carreraInput.value = '';
       anioInput.value = '';
       closeSuggestions();
-      autocompleteStatus.textContent = 'No se encontraron datos del estudiante.';
-      autocompleteStatus.className = 'hint hint--error';
+      autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
+      autocompleteStatus.className = 'hint';
       return;
     }
 
     if (data.alumno) {
-      fillStudentFields(data.alumno);
+      fillStudentFields({
+        carrera: data.alumno.carrera,
+        anio_ingreso: data.alumno.anio_ingreso,
+        sede: data.alumno.sede,
+      });
     } else {
       carreraInput.value = '';
       anioInput.value = '';
-      autocompleteStatus.textContent = 'Selecciona un estudiante de la lista.';
+      autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
       autocompleteStatus.className = 'hint';
     }
 
@@ -816,17 +732,10 @@ function validateForm() {
 
   if (!run) {
     errors.push({ field: 'run', message: 'Debes ingresar el RUN.' });
-  } else if (run.length < MIN_RUN_LENGTH || run.length > MAX_RUN_LENGTH) {
-    errors.push({ field: 'run', message: 'Ingresa un RUN válido de 7 u 8 dígitos.' });
   }
 
   if (!dv) {
     errors.push({ field: 'dv', message: 'Debes ingresar el dígito verificador.' });
-  }
-
-  if (run && dv && !isValidRun(run, dv)) {
-    errors.push({ field: 'run', message: 'El RUN y el dígito verificador no son válidos.' });
-    errors.push({ field: 'dv', message: 'El dígito verificador no corresponde al RUN ingresado.' });
   }
 
   if (!carreraInput.value.trim()) {
@@ -893,14 +802,13 @@ campusHeaderInput.addEventListener('change', () => {
 });
 
 runInput.addEventListener('input', () => {
-  runInput.value = formatRun(runInput.value);
+  runInput.value = sanitizeRun(runInput.value);
   clearMessage();
   syncRunFieldState();
   closeSuggestions();
   clearFieldError('run');
   clearFieldError('dv');
   window.clearTimeout(lookupTimer);
-  updateRunValidationFeedback();
   lookupTimer = window.setTimeout(() => lookupStudent(runInput.value), LOOKUP_DEBOUNCE_MS);
 });
 
@@ -971,8 +879,8 @@ authPasswordInput.addEventListener('input', () => {
 
 dvInput.addEventListener('input', () => {
   dvInput.value = sanitizeDv(dvInput.value);
+  clearFieldError('dv');
   clearMessage();
-  updateRunValidationFeedback();
 });
 
 carreraInput.addEventListener('input', () => {
@@ -1049,7 +957,6 @@ recordsBody.addEventListener('click', (event) => {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   clearMessage();
-  updateRunValidationFeedback();
 
   if (!validateForm()) {
     return;
