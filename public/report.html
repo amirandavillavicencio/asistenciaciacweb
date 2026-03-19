@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generar Informe | CIAC Registro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="report-shell">
+    <section class="panel report-panel">
+      <div class="panel__header panel__header--table report-panel__header">
+        <div>
+          <p class="section-tag">Generar Informe</p>
+          <h1>Informe diario de registros</h1>
+          <p>Vista consolidada de los registros del día actual para revisión y exportación.</p>
+        </div>
+        <div class="report-panel__actions">
+          <span id="report-date" class="summary-chip summary-chip--secondary">Fecha --</span>
+          <button id="report-export-button" class="button" type="button">Exportar Excel</button>
+        </div>
+      </div>
+
+      <div id="report-message" class="message" aria-live="polite"></div>
+
+      <div class="report-summary">
+        <span id="report-count" class="summary-chip">0 registros</span>
+        <span id="report-campus" class="summary-chip summary-chip--secondary">Campus: Todos</span>
+      </div>
+
+      <div class="table-wrap report-table-wrap">
+        <table class="records-table report-table">
+          <thead>
+            <tr>
+              <th>RUN</th>
+              <th>DV</th>
+              <th>Carrera</th>
+              <th>Sede</th>
+              <th>Hora entrada</th>
+              <th>Hora salida</th>
+              <th>Actividad</th>
+              <th>Temática</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="report-records-body">
+            <tr>
+              <td colspan="9" class="empty">Cargando registros del día...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/report.js" defer></script>
+</body>
+</html>
