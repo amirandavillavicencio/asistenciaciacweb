@@ -236,23 +236,23 @@ async function lookupStudent(runValue) {
   }
 }
 
-async function exportExcel() {
+async function downloadExport() {
   clearMessage();
   exportButton.disabled = true;
   exportButton.textContent = 'Exportando...';
 
   try {
-    const response = await fetch('/api/exportar-excel');
+    const response = await fetch('/api/exportar-registros');
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(buildApiError(data, 'No se pudo exportar el archivo Excel.'));
+      throw new Error(buildApiError(data, 'No se pudo exportar el archivo CSV.'));
     }
 
     const blob = await response.blob();
     const disposition = response.headers.get('Content-Disposition') || '';
-    const match = disposition.match(/filename="?([^";]+)"?/i);
-    const filename = match ? match[1] : 'ciac-registros.xlsx';
+    const match = disposition.match(/filename\*?=(?:UTF-8''|"?)([^";]+)"?/i);
+    const filename = match ? decodeURIComponent(match[1]) : 'ciac-registros.csv';
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
 
@@ -262,12 +262,12 @@ async function exportExcel() {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
-    showMessage('El archivo Excel fue exportado correctamente.', 'success');
+    showMessage('El archivo CSV fue exportado correctamente.', 'success');
   } catch (error) {
-    showMessage(error.message || 'No se pudo exportar el archivo Excel.', 'error');
+    showMessage(error.message || 'No se pudo exportar el archivo CSV.', 'error');
   } finally {
     exportButton.disabled = false;
-    exportButton.textContent = 'Exportar Excel';
+    exportButton.textContent = 'Exportar CSV';
   }
 }
 
@@ -346,7 +346,7 @@ anioInput.addEventListener('input', () => {
   anioInput.value = String(anioInput.value || '').replace(/\D/g, '').slice(0, 4);
 });
 
-exportButton.addEventListener('click', exportExcel);
+exportButton.addEventListener('click', downloadExport);
 
 recordsBody.addEventListener('click', (event) => {
   const button = event.target.closest('[data-action="salida"]');
@@ -418,6 +418,3 @@ form.addEventListener('submit', async (event) => {
 updateEspacios();
 updateClock();
 window.setInterval(updateClock, 1000);
-loadTodayRecords().catch((error) => {
-  showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
-});

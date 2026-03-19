@@ -2,10 +2,9 @@
   "name": "ciac-registro",
   "version": "1.0.0",
   "private": true,
-  "description": "MVP CIAC Registro - asistencia con Supabase y exportación Excel",
+  "description": "MVP CIAC Registro - asistencia con Supabase y exportación CSV robusta",
   "license": "MIT",
   "dependencies": {
-    "node-fetch": "^2.7.0",
-    "xlsx": "^0.18.5"
+    "node-fetch": "^2.7.0"
   }
 }
