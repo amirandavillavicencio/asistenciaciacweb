@@ -99,34 +99,61 @@ function getCurrentSemester(date = new Date()) {
 
 function formatDateTime(value) {
   if (!value) {
-    return '—';
+    return { date: '—', time: '' };
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return String(value);
+    return { date: String(value), time: '' };
   }
 
-  return new Intl.DateTimeFormat('es-CL', {
-    dateStyle: 'short',
-    timeStyle: 'short',
+  const parts = new Intl.DateTimeFormat('es-CL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
     timeZone: 'America/Santiago',
-  }).format(date);
+  }).formatToParts(date);
+
+  const getPart = (type) => parts.find((part) => part.type === type)?.value || '';
+
+  return {
+    date: `${getPart('day')}-${getPart('month')}-${getPart('year')}`,
+    time: `${getPart('hour')}:${getPart('minute')}`,
+  };
 }
 
-function getStudentLabel(item) {
-  const parts = [];
+function renderDateTimeCell(value) {
+  const formatted = formatDateTime(value);
+  const timeMarkup = formatted.time
+    ? `<span class="table-datetime__time">${escapeHtml(formatted.time)}</span>`
+    : '';
 
-  if (item.carrera) {
-    parts.push(item.carrera);
-  }
+  return `
+    <div class="table-datetime">
+      <span class="table-datetime__date">${escapeHtml(formatted.date)}</span>
+      ${timeMarkup}
+    </div>
+  `;
+}
 
-  if (item.anio_ingreso) {
-    parts.push(`Ingreso ${item.anio_ingreso}`);
-  }
+function getStudentDetails(item) {
+  return {
+    career: item.carrera || 'Alumno CIAC',
+    admission: item.anio_ingreso ? `Ingreso ${item.anio_ingreso}` : 'Ingreso no informado',
+    notes: item.observaciones || 'Sin observaciones',
+  };
+}
 
-  return parts.join(' · ') || 'Alumno CIAC';
+function getCellValue(value) {
+  return value || '—';
+}
+
+function getRunLabel(item) {
+  return [item.run, item.dv].filter(Boolean).join('-') || '—';
 }
 
 function getVisibleRecords(records) {
@@ -151,26 +178,28 @@ function renderRecords(records) {
     const estadoClass = isOpen ? 'estado--activo' : 'estado--cerrado';
     const estadoText = isOpen ? 'Entrada activa' : 'Salida registrada';
     const semestre = getCurrentSemester(item.dia ? new Date(`${item.dia}T12:00:00Z`) : new Date());
+    const student = getStudentDetails(item);
     const actionButton = isOpen
       ? `<button type="button" class="table-action" data-action="salida" data-id="${escapeHtml(item.id)}">Salida</button>`
       : '<span class="table-action table-action--muted">Completado</span>';
 
     return `
       <tr>
-        <td>${escapeHtml(item.run)}-${escapeHtml(item.dv)}</td>
+        <td class="cell-run">${escapeHtml(getRunLabel(item))}</td>
         <td>
           <div class="student-cell">
-            <strong>${escapeHtml(getStudentLabel(item))}</strong>
-            <span>${escapeHtml(item.observaciones || 'Sin observaciones')}</span>
+            <strong>${escapeHtml(student.career)}</strong>
+            <span class="student-cell__meta">${escapeHtml(student.admission)}</span>
+            <span class="student-cell__notes">${escapeHtml(student.notes)}</span>
           </div>
         </td>
-        <td>${escapeHtml(item.sede)}</td>
-        <td>${escapeHtml(item.actividad)}</td>
-        <td>${escapeHtml(item.tematica)}</td>
-        <td>${escapeHtml(item.espacio)}</td>
+        <td>${escapeHtml(getCellValue(item.sede))}</td>
+        <td>${escapeHtml(getCellValue(item.actividad))}</td>
+        <td>${escapeHtml(getCellValue(item.tematica))}</td>
+        <td>${escapeHtml(getCellValue(item.espacio))}</td>
         <td>${escapeHtml(semestre)}</td>
-        <td>${escapeHtml(formatDateTime(item.hora_entrada))}</td>
-        <td>${escapeHtml(formatDateTime(item.hora_salida))}</td>
+        <td>${renderDateTimeCell(item.hora_entrada)}</td>
+        <td>${renderDateTimeCell(item.hora_salida)}</td>
         <td><span class="estado ${estadoClass}">${escapeHtml(estadoText)}</span></td>
         <td>${actionButton}</td>
       </tr>
