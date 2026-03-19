@@ -999,3 +999,52 @@ th:last-child {
     align-items: flex-start;
   }
 }
+
+body.report-locked {
+  overflow: hidden;
+}
+
+.report-access-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(10, 27, 43, 0.64);
+}
+
+.report-access-overlay[hidden] {
+  display: none;
+}
+
+.report-access-card {
+  width: min(100%, 420px);
+  padding: 24px;
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(14, 27, 39, 0.18);
+}
+
+.report-access-card h2 {
+  margin: 0 0 10px;
+}
+
+.report-access-card p {
+  margin: 0 0 16px;
+  color: var(--ink-muted);
+}
+
+.report-access-form {
+  display: grid;
+  gap: 14px;
+}
+
+.report-access-form .field {
+  display: grid;
+  gap: 8px;
+}
+
+.report-access-form .message {
+  margin-top: 0;
+}

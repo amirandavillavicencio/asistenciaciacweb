@@ -13,11 +13,20 @@ const activityTotal = document.getElementById('activity-total');
 const campusTotal = document.getElementById('campus-total');
 const reportHighlights = document.getElementById('report-highlights');
 const hourlyChart = document.getElementById('hourly-chart');
+const accessOverlay = document.getElementById('report-access-overlay');
+const accessForm = document.getElementById('report-access-form');
+const accessInput = document.getElementById('report-access-password');
+const accessError = document.getElementById('report-access-error');
+const accessButton = document.getElementById('report-access-submit');
 
-const REPORT_ACCESS_KEY = 'Ciac.2011';
+const REPORT_AUTH_STORAGE_KEY = 'ciac-report-authenticated';
+const REPORT_AUTH_HEADER = 'x-report-password';
 const params = new URLSearchParams(window.location.search);
 const selectedCampus = params.get('campus') || '';
-const providedAccessKey = params.get('key') || '';
+
+window.__REPORT_RECORDS__ = [];
+let reportPassword = sessionStorage.getItem(REPORT_AUTH_STORAGE_KEY) || '';
+let reportUnlocked = Boolean(reportPassword);
 
 function escapeHtml(value) {
   return String(value || '')
@@ -46,12 +55,52 @@ function buildApiError(data, fallback) {
   return data.error || fallback;
 }
 
-function hasReportAccess() {
-  return providedAccessKey === REPORT_ACCESS_KEY;
+function getAuthHeaders() {
+  return reportPassword
+    ? { [REPORT_AUTH_HEADER]: reportPassword }
+    : {};
+}
+
+function setAuthenticatedState(password) {
+  reportPassword = password;
+  reportUnlocked = Boolean(password);
+
+  if (password) {
+    sessionStorage.setItem(REPORT_AUTH_STORAGE_KEY, password);
+  } else {
+    sessionStorage.removeItem(REPORT_AUTH_STORAGE_KEY);
+  }
+
+  if (exportButton) {
+    exportButton.disabled = !reportUnlocked;
+  }
+}
+
+function openAccessOverlay() {
+  accessOverlay.hidden = false;
+  document.body.classList.add('report-locked');
+  exportButton.disabled = true;
+  window.setTimeout(() => accessInput?.focus(), 50);
+}
+
+function closeAccessOverlay() {
+  accessOverlay.hidden = true;
+  document.body.classList.remove('report-locked');
+  exportButton.disabled = !reportUnlocked;
+}
+
+function showAccessError(message) {
+  accessError.textContent = message;
+  accessError.hidden = false;
+}
+
+function clearAccessError() {
+  accessError.textContent = '';
+  accessError.hidden = true;
 }
 
 function renderBlockedState() {
-  reportBody.innerHTML = '<tr><td colspan="9" class="empty">Debes ingresar la clave Ciac.2011 desde la pantalla principal para ver este informe.</td></tr>';
+  reportBody.innerHTML = '<tr><td colspan="9" class="empty">Debes ingresar la clave de acceso para ver este informe.</td></tr>';
   reportCount.textContent = '0';
   reportOpenCount.textContent = '0';
   reportClosedCount.textContent = '0';
@@ -359,39 +408,65 @@ function renderRecords(records) {
       <td>${escapeHtml(record.dv || '—')}</td>
       <td>${escapeHtml(record.carrera || '—')}</td>
       <td>${escapeHtml(record.sede || '—')}</td>
-      <td>${escapeHtml(formatDateTime(record.hora_entrada))}</td>
-      <td>${escapeHtml(formatDateTime(record.hora_salida))}</td>
-      <td>${escapeHtml(record.actividad || '—')}</td>
+      <td>${escapeHtml(record.anio_ingreso || '—')}</td>
       <td>${escapeHtml(record.tematica || '—')}</td>
       <td>${escapeHtml(normalizeState(record))}</td>
+      <td>${escapeHtml(formatDateTime(record.hora_entrada))}</td>
+      <td>${escapeHtml(formatDateTime(record.hora_salida))}</td>
     </tr>
   `).join('');
+}
+
+async function verifyPassword(password) {
+  const response = await fetch('/api/report-auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  const data = await response.json();
+
+  if (!response.ok || !data.authorized) {
+    throw new Error(buildApiError(data, 'Clave incorrecta'));
+  }
+
+  return true;
 }
 
 async function loadRecords() {
   clearMessage();
 
-  if (!hasReportAccess()) {
+  if (!reportUnlocked) {
     renderBlockedState();
-    showMessage('Clave requerida. Usa la clave Ciac.2011 para ver el informe.', 'error');
+    openAccessOverlay();
     return;
   }
 
-  const response = await fetch('/api/registros-hoy');
+  const response = await fetch(`/api/report-data?campus=${encodeURIComponent(selectedCampus)}`, {
+    headers: getAuthHeaders(),
+  });
   const data = await response.json();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      setAuthenticatedState('');
+      renderBlockedState();
+      openAccessOverlay();
+      throw new Error('Clave incorrecta');
+    }
+
     throw new Error(buildApiError(data, 'No se pudieron cargar los registros del informe.'));
   }
 
+  closeAccessOverlay();
   renderRecords(data.registros || []);
 }
 
 async function exportReport() {
   clearMessage();
 
-  if (!hasReportAccess()) {
-    showMessage('Clave incorrecta. Usa la clave Ciac.2011 para exportar el informe.', 'error');
+  if (!reportUnlocked) {
+    openAccessOverlay();
+    showMessage('Debes ingresar la clave antes de exportar el informe.', 'error');
     return;
   }
 
@@ -399,24 +474,25 @@ async function exportReport() {
   exportButton.textContent = 'Exportando...';
 
   try {
-    const response = await fetch('/api/export-report');
+    const response = await fetch(`/api/export-report?campus=${encodeURIComponent(selectedCampus)}`, {
+      headers: getAuthHeaders(),
+    });
     const contentType = response.headers.get('Content-Type') || '';
     const isJsonResponse = contentType.includes('application/json');
 
     if (!response.ok) {
       const data = isJsonResponse ? await response.json() : null;
-      throw new Error(buildApiError(data, 'No se pudo exportar el informe.'));
-    }
-
-    if (isJsonResponse) {
-      const data = await response.json();
-      throw new Error(buildApiError(data, 'El endpoint no devolvió un archivo descargable.'));
+      if (response.status === 401) {
+        setAuthenticatedState('');
+        openAccessOverlay();
+      }
+      throw new Error(buildApiError(data, response.status === 401 ? 'Clave incorrecta' : 'No se pudo exportar el informe.'));
     }
 
     const blob = await response.blob();
     const disposition = response.headers.get('Content-Disposition') || '';
     const match = disposition.match(/filename\*?=(?:UTF-8''|"?)([^";]+)"?/i);
-    const filename = match ? decodeURIComponent(match[1]) : 'reporte.csv';
+    const filename = match ? decodeURIComponent(match[1]) : 'reporte.xlsx';
     const link = document.createElement('a');
     const objectUrl = window.URL.createObjectURL(blob);
 
@@ -430,26 +506,44 @@ async function exportReport() {
   } catch (error) {
     showMessage(error.message || 'No se pudo exportar el informe.', 'error');
   } finally {
-    exportButton.disabled = false;
+    exportButton.disabled = !reportUnlocked;
     exportButton.textContent = 'Exportar Excel';
   }
 }
 
+accessForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearAccessError();
+  accessButton.disabled = true;
+  accessButton.textContent = 'Validando...';
+
+  try {
+    const password = accessInput.value;
+    await verifyPassword(password);
+    setAuthenticatedState(password);
+    accessForm.reset();
+    await loadRecords();
+    showMessage('Acceso concedido al informe.', 'success');
+  } catch (error) {
+    setAuthenticatedState('');
+    renderBlockedState();
+    openAccessOverlay();
+    showAccessError('Clave incorrecta');
+    showMessage('Clave incorrecta', 'error');
+  } finally {
+    accessButton.disabled = false;
+    accessButton.textContent = 'Ingresar';
+  }
+});
+
 exportButton.addEventListener('click', exportReport);
 window.addEventListener('resize', () => drawHourlyChart(getVisibleRecords(window.__REPORT_RECORDS__ || [])));
 
-loadRecords().catch((error) => {
-  showMessage(error.message || 'No se pudieron cargar los registros del informe.', 'error');
-  reportBody.innerHTML = '<tr><td colspan="9" class="empty">No fue posible cargar el informe.</td></tr>';
-  reportCount.textContent = '0';
-  reportOpenCount.textContent = '0';
-  reportClosedCount.textContent = '0';
-  reportDurationAverage.textContent = '—';
-  reportCampus.textContent = `Campus: ${selectedCampus || 'Todos'}`;
-  reportDate.textContent = `Fecha ${formatDateLabel()}`;
-  createBars(activityBars, {}, 'No hay actividades registradas.');
-  createBars(campusBars, {}, 'No hay sedes registradas.');
-  renderHighlights([]);
-  drawHourlyChart([]);
-});
-
+renderBlockedState();
+if (reportUnlocked) {
+  loadRecords().catch((error) => {
+    showMessage(error.message || 'No se pudieron cargar los registros del informe.', 'error');
+  });
+} else {
+  openAccessOverlay();
+}
