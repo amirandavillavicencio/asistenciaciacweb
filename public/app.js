@@ -4,7 +4,6 @@ const CAMPUS_SPACES = {
 };
 
 const form = document.getElementById('registro-form');
-const campusInput = document.getElementById('campus');
 const campusHeaderInput = document.getElementById('campus-header');
 const runInput = document.getElementById('run');
 const dvInput = document.getElementById('dv');
@@ -62,25 +61,22 @@ function buildApiError(data, fallback) {
   return data.error || fallback;
 }
 
-function syncCampus(source, value) {
-  if (source !== campusInput) {
-    campusInput.value = value;
-    updateEspacios();
-  }
+function getSelectedCampus() {
+  return campusHeaderInput.value;
+}
 
-  if (source !== campusHeaderInput) {
-    campusHeaderInput.value = value;
-  }
-
+function syncCampus(value) {
+  campusHeaderInput.value = value;
   activeCampusFilter = value;
 }
 
 function updateEspacios() {
-  const spaces = CAMPUS_SPACES[campusInput.value] || [];
+  const selectedCampus = getSelectedCampus();
+  const spaces = CAMPUS_SPACES[selectedCampus] || [];
   const previousValue = espacioInput.value;
 
   if (!spaces.length) {
-    espacioInput.innerHTML = '<option value="">Selecciona primero el campus</option>';
+    espacioInput.innerHTML = '<option value="">Selecciona primero el campus superior</option>';
     espacioInput.disabled = true;
     return;
   }
@@ -227,9 +223,12 @@ async function lookupStudent(runValue) {
     dvInput.value = data.alumno.dv || '';
     carreraInput.value = data.alumno.carrera || '';
     anioInput.value = data.alumno.anio_ingreso || '';
-    if (data.alumno.sede && !campusInput.value) {
-      syncCampus(campusInput, data.alumno.sede);
+
+    if (data.alumno.sede && !getSelectedCampus()) {
+      syncCampus(data.alumno.sede);
+      updateEspacios();
     }
+
     autocompleteStatus.textContent = 'Datos del estudiante completados correctamente.';
   } catch {
     autocompleteStatus.textContent = 'No fue posible consultar los datos del estudiante.';
@@ -313,17 +312,9 @@ function updateClock() {
   currentSemesterBadge.textContent = `Semestre ${getCurrentSemester(now)}`;
 }
 
-campusInput.addEventListener('change', () => {
-  syncCampus(campusInput, campusInput.value);
-  updateEspacios();
-  clearMessage();
-  loadTodayRecords().catch((error) => {
-    showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
-  });
-});
-
 campusHeaderInput.addEventListener('change', () => {
-  syncCampus(campusHeaderInput, campusHeaderInput.value);
+  syncCampus(campusHeaderInput.value);
+  updateEspacios();
   clearMessage();
   loadTodayRecords().catch((error) => {
     showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
@@ -368,7 +359,7 @@ form.addEventListener('submit', async (event) => {
   clearMessage();
 
   const payload = {
-    campus: campusInput.value,
+    campus: getSelectedCampus(),
     run: sanitizeRun(runInput.value),
     dv: sanitizeDv(dvInput.value),
     carrera: carreraInput.value.trim(),
@@ -398,11 +389,11 @@ form.addEventListener('submit', async (event) => {
     showMessage(data.message || 'Entrada registrada correctamente.', 'success');
     renderRecords(data.registrosHoy || []);
 
-    const selectedCampus = campusInput.value;
+    const selectedCampus = getSelectedCampus();
     const selectedActividad = actividadInput.value;
 
     form.reset();
-    syncCampus(campusInput, selectedCampus);
+    syncCampus(selectedCampus);
     actividadInput.value = selectedActividad;
     updateEspacios();
     autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
@@ -415,6 +406,7 @@ form.addEventListener('submit', async (event) => {
   }
 });
 
+syncCampus(getSelectedCampus());
 updateEspacios();
 updateClock();
 window.setInterval(updateClock, 1000);
