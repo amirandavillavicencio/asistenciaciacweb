@@ -24,7 +24,6 @@ const currentDate = document.getElementById('current-date');
 const currentTime = document.getElementById('current-time');
 const currentSemesterBadge = document.getElementById('current-semester');
 
-const REPORT_ACCESS_KEY = 'Ciac.2011';
 
 let lookupTimer = null;
 let activeCampusFilter = '';
@@ -54,21 +53,6 @@ function showMessage(text, type) {
 function clearMessage() {
   messageBox.textContent = '';
   messageBox.className = 'message';
-}
-
-function requestReportAccess() {
-  const providedKey = window.prompt('Ingresa la clave para ver o exportar el informe CIAC.');
-
-  if (providedKey === null) {
-    return null;
-  }
-
-  if (providedKey !== REPORT_ACCESS_KEY) {
-    showMessage('Clave incorrecta. Usa la clave autorizada para acceder al informe.', 'error');
-    return null;
-  }
-
-  return providedKey;
 }
 
 function buildApiError(data, fallback) {
@@ -317,12 +301,6 @@ async function downloadExport() {
 
 function openUsageReport() {
   clearMessage();
-  const accessKey = requestReportAccess();
-
-  if (!accessKey) {
-    return;
-  }
-
   const selectedCampus = getSelectedCampus();
   const reportUrl = new URL('/report.html', window.location.origin);
 
@@ -330,7 +308,6 @@ function openUsageReport() {
     reportUrl.searchParams.set('campus', selectedCampus);
   }
 
-  reportUrl.searchParams.set('key', accessKey);
   window.open(reportUrl.toString(), '_blank', 'noopener');
 }
 

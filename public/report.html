@@ -21,12 +21,12 @@
         <div class="report-panel__actions">
           <span id="report-date" class="summary-chip summary-chip--secondary">Fecha --</span>
           <span id="report-campus" class="summary-chip summary-chip--secondary">Campus: Todos</span>
-          <button id="report-export-button" class="button" type="button">Exportar Excel</button>
+          <button id="report-export-button" class="button" type="button" disabled>Exportar Excel</button>
         </div>
       </div>
 
       <div id="report-message" class="message" aria-live="polite"></div>
-      <p class="hint">Para ver este informe y exportarlo a Excel debes ingresar la clave <strong>Ciac.2011</strong>.</p>
+      <p class="hint">Protege este informe con una clave temporal validada en servidor antes de visualizarlo o exportarlo.</p>
 
       <section class="report-kpis" aria-label="Resumen del día">
         <article class="report-kpi">
@@ -113,16 +113,16 @@
                 <th>DV</th>
                 <th>Carrera</th>
                 <th>Sede</th>
-                <th>Hora entrada</th>
-                <th>Hora salida</th>
-                <th>Actividad</th>
+                <th>Año Ingreso</th>
                 <th>Temática</th>
                 <th>Estado</th>
+                <th>Hora Entrada</th>
+                <th>Hora Salida</th>
               </tr>
             </thead>
             <tbody id="report-records-body">
               <tr>
-                <td colspan="9" class="empty">Cargando registros del día...</td>
+                <td colspan="9" class="empty">Debes ingresar la clave para cargar el informe.</td>
               </tr>
             </tbody>
           </table>
@@ -130,6 +130,24 @@
       </section>
     </section>
   </main>
+
+
+
+  <div id="report-access-overlay" class="report-access-overlay" role="dialog" aria-modal="true" aria-labelledby="report-access-title">
+    <div class="report-access-card">
+      <p class="section-tag">Acceso protegido</p>
+      <h2 id="report-access-title">Ingresa la clave del informe</h2>
+      <p>Debes validar la clave de acceso antes de ver los registros o exportar a Excel.</p>
+      <form id="report-access-form" class="report-access-form">
+        <label class="field">
+          <span>Clave de acceso</span>
+          <input id="report-access-password" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <p id="report-access-error" class="message message--error is-visible" hidden></p>
+        <button id="report-access-submit" class="button" type="submit">Ingresar</button>
+      </form>
+    </div>
+  </div>
 
   <script src="/report.js" defer></script>
 </body>
