@@ -300,49 +300,15 @@ async function downloadExport() {
   }
 }
 
-async function downloadUsageReport() {
+function openUsageReport() {
   clearMessage();
-  exportReportButton.disabled = true;
-  exportReportButton.textContent = 'Exportando informe...';
 
-  try {
-    const response = await fetch('/api/export-report');
+  const selectedCampus = getSelectedCampus();
+  const reportUrl = selectedCampus
+    ? `/report.html?campus=${encodeURIComponent(selectedCampus)}`
+    : '/report.html';
 
-    if (!response.ok) {
-      const contentType = response.headers.get('Content-Type') || '';
-      let errorMessage = 'Error exportando informe';
-
-      if (contentType.includes('application/json')) {
-        const data = await response.json();
-        errorMessage = data.error || data.detail || errorMessage;
-      } else {
-        const text = await response.text();
-        errorMessage = text || errorMessage;
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    const blob = await response.blob();
-    const disposition = response.headers.get('Content-Disposition') || '';
-    const match = disposition.match(/filename\*?=(?:UTF-8''|"?)([^";]+)"?/i);
-    const filename = match ? decodeURIComponent(match[1]) : 'informe_uso_ciac.xlsx';
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-    showMessage('El informe de uso fue exportado correctamente.', 'success');
-  } catch (error) {
-    showMessage(error.message || 'Error exportando informe', 'error');
-  } finally {
-    exportReportButton.disabled = false;
-    exportReportButton.textContent = 'Exportar informe de uso';
-  }
+  window.open(reportUrl, '_blank', 'noopener');
 }
 
 async function registerExit(id) {
@@ -413,7 +379,7 @@ anioInput.addEventListener('input', () => {
 });
 
 exportButton.addEventListener('click', downloadExport);
-exportReportButton.addEventListener('click', downloadUsageReport);
+exportReportButton.addEventListener('click', openUsageReport);
 
 recordsBody.addEventListener('click', (event) => {
   const button = event.target.closest('[data-action="salida"]');
