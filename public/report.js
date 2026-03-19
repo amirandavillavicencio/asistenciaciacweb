@@ -14,8 +14,10 @@ const campusTotal = document.getElementById('campus-total');
 const reportHighlights = document.getElementById('report-highlights');
 const hourlyChart = document.getElementById('hourly-chart');
 
+const REPORT_ACCESS_KEY = 'Ciac.2011';
 const params = new URLSearchParams(window.location.search);
 const selectedCampus = params.get('campus') || '';
+const providedAccessKey = params.get('key') || '';
 
 function escapeHtml(value) {
   return String(value || '')
@@ -42,6 +44,26 @@ function buildApiError(data, fallback) {
   }
 
   return data.error || fallback;
+}
+
+function hasReportAccess() {
+  return providedAccessKey === REPORT_ACCESS_KEY;
+}
+
+function renderBlockedState() {
+  reportBody.innerHTML = '<tr><td colspan="9" class="empty">Debes ingresar la clave Ciac.2011 desde la pantalla principal para ver este informe.</td></tr>';
+  reportCount.textContent = '0';
+  reportOpenCount.textContent = '0';
+  reportClosedCount.textContent = '0';
+  reportDurationAverage.textContent = '—';
+  reportCampus.textContent = `Campus: ${selectedCampus || 'Todos'}`;
+  reportDate.textContent = `Fecha ${formatDateLabel()}`;
+  createBars(activityBars, {}, 'Acceso bloqueado hasta ingresar la clave.');
+  createBars(campusBars, {}, 'Acceso bloqueado hasta ingresar la clave.');
+  activityTotal.textContent = '0 categorías';
+  campusTotal.textContent = '0 sedes';
+  renderHighlights([]);
+  drawHourlyChart([]);
 }
 
 function formatDateLabel(date = new Date()) {
@@ -348,6 +370,13 @@ function renderRecords(records) {
 
 async function loadRecords() {
   clearMessage();
+
+  if (!hasReportAccess()) {
+    renderBlockedState();
+    showMessage('Clave requerida. Usa la clave Ciac.2011 para ver el informe.', 'error');
+    return;
+  }
+
   const response = await fetch('/api/registros-hoy');
   const data = await response.json();
 
@@ -360,6 +389,12 @@ async function loadRecords() {
 
 async function exportReport() {
   clearMessage();
+
+  if (!hasReportAccess()) {
+    showMessage('Clave incorrecta. Usa la clave Ciac.2011 para exportar el informe.', 'error');
+    return;
+  }
+
   exportButton.disabled = true;
   exportButton.textContent = 'Exportando...';
 
