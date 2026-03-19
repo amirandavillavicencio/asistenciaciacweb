@@ -84,7 +84,11 @@
             <div class="grid grid--run">
               <label>
                 <span>RUN</span>
-                <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números" required>
+                <div class="input-shell">
+                  <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números" required aria-autocomplete="list" aria-expanded="false" aria-controls="run-suggestions" aria-describedby="autocomplete-status">
+                  <button id="run-clear" class="input-clear" type="button" aria-label="Limpiar RUN" hidden>×</button>
+                </div>
+                <ul id="run-suggestions" class="autocomplete" role="listbox" hidden></ul>
               </label>
 
               <label>
@@ -93,7 +97,7 @@
               </label>
             </div>
 
-            <p id="autocomplete-status" class="hint">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
+            <p id="autocomplete-status" class="hint" aria-live="polite">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
 
             <div class="grid grid--2">
               <label>
