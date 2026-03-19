@@ -238,7 +238,7 @@ async function lookupStudent(runValue) {
 async function downloadExport() {
   clearMessage();
   exportButton.disabled = true;
-  exportButton.textContent = 'Exportando...';
+  exportButton.textContent = 'Exportando CSV...';
 
   try {
     const response = await fetch('/api/exportar-registros');
@@ -266,7 +266,7 @@ async function downloadExport() {
     showMessage(error.message || 'No se pudo exportar el archivo CSV.', 'error');
   } finally {
     exportButton.disabled = false;
-    exportButton.textContent = 'Exportar CSV';
+    exportButton.textContent = 'Exportar registros CSV';
   }
 }
 
@@ -409,4 +409,7 @@ form.addEventListener('submit', async (event) => {
 syncCampus(getSelectedCampus());
 updateEspacios();
 updateClock();
+loadTodayRecords().catch((error) => {
+  showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
+});
 window.setInterval(updateClock, 1000);
