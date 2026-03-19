@@ -29,18 +29,19 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       alumno: {
-        run: alumno.rut || '',
-        dv: alumno.dv || '',
-        carrera: alumno.carrera_ingreso || '',
-        anio_ingreso: alumno.cohorte || '',
-        sede: alumno.sede || '',
+        run: alumno.rut ? String(alumno.rut) : '',
+        dv: alumno.dv ? String(alumno.dv) : '',
+        carrera: alumno.carrera_ingreso ? String(alumno.carrera_ingreso) : '',
+        anio_ingreso: alumno.cohorte ? String(alumno.cohorte) : '',
+        sede: alumno.sede ? String(alumno.sede) : '',
       },
     });
   } catch (error) {
-    return res.status(error.status || 500).json({
-      error: 'No se pudo consultar students_matrix en este momento.',
-      detail: error.message,
-      supabase: error.details || null,
+    console.error('Error en /api/buscar:', error);
+
+    return res.status(200).json({
+      alumno: null,
+      error: 'No fue posible consultar los datos del estudiante.',
     });
   }
 };
