@@ -10,49 +10,123 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main class="report-shell">
-    <section class="panel report-panel">
+  <main class="report-shell report-shell--dashboard">
+    <section class="panel report-panel report-dashboard">
       <div class="panel__header panel__header--table report-panel__header">
         <div>
-          <p class="section-tag">Generar Informe</p>
-          <h1>Informe diario de registros</h1>
-          <p>Vista consolidada de los registros del día actual para revisión y exportación.</p>
+          <p class="section-tag">Informe Ejecutivo</p>
+          <h1>Dashboard diario de registros CIAC</h1>
+          <p>Seguimiento visual de asistencia, permanencia, distribución por sede y uso de actividades para la jornada actual.</p>
         </div>
         <div class="report-panel__actions">
           <span id="report-date" class="summary-chip summary-chip--secondary">Fecha --</span>
+          <span id="report-campus" class="summary-chip summary-chip--secondary">Campus: Todos</span>
           <button id="report-export-button" class="button" type="button">Exportar Excel</button>
         </div>
       </div>
 
       <div id="report-message" class="message" aria-live="polite"></div>
 
-      <div class="report-summary">
-        <span id="report-count" class="summary-chip">0 registros</span>
-        <span id="report-campus" class="summary-chip summary-chip--secondary">Campus: Todos</span>
-      </div>
+      <section class="report-kpis" aria-label="Resumen del día">
+        <article class="report-kpi">
+          <span class="report-kpi__label">Registros totales</span>
+          <strong id="report-count" class="report-kpi__value">0</strong>
+          <span class="report-kpi__hint">Atenciones registradas hoy</span>
+        </article>
+        <article class="report-kpi">
+          <span class="report-kpi__label">Entradas activas</span>
+          <strong id="report-open-count" class="report-kpi__value">0</strong>
+          <span class="report-kpi__hint">Sin salida registrada</span>
+        </article>
+        <article class="report-kpi">
+          <span class="report-kpi__label">Salidas completadas</span>
+          <strong id="report-closed-count" class="report-kpi__value">0</strong>
+          <span class="report-kpi__hint">Registros cerrados</span>
+        </article>
+        <article class="report-kpi">
+          <span class="report-kpi__label">Permanencia promedio</span>
+          <strong id="report-duration-average" class="report-kpi__value">—</strong>
+          <span class="report-kpi__hint">Solo registros con entrada y salida</span>
+        </article>
+      </section>
 
-      <div class="table-wrap report-table-wrap">
-        <table class="records-table report-table">
-          <thead>
-            <tr>
-              <th>RUN</th>
-              <th>DV</th>
-              <th>Carrera</th>
-              <th>Sede</th>
-              <th>Hora entrada</th>
-              <th>Hora salida</th>
-              <th>Actividad</th>
-              <th>Temática</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody id="report-records-body">
-            <tr>
-              <td colspan="9" class="empty">Cargando registros del día...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <section class="report-grid" aria-label="Visualizaciones del informe">
+        <article class="report-card report-card--chart">
+          <div class="report-card__header">
+            <div>
+              <p class="section-tag">Tendencia</p>
+              <h2>Flujo horario</h2>
+            </div>
+            <span class="report-card__meta">Entradas por hora</span>
+          </div>
+          <canvas id="hourly-chart" class="report-canvas" width="720" height="280" aria-label="Gráfico de entradas por hora" role="img"></canvas>
+        </article>
+
+        <article class="report-card report-card--bars">
+          <div class="report-card__header">
+            <div>
+              <p class="section-tag">Distribución</p>
+              <h2>Uso por actividad</h2>
+            </div>
+            <span id="activity-total" class="report-card__meta">0 categorías</span>
+          </div>
+          <div id="activity-bars" class="report-bars" aria-live="polite"></div>
+        </article>
+
+        <article class="report-card report-card--bars">
+          <div class="report-card__header">
+            <div>
+              <p class="section-tag">Cobertura</p>
+              <h2>Registros por sede</h2>
+            </div>
+            <span id="campus-total" class="report-card__meta">0 sedes</span>
+          </div>
+          <div id="campus-bars" class="report-bars" aria-live="polite"></div>
+        </article>
+
+        <article class="report-card report-card--highlights">
+          <div class="report-card__header">
+            <div>
+              <p class="section-tag">Hallazgos rápidos</p>
+              <h2>Indicadores clave</h2>
+            </div>
+          </div>
+          <ul id="report-highlights" class="report-highlights"></ul>
+        </article>
+      </section>
+
+      <section class="report-card report-card--table">
+        <div class="report-card__header">
+          <div>
+            <p class="section-tag">Detalle operativo</p>
+            <h2>Tabla consolidada del día</h2>
+          </div>
+          <span class="report-card__meta">Vista para revisión y respaldo</span>
+        </div>
+
+        <div class="table-wrap report-table-wrap">
+          <table class="records-table report-table">
+            <thead>
+              <tr>
+                <th>RUN</th>
+                <th>DV</th>
+                <th>Carrera</th>
+                <th>Sede</th>
+                <th>Hora entrada</th>
+                <th>Hora salida</th>
+                <th>Actividad</th>
+                <th>Temática</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="report-records-body">
+              <tr>
+                <td colspan="9" class="empty">Cargando registros del día...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 
