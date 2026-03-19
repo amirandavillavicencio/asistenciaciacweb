@@ -13,6 +13,10 @@
   --surface: #ffffff;
   --surface-muted: #f6f8fa;
   --surface-subtle: #eef2f5;
+  --shell-max-width: 1400px;
+  --shell-padding-x: clamp(16px, 2.4vw, 32px);
+  --shell-padding-y: 20px;
+  --panel-padding: clamp(18px, 2vw, 24px);
 }
 
 * {
@@ -21,6 +25,7 @@
 
 html {
   background: #e9eef3;
+  overflow-x: hidden;
 }
 
 body {
@@ -28,6 +33,7 @@ body {
   font-family: 'Source Sans 3', Arial, sans-serif;
   color: var(--ink-strong);
   background: #e9eef3;
+  overflow-x: hidden;
 }
 
 button,
@@ -38,17 +44,18 @@ textarea {
 }
 
 .app-shell {
-  max-width: 1460px;
+  width: min(100%, var(--shell-max-width));
   margin: 0 auto;
-  padding: 20px 24px 32px;
+  padding: var(--shell-padding-y) var(--shell-padding-x) 32px;
 }
 
 .topbar {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(420px, 0.95fr);
-  gap: 28px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 24px;
   align-items: stretch;
-  padding: 22px 28px;
+  width: 100%;
+  padding: var(--panel-padding);
   border: 1px solid #0f2f4f;
   background: var(--usm-blue);
   color: #fff;
@@ -65,12 +72,13 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 220px;
-  min-width: 220px;
+  width: clamp(152px, 18vw, 220px);
+  min-width: 152px;
   min-height: 88px;
   padding: 10px 16px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.16);
+  flex-shrink: 0;
 }
 
 .brand-logo {
@@ -81,7 +89,12 @@ textarea {
   object-fit: contain;
 }
 
-.brand-copy {
+.brand-copy,
+.panel,
+.panel__header > *,
+.table-wrap,
+.student-cell,
+.header-datetime > div {
   min-width: 0;
 }
 
@@ -120,14 +133,16 @@ textarea {
 
 .topbar__controls {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(160px, 1fr) minmax(220px, 1fr) minmax(0, auto);
   gap: 14px;
   align-items: end;
+  min-width: 0;
 }
 
 .header-field,
 .header-datetime {
   align-self: stretch;
+  min-width: 0;
 }
 
 .header-field {
@@ -168,7 +183,7 @@ textarea {
   padding: 10px 14px;
 }
 
-.header-datetime div {
+.header-datetime > div {
   display: grid;
   gap: 2px;
 }
@@ -181,8 +196,9 @@ textarea {
 
 .dashboard-layout {
   display: grid;
-  grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
   gap: 20px;
+  width: 100%;
   margin-top: 18px;
   align-items: start;
 }
@@ -194,7 +210,8 @@ textarea {
 
 .panel--form,
 .panel--table {
-  padding: 22px;
+  width: 100%;
+  padding: var(--panel-padding);
 }
 
 .panel__header {
@@ -269,6 +286,7 @@ textarea {
 label {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 label span {
@@ -281,6 +299,7 @@ input,
 select,
 textarea {
   width: 100%;
+  min-width: 0;
   min-height: 46px;
   padding: 10px 12px;
   border: 1px solid var(--border-strong);
@@ -310,6 +329,7 @@ select:disabled {
 .button,
 button {
   min-height: 48px;
+  max-width: 100%;
   padding: 0 18px;
   border: 1px solid var(--usm-blue);
   border-radius: 0;
@@ -331,10 +351,12 @@ button:disabled {
 }
 
 .button--header {
-  min-width: 210px;
+  min-width: 0;
+  width: 100%;
   border-color: #fff;
   background: #fff;
   color: var(--usm-blue);
+  justify-self: stretch;
 }
 
 .button--header:hover {
@@ -344,6 +366,7 @@ button:disabled {
 
 .message {
   display: none;
+  width: 100%;
   margin-top: 14px;
   padding: 12px 14px;
   border-left: 4px solid transparent;
@@ -390,8 +413,12 @@ button:disabled {
 }
 
 .table-wrap {
+  width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 10px 10px;
   border: 1px solid var(--border);
+  background: #fff;
 }
 
 table {
@@ -495,6 +522,16 @@ td {
 
   .dashboard-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .panel__header {
+    flex-direction: column;
+  }
+
+  .table-summary {
+    justify-content: flex-start;
   }
 }
 
