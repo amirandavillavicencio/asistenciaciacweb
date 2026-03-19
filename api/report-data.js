@@ -1,6 +1,7 @@
 const { supabaseGet } = require('../lib/supabase');
 
 const CHILE_TIMEZONE = 'America/Santiago';
+const VALID_CAMPUSES = ['Vitacura', 'San Joaquín'];
 const RECORD_SELECT = [
   'id',
   'dia',
@@ -99,6 +100,11 @@ module.exports = async function handler(req, res) {
   try {
     const dia = getChileDate();
     const campus = String(req.query.campus || '').trim();
+
+    if (campus && !VALID_CAMPUSES.includes(campus)) {
+      return res.status(400).json({ error: 'Debes seleccionar un campus válido para consultar el informe.' });
+    }
+
     const query = {
       select: RECORD_SELECT,
       dia: `eq.${dia}`,
@@ -118,6 +124,10 @@ module.exports = async function handler(req, res) {
       generated_at: new Date().toISOString(),
       date: dia,
       campus: campus || null,
+      total_registros: rows.length,
+      total_activos: totalActivos,
+      total_cerrados: totalCerrados,
+      promedio_duracion_minutos: getAverageDurationMinutes(rows),
       summary: {
         total_registros: rows.length,
         total_activos: totalActivos,
@@ -132,7 +142,7 @@ module.exports = async function handler(req, res) {
     });
   } catch (error) {
     return res.status(500).json({
-      error: 'No se pudo generar el informe de uso.',
+      error: 'No fue posible cargar los datos del informe en este momento.',
       detail: error.message,
       supabase: error.details || null,
     });

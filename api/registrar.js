@@ -1,5 +1,5 @@
 const { supabaseGet, supabasePost } = require('../lib/supabase');
-const { cleanRun, cleanDv } = require('../lib/rut');
+const { cleanRun, cleanDv, isValidRut } = require('../lib/rut');
 
 const CHILE_TIMEZONE = 'America/Santiago';
 const CAMPUS_OPTIONS = ['Vitacura', 'San Joaquín'];
@@ -18,6 +18,7 @@ const SPACE_OPTIONS = {
   'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
 };
 const RECORD_SELECT = 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado,created_at';
+const MIN_YEAR = 1990;
 
 function getChileParts(date = new Date()) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -95,6 +96,7 @@ module.exports = async function handler(req, res) {
     const tematica = String(body.tematica || '').trim();
     const observaciones = String(body.observaciones || '').trim();
     const espacio = String(body.espacio || '').trim();
+    const currentYear = new Date().getUTCFullYear();
 
     if (!campus) {
       return res.status(400).json({ error: 'Debes seleccionar un campus.' });
@@ -108,12 +110,16 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes ingresar el RUN.' });
     }
 
-    if (!/^\d+$/.test(run)) {
-      return res.status(400).json({ error: 'El RUN debe contener solo números.' });
+    if (!/^\d{7,8}$/.test(run)) {
+      return res.status(400).json({ error: 'Debes ingresar un RUN válido de 7 u 8 dígitos.' });
     }
 
     if (!dv || dv.length !== 1) {
       return res.status(400).json({ error: 'Debes ingresar un dígito verificador válido.' });
+    }
+
+    if (!isValidRut(run, dv)) {
+      return res.status(400).json({ error: 'El RUN y el dígito verificador no son válidos.' });
     }
 
     if (!carrera) {
@@ -122,6 +128,10 @@ module.exports = async function handler(req, res) {
 
     if (!anioIngreso || !/^\d{4}$/.test(anioIngreso)) {
       return res.status(400).json({ error: 'Debes ingresar un año de ingreso válido.' });
+    }
+
+    if (Number(anioIngreso) < MIN_YEAR || Number(anioIngreso) > currentYear) {
+      return res.status(400).json({ error: `Debes ingresar un año de ingreso entre ${MIN_YEAR} y ${currentYear}.` });
     }
 
     if (!actividad) {
@@ -186,7 +196,7 @@ module.exports = async function handler(req, res) {
     });
   } catch (error) {
     return res.status(error.status || 500).json({
-      error: 'No se pudo registrar la asistencia.',
+      error: 'No fue posible registrar la entrada.',
       detail: error.message,
       supabase: error.details || null,
     });
