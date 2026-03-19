@@ -4,139 +4,190 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CIAC Registro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <main class="app-shell">
-    <header class="hero">
-      <div>
-        <p class="eyebrow">MVP CIAC</p>
-        <h1>Registro CIAC</h1>
-        <p class="hero__text">Ingreso de RUN, autocompletado desde Supabase, registro de entrada/salida y exportación diaria a Excel.</p>
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">USM</div>
+        <div>
+          <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
+          <h1>CIAC Registro</h1>
+          <p class="brand-subtitle">Sistema de control diario de atenciones y uso de espacios CIAC.</p>
+        </div>
+      </div>
+
+      <div class="topbar-tools">
+        <label class="header-field" for="campus-header">
+          <span>Campus</span>
+          <select id="campus-header" aria-label="Campus principal">
+            <option value="">Selecciona campus</option>
+            <option value="Vitacura">Vitacura</option>
+            <option value="San Joaquín">San Joaquín</option>
+          </select>
+        </label>
+
+        <div class="header-meta" aria-live="polite">
+          <span class="header-meta__label">Fecha</span>
+          <strong id="current-date">--</strong>
+          <span class="header-meta__label">Hora</span>
+          <strong id="current-time">--</strong>
+        </div>
+
+        <button id="export-button" class="button button--header" type="button">Exportar Excel</button>
       </div>
     </header>
 
-    <section class="panel">
-      <div class="panel__header">
-        <div>
-          <h2>Registrar asistencia</h2>
-          <p>Completa el RUN y guarda la entrada o salida del estudiante.</p>
-        </div>
-        <button id="export-button" class="button button--secondary" type="button">Exportar Excel</button>
-      </div>
+    <div id="message" class="message" aria-live="polite"></div>
 
-      <div id="message" class="message" aria-live="polite"></div>
-
-      <form id="registro-form" class="form" novalidate>
-        <div class="grid grid--2">
-          <label>
-            <span>Campus</span>
-            <select id="campus" name="campus" required>
-              <option value="">Selecciona campus</option>
-              <option value="Vitacura">Vitacura</option>
-              <option value="San Joaquín">San Joaquín</option>
-            </select>
-          </label>
-
-          <label>
-            <span>Actividad</span>
-            <select id="actividad" name="actividad" required>
-              <option value="">Selecciona actividad</option>
-              <option value="Reforzamiento">Reforzamiento</option>
-              <option value="Consultoría">Consultoría</option>
-              <option value="Tutoría par integral">Tutoría par integral</option>
-              <option value="Mentoría">Mentoría</option>
-              <option value="Psicoeducativo individual">Psicoeducativo individual</option>
-              <option value="Psicoeducativo grupal">Psicoeducativo grupal</option>
-              <option value="Uso de sala">Uso de sala</option>
-            </select>
-          </label>
+    <section class="dashboard-layout">
+      <article class="panel panel--form">
+        <div class="panel__header panel__header--stacked">
+          <div>
+            <p class="section-tag">Registro diario</p>
+            <h2>Ingreso de estudiante</h2>
+            <p>Completa los antecedentes del alumno para registrar una nueva entrada.</p>
+          </div>
+          <div class="panel__pill">MVP operativo</div>
         </div>
 
-        <div class="grid grid--run">
-          <label>
-            <span>RUN</span>
-            <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números, sin puntos ni guion" required>
-          </label>
+        <form id="registro-form" class="form" novalidate>
+          <section class="form-section">
+            <div class="form-section__header">
+              <h3>Identificación del estudiante</h3>
+              <p>Consulta automática de datos según RUN.</p>
+            </div>
 
-          <label>
-            <span>DV</span>
-            <input id="dv" name="dv" type="text" maxlength="1" autocomplete="off" placeholder="K" required>
-          </label>
+            <div class="grid grid--run">
+              <label>
+                <span>RUN</span>
+                <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números" required>
+              </label>
+
+              <label>
+                <span>DV</span>
+                <input id="dv" name="dv" type="text" maxlength="1" autocomplete="off" placeholder="K" required>
+              </label>
+            </div>
+
+            <p id="autocomplete-status" class="hint">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
+
+            <div class="grid grid--2">
+              <label>
+                <span>Carrera</span>
+                <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Carrera del estudiante" required>
+              </label>
+
+              <label>
+                <span>Año de ingreso</span>
+                <input id="anio_ingreso" name="anio_ingreso" type="text" inputmode="numeric" autocomplete="off" placeholder="AAAA" maxlength="4" required>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="form-section__header">
+              <h3>Detalle de atención</h3>
+              <p>Selecciona la información académica y el espacio utilizado.</p>
+            </div>
+
+            <div class="grid grid--2">
+              <label>
+                <span>Campus</span>
+                <select id="campus" name="campus" required>
+                  <option value="">Selecciona campus</option>
+                  <option value="Vitacura">Vitacura</option>
+                  <option value="San Joaquín">San Joaquín</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Actividad</span>
+                <select id="actividad" name="actividad" required>
+                  <option value="">Selecciona actividad</option>
+                  <option value="Reforzamiento">Reforzamiento</option>
+                  <option value="Consultoría">Consultoría</option>
+                  <option value="Tutoría par integral">Tutoría par integral</option>
+                  <option value="Mentoría">Mentoría</option>
+                  <option value="Psicoeducativo individual">Psicoeducativo individual</option>
+                  <option value="Psicoeducativo grupal">Psicoeducativo grupal</option>
+                  <option value="Uso de sala">Uso de sala</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid grid--2">
+              <label>
+                <span>Temática</span>
+                <select id="tematica" name="tematica" required>
+                  <option value="">Selecciona temática</option>
+                  <option value="Matemática">Matemática</option>
+                  <option value="Química">Química</option>
+                  <option value="Física">Física</option>
+                  <option value="Programación">Programación</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Espacio</span>
+                <select id="espacio" name="espacio" required disabled>
+                  <option value="">Selecciona primero el campus</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              <span>Observaciones</span>
+              <textarea id="observaciones" name="observaciones" rows="4" placeholder="Información adicional del registro"></textarea>
+            </label>
+          </section>
+
+          <button id="submit-button" class="button" type="submit">Registrar entrada</button>
+        </form>
+      </article>
+
+      <article class="panel panel--table">
+        <div class="panel__header panel__header--table">
+          <div>
+            <p class="section-tag">Control diario</p>
+            <h2>Registros del día</h2>
+            <p>Listado actualizado de entradas y salidas registradas durante la jornada.</p>
+          </div>
+          <div class="table-summary">
+            <span id="records-count" class="badge">0 registros</span>
+            <span id="current-semester" class="badge badge--secondary">Semestre --</span>
+          </div>
         </div>
 
-        <p id="autocomplete-status" class="hint">Escribe 3 o más dígitos del RUN para consultar la matriz.</p>
-
-        <div class="grid grid--2">
-          <label>
-            <span>Carrera</span>
-            <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Se autocompleta desde Supabase" required>
-          </label>
-
-          <label>
-            <span>Año ingreso</span>
-            <input id="anio_ingreso" name="anio_ingreso" type="text" inputmode="numeric" autocomplete="off" placeholder="AAAA" maxlength="4" required>
-          </label>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>RUN</th>
+                <th>Alumno</th>
+                <th>Campus</th>
+                <th>Actividad</th>
+                <th>Temática</th>
+                <th>Espacio</th>
+                <th>Semestre</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="records-body">
+              <tr>
+                <td colspan="11" class="empty">No hay registros hoy.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
-        <div class="grid grid--2">
-          <label>
-            <span>Temática</span>
-            <input id="tematica" name="tematica" type="text" autocomplete="off" placeholder="Tema trabajado" required>
-          </label>
-
-          <label>
-            <span>Espacio</span>
-            <select id="espacio" name="espacio" required disabled>
-              <option value="">Selecciona primero el campus</option>
-            </select>
-          </label>
-        </div>
-
-        <label>
-          <span>Observaciones</span>
-          <textarea id="observaciones" name="observaciones" rows="4" placeholder="Observaciones del registro"></textarea>
-        </label>
-
-        <button id="submit-button" class="button" type="submit">Registrar</button>
-      </form>
-    </section>
-
-    <section class="panel">
-      <div class="panel__header panel__header--table">
-        <div>
-          <h2>Registros del día</h2>
-          <p>Datos cargados desde attendance_records.</p>
-        </div>
-        <span id="records-count" class="badge">0 registros</span>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Día</th>
-              <th>Hora entrada</th>
-              <th>Hora salida</th>
-              <th>RUN</th>
-              <th>DV</th>
-              <th>Carrera</th>
-              <th>Sede</th>
-              <th>Año ingreso</th>
-              <th>Actividad</th>
-              <th>Temática</th>
-              <th>Observaciones</th>
-              <th>Espacio</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody id="records-body">
-            <tr>
-              <td colspan="13" class="empty">No hay registros hoy.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      </article>
     </section>
   </main>
 
