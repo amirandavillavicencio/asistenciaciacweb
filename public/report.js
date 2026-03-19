@@ -126,20 +126,24 @@ async function exportReport() {
   exportButton.textContent = 'Exportando...';
 
   try {
-    const url = selectedCampus
-      ? `/api/export-report?campus=${encodeURIComponent(selectedCampus)}`
-      : '/api/export-report';
-    const response = await fetch(url);
+    const response = await fetch('/api/export-report');
+    const contentType = response.headers.get('Content-Type') || '';
+    const isJsonResponse = contentType.includes('application/json');
 
     if (!response.ok) {
-      const data = await response.json();
+      const data = isJsonResponse ? await response.json() : null;
       throw new Error(buildApiError(data, 'No se pudo exportar el informe.'));
+    }
+
+    if (isJsonResponse) {
+      const data = await response.json();
+      throw new Error(buildApiError(data, 'El endpoint no devolvió un archivo descargable.'));
     }
 
     const blob = await response.blob();
     const disposition = response.headers.get('Content-Disposition') || '';
     const match = disposition.match(/filename\*?=(?:UTF-8''|"?)([^";]+)"?/i);
-    const filename = match ? decodeURIComponent(match[1]) : 'informe_uso_ciac.xlsx';
+    const filename = match ? decodeURIComponent(match[1]) : 'reporte.csv';
     const link = document.createElement('a');
     const objectUrl = window.URL.createObjectURL(blob);
 
