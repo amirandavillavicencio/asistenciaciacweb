@@ -1,10 +1,11 @@
-const { supabaseGet } = require('../lib/supabase');
+const { supabaseGet, getSupabaseConfig } = require('../lib/supabase');
 
 const TABLE_PATH = 'attendance_records';
 const TABLE_SCHEMA = 'public';
 const CHILE_TIMEZONE = 'America/Santiago';
 const RECORD_SELECT = '*';
 const RECORD_LIMIT = 20;
+const ENDPOINT_NAME = 'api/report-data.js';
 
 function getChileDate(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -16,15 +17,15 @@ function getChileDate(date = new Date()) {
 }
 
 function buildEnvDiagnostic() {
-  const supabaseUrl = String(process.env.SUPABASE_URL || '').trim();
-  const projectRefMatch = supabaseUrl.match(/^https:\/\/([^.]+)\.supabase\.co/i);
+  const { url, hasUrl, hasAnonKey, hasServiceRoleKey } = getSupabaseConfig();
+  const projectRefMatch = url.match(/^https:\/\/([^.]+)\.supabase\.co/i);
 
   return {
-    SUPABASE_URL_present: Boolean(supabaseUrl),
-    SUPABASE_URL_host: supabaseUrl ? new URL(supabaseUrl).host : null,
+    NEXT_PUBLIC_SUPABASE_URL_present: hasUrl,
+    NEXT_PUBLIC_SUPABASE_URL_host: hasUrl ? new URL(url).host : null,
     SUPABASE_PROJECT_REF: projectRefMatch ? projectRefMatch[1] : null,
-    SUPABASE_ANON_KEY_present: Boolean(String(process.env.SUPABASE_ANON_KEY || '').trim()),
-    SUPABASE_SERVICE_ROLE_KEY_present: Boolean(String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY_present: hasAnonKey,
+    SUPABASE_SERVICE_ROLE_KEY_present: hasServiceRoleKey,
   };
 }
 
@@ -44,7 +45,7 @@ module.exports = async function handler(req, res) {
       limit: RECORD_LIMIT,
     };
     const diagnostic = {
-      endpoint: 'api/report-data.js',
+      endpoint: ENDPOINT_NAME,
       table: TABLE_PATH,
       schema: TABLE_SCHEMA,
       intended_filters: {
@@ -66,12 +67,17 @@ module.exports = async function handler(req, res) {
       ],
     };
 
+    console.log('[report-data] endpoint start', JSON.stringify({
+      endpoint: ENDPOINT_NAME,
+      hasUrl: diagnostic.env.NEXT_PUBLIC_SUPABASE_URL_present,
+      hasServiceRoleKey: diagnostic.env.SUPABASE_SERVICE_ROLE_KEY_present,
+    }));
     console.log('[report-data] Supabase diagnostic', JSON.stringify(diagnostic));
 
-    const registros = await supabaseGet(TABLE_PATH, query);
+    const registros = await supabaseGet(TABLE_PATH, query, { endpointName: ENDPOINT_NAME });
     const rowCount = Array.isArray(registros) ? registros.length : 0;
 
-    console.log('[report-data] Supabase rows returned', JSON.stringify({ rowCount }));
+    console.log('[report-data] Supabase rows returned', JSON.stringify({ endpoint: ENDPOINT_NAME, rowCount }));
 
     return res.status(200).json({
       registros: Array.isArray(registros) ? registros : [],
@@ -79,15 +85,18 @@ module.exports = async function handler(req, res) {
       rowCount,
     });
   } catch (error) {
-    console.error('[report-data] Supabase error', JSON.stringify({
+    console.error('[report-data] catch', JSON.stringify({
+      endpoint: ENDPOINT_NAME,
       message: error.message || 'No se pudo cargar el informe.',
       status: error.status || 500,
       details: error.details || null,
     }));
 
     return res.status(error.status || 500).json({
-      error: error.message || 'No se pudo cargar el informe.',
-      detail: error.details || null,
+      error: 'No se pudo cargar el informe.',
+      detail: error.message || 'Error desconocido.',
+      endpoint: ENDPOINT_NAME,
+      supabase: error.details || null,
     });
   }
 };
