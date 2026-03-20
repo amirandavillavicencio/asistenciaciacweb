@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
     const data = await supabaseRequest({
       path: 'students_autocomplete',
       query: {
-        select: 'run,dv,cohorte,carrera_ingreso,sede',
+        select: '*',
         run: `eq.${run}`,
         limit: '1',
       },
@@ -26,16 +26,8 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ alumno: null });
     }
 
-    const alumno = data[0];
-
     return res.status(200).json({
-      alumno: {
-        run: alumno.run || '',
-        dv: alumno.dv || '',
-        carrera: alumno.carrera_ingreso || '',
-        anio_ingreso: alumno.cohorte || '',
-        sede: alumno.sede || '',
-      },
+      alumno: data[0] || null,
     });
   } catch (error) {
     console.error('ERROR BUSCAR:', error);
