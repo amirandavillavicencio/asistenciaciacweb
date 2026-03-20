@@ -8,18 +8,18 @@ module.exports = async function handler(req, res) {
   try {
     const run = String(req.query.run || '').replace(/\D/g, '');
 
-    // No bloquear, solo no buscar si es muy corto
     if (run.length < 3) {
       return res.status(200).json({ alumno: null });
     }
 
     const data = await supabaseRequest({
-      path: 'students_matrix',
+      path: 'students_autocomplete',
       query: {
         select: 'rut,dv,cohorte,carrera_ingreso,sede',
         rut: `eq.${run}`,
         limit: '1',
       },
+      endpointName: 'api/buscar.js',
     });
 
     if (!Array.isArray(data) || data.length === 0) {
@@ -40,7 +40,6 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     console.error('ERROR BUSCAR:', error);
 
-    // 👇 clave: NO romper frontend
     return res.status(200).json({
       alumno: null,
     });
