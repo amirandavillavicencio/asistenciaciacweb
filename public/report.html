@@ -21,12 +21,11 @@
         <div class="report-panel__actions">
           <span id="report-date" class="summary-chip summary-chip--secondary">Fecha --</span>
           <span id="report-campus" class="summary-chip summary-chip--secondary">Campus: Todos</span>
-          <button id="report-export-button" class="button" type="button" disabled>Exportar Excel</button>
+          <button id="report-export-button" class="button" type="button">Exportar Excel</button>
         </div>
       </div>
 
       <div id="report-message" class="message" aria-live="polite"></div>
-      <p class="hint">Este informe requiere una clave fija antes de mostrar los registros o habilitar la exportación a Excel.</p>
 
       <section class="report-filters" aria-label="Filtros del informe">
         <label class="field report-filters__field">
@@ -144,7 +143,7 @@
             </thead>
             <tbody id="report-records-body">
               <tr>
-                <td colspan="9" class="empty">Debes ingresar la clave para cargar el informe.</td>
+                <td colspan="9" class="empty">Cargando registros...</td>
               </tr>
             </tbody>
           </table>
@@ -152,24 +151,6 @@
       </section>
     </section>
   </main>
-
-
-
-  <div id="report-access-overlay" class="report-access-overlay" role="dialog" aria-modal="true" aria-labelledby="report-access-title">
-    <div class="report-access-card">
-      <p class="section-tag">Acceso protegido</p>
-      <h2 id="report-access-title">Ingresa la clave del informe</h2>
-      <p>Debes ingresar la clave correcta para ver el informe completo y habilitar el botón de exportación.</p>
-      <form id="report-access-form" class="report-access-form">
-        <label class="field">
-          <span>Clave de acceso</span>
-          <input id="report-access-password" name="password" type="password" autocomplete="current-password" required>
-        </label>
-        <p id="report-access-error" class="message message--error is-visible" hidden></p>
-        <button id="report-access-submit" class="button" type="submit">Ingresar</button>
-      </form>
-    </div>
-  </div>
 
   <script src="/report.js" defer></script>
 </body>

@@ -1,6 +1,5 @@
 const XLSX = require('xlsx');
 const { supabaseGet } = require('../lib/supabase');
-const { requireReportAccess } = require('../lib/report-auth');
 
 const CHILE_TIMEZONE = 'America/Santiago';
 const RECORD_SELECT = 'dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,estado';
@@ -48,8 +47,6 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    requireReportAccess(req);
-
     const dia = getChileDate();
     const campus = String(req.query?.campus || '').trim();
     const motivo = String(req.query?.motivo || req.query?.tematica || '').trim();

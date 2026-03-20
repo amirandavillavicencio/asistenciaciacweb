@@ -13,19 +13,12 @@ const activityTotal = document.getElementById('activity-total');
 const campusTotal = document.getElementById('campus-total');
 const reportHighlights = document.getElementById('report-highlights');
 const hourlyChart = document.getElementById('hourly-chart');
-const accessOverlay = document.getElementById('report-access-overlay');
-const accessForm = document.getElementById('report-access-form');
-const accessInput = document.getElementById('report-access-password');
-const accessError = document.getElementById('report-access-error');
-const accessButton = document.getElementById('report-access-submit');
 const campusFilter = document.getElementById('report-filter-campus');
 const topicFilter = document.getElementById('report-filter-topic');
 const activityFilter = document.getElementById('report-filter-activity');
 const clearFiltersButton = document.getElementById('report-clear-filters');
 
-const REPORT_AUTH_STORAGE_KEY = 'ciac-report-authenticated';
 const params = new URLSearchParams(window.location.search);
-const REPORT_AUTH_HEADER = 'x-report-password';
 const DEFAULT_FILTERS = {
   campus: params.get('campus') || '',
   topic: params.get('motivo') || params.get('tematica') || '',
@@ -33,8 +26,6 @@ const DEFAULT_FILTERS = {
 };
 
 window.__REPORT_RECORDS__ = [];
-let reportPassword = sessionStorage.getItem(REPORT_AUTH_STORAGE_KEY) || '';
-let reportUnlocked = Boolean(reportPassword);
 let activeFilters = { ...DEFAULT_FILTERS };
 
 function escapeHtml(value) {
@@ -62,50 +53,6 @@ function buildApiError(data, fallback) {
   }
 
   return data.error || fallback;
-}
-
-function getAuthHeaders() {
-  return reportPassword
-    ? { [REPORT_AUTH_HEADER]: reportPassword }
-    : {};
-}
-
-function setAuthenticatedState(password) {
-  reportPassword = password;
-  reportUnlocked = Boolean(password);
-
-  if (password) {
-    sessionStorage.setItem(REPORT_AUTH_STORAGE_KEY, password);
-  } else {
-    sessionStorage.removeItem(REPORT_AUTH_STORAGE_KEY);
-  }
-
-  if (exportButton) {
-    exportButton.disabled = !reportUnlocked;
-  }
-}
-
-function openAccessOverlay() {
-  accessOverlay.hidden = false;
-  document.body.classList.add('report-locked');
-  exportButton.disabled = true;
-  window.setTimeout(() => accessInput?.focus(), 50);
-}
-
-function closeAccessOverlay() {
-  accessOverlay.hidden = true;
-  document.body.classList.remove('report-locked');
-  exportButton.disabled = !reportUnlocked;
-}
-
-function showAccessError(message) {
-  accessError.textContent = message;
-  accessError.hidden = false;
-}
-
-function clearAccessError() {
-  accessError.textContent = '';
-  accessError.hidden = true;
 }
 
 function formatDateLabel(date = new Date()) {
@@ -451,22 +398,6 @@ function getActiveFilterSummary() {
   return labels.length ? labels.join(' · ') : 'Todos';
 }
 
-function renderBlockedState() {
-  reportBody.innerHTML = '<tr><td colspan="9" class="empty">Debes ingresar la clave de acceso para ver este informe.</td></tr>';
-  reportCount.textContent = '0';
-  reportOpenCount.textContent = '0';
-  reportClosedCount.textContent = '0';
-  reportDurationAverage.textContent = '—';
-  reportCampus.textContent = `Filtros: ${getActiveFilterSummary()}`;
-  reportDate.textContent = `Fecha ${formatDateLabel()}`;
-  createBars(activityBars, {}, 'Acceso bloqueado hasta ingresar la clave.');
-  createBars(campusBars, {}, 'Acceso bloqueado hasta ingresar la clave.');
-  activityTotal.textContent = '0 categorías';
-  campusTotal.textContent = '0 sedes';
-  renderHighlights([]);
-  drawHourlyChart([]);
-}
-
 function renderRecords(records) {
   window.__REPORT_RECORDS__ = Array.isArray(records) ? records : [];
   updateFilterOptions(window.__REPORT_RECORDS__);
@@ -514,21 +445,6 @@ function applyFilters() {
   renderRecords(window.__REPORT_RECORDS__ || []);
 }
 
-async function verifyPassword(password) {
-  const response = await fetch('/api/report-auth', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
-  });
-  const data = await response.json();
-
-  if (!response.ok || !data.authorized) {
-    throw new Error(buildApiError(data, 'Clave incorrecta'));
-  }
-
-  return true;
-}
-
 function buildReportQuery() {
   const query = new URLSearchParams();
 
@@ -547,61 +463,33 @@ function buildReportQuery() {
 
 async function loadRecords() {
   clearMessage();
-
-  if (!reportUnlocked) {
-    renderBlockedState();
-    openAccessOverlay();
-    return;
-  }
+  reportBody.innerHTML = '<tr><td colspan="9" class="empty">Cargando registros...</td></tr>';
 
   const query = buildReportQuery();
-  const response = await fetch(`/api/report-data${query ? `?${query}` : ''}`, {
-    headers: getAuthHeaders(),
-  });
+  const response = await fetch(`/api/report-data${query ? `?${query}` : ''}`);
   const data = await response.json();
 
   if (!response.ok) {
-    if (response.status === 401) {
-      setAuthenticatedState('');
-      renderBlockedState();
-      openAccessOverlay();
-      throw new Error('Clave incorrecta');
-    }
-
     throw new Error(buildApiError(data, 'No se pudieron cargar los registros del informe.'));
   }
 
-  closeAccessOverlay();
   renderRecords(data.registros || []);
 }
 
 async function exportReport() {
   clearMessage();
-
-  if (!reportUnlocked) {
-    openAccessOverlay();
-    showMessage('Debes ingresar la clave antes de exportar el informe.', 'error');
-    return;
-  }
-
   exportButton.disabled = true;
   exportButton.textContent = 'Exportando...';
 
   try {
     const query = buildReportQuery();
-    const response = await fetch(`/api/export-report${query ? `?${query}` : ''}`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(`/api/export-report${query ? `?${query}` : ''}`);
     const contentType = response.headers.get('Content-Type') || '';
     const isJsonResponse = contentType.includes('application/json');
 
     if (!response.ok) {
       const data = isJsonResponse ? await response.json() : null;
-      if (response.status === 401) {
-        setAuthenticatedState('');
-        openAccessOverlay();
-      }
-      throw new Error(buildApiError(data, response.status === 401 ? 'Clave incorrecta' : 'No se pudo exportar el informe.'));
+      throw new Error(buildApiError(data, 'No se pudo exportar el informe.'));
     }
 
     const blob = await response.blob();
@@ -621,7 +509,7 @@ async function exportReport() {
   } catch (error) {
     showMessage(error.message || 'No se pudo exportar el informe.', 'error');
   } finally {
-    exportButton.disabled = !reportUnlocked;
+    exportButton.disabled = false;
     exportButton.textContent = 'Exportar Excel';
   }
 }
@@ -648,40 +536,10 @@ clearFiltersButton?.addEventListener('click', () => {
   });
 });
 
-accessForm?.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  clearAccessError();
-  accessButton.disabled = true;
-  accessButton.textContent = 'Validando...';
-
-  try {
-    const password = accessInput.value;
-    await verifyPassword(password);
-    setAuthenticatedState(password);
-    accessForm.reset();
-    await loadRecords();
-    showMessage('Acceso concedido al informe.', 'success');
-  } catch (error) {
-    setAuthenticatedState('');
-    renderBlockedState();
-    openAccessOverlay();
-    showAccessError('Clave incorrecta');
-    showMessage('Clave incorrecta', 'error');
-  } finally {
-    accessButton.disabled = false;
-    accessButton.textContent = 'Ingresar';
-  }
-});
-
 exportButton.addEventListener('click', exportReport);
 window.addEventListener('resize', () => drawHourlyChart(getVisibleRecords(window.__REPORT_RECORDS__ || [])));
 
 syncFilterControls();
-renderBlockedState();
-if (reportUnlocked) {
-  loadRecords().catch((error) => {
-    showMessage(error.message || 'No se pudieron cargar los registros del informe.', 'error');
-  });
-} else {
-  openAccessOverlay();
-}
+loadRecords().catch((error) => {
+  showMessage(error.message || 'No se pudieron cargar los registros del informe.', 'error');
+});
