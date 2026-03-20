@@ -15,8 +15,8 @@ module.exports = async function handler(req, res) {
     const data = await supabaseRequest({
       path: 'students_autocomplete',
       query: {
-        select: 'rut,dv,cohorte,carrera_ingreso,sede',
-        rut: `eq.${run}`,
+        select: 'run,dv,cohorte,carrera_ingreso,sede',
+        run: `eq.${run}`,
         limit: '1',
       },
       endpointName: 'api/buscar.js',
@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       alumno: {
-        run: alumno.rut || '',
+        run: alumno.run || '',
         dv: alumno.dv || '',
         carrera: alumno.carrera_ingreso || '',
         anio_ingreso: alumno.cohorte || '',
