@@ -59,7 +59,26 @@ function buildApiError(data, fallback) {
   if (!data || typeof data !== 'object') {
     return fallback;
   }
+
+  if (data.detail) {
+    return `${data.error || fallback}: ${data.detail}`;
+  }
+
   return data.error || fallback;
+}
+
+async function parseJsonResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!contentType.includes('application/json')) {
+    return null;
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
 
 function getSelectedCampus() {
@@ -211,13 +230,13 @@ function renderRecords(records) {
 
 async function loadTodayRecords() {
   const response = await fetch('/api/registros-hoy');
-  const data = await response.json();
+  const data = await parseJsonResponse(response);
 
   if (!response.ok) {
     throw new Error(buildApiError(data, 'No se pudieron cargar los registros del día.'));
   }
 
-  renderRecords(data.registros || []);
+  renderRecords(data?.registros || []);
 }
 
 async function lookupStudent(runValue) {

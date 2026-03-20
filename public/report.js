@@ -52,7 +52,25 @@ function buildApiError(data, fallback) {
     return fallback;
   }
 
+  if (data.detail) {
+    return `${data.error || fallback}: ${data.detail}`;
+  }
+
   return data.error || fallback;
+}
+
+async function parseJsonResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!contentType.includes('application/json')) {
+    return null;
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
 
 function formatDateLabel(date = new Date()) {
@@ -467,13 +485,13 @@ async function loadRecords() {
 
   const query = buildReportQuery();
   const response = await fetch(`/api/report-data${query ? `?${query}` : ''}`);
-  const data = await response.json();
+  const data = await parseJsonResponse(response);
 
   if (!response.ok) {
     throw new Error(buildApiError(data, 'No se pudieron cargar los registros del informe.'));
   }
 
-  renderRecords(data.registros || []);
+  renderRecords(data?.registros || []);
 }
 
 async function exportReport() {
