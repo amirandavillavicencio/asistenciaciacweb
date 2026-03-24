@@ -466,6 +466,13 @@ async function downloadExport() {
 
 function openUsageReport() {
   clearMessage();
+  const claveInforme = window.prompt('Ingresa la clave para abrir Informe:');
+
+  if (claveInforme !== 'Ciac.2011') {
+    window.alert('Clave incorrecta');
+    return;
+  }
+
   const selectedCampus = getSelectedCampus();
   const reportUrl = new URL('/report.html', window.location.origin);
 
