@@ -34,11 +34,13 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes indicar un registro válido.' });
     }
 
-    const { hora, timestamp } = getFechaHoraCL();
-    const dia = String(timestamp).slice(0, 10);
+    const { fecha, hora, timestampUTC } = getFechaHoraCL();
+    const dia = fecha;
 
     console.log('Hora Chile:', hora);
-    console.log('Timestamp:', timestamp);
+    console.log('Día Chile:', dia);
+    console.log('Timestamp UTC salida:', timestampUTC);
+
     const existing = await supabaseGet('attendance_records', {
       select: RECORD_SELECT,
       id: `eq.${id}`,
@@ -60,7 +62,7 @@ module.exports = async function handler(req, res) {
       'attendance_records',
       { id: `eq.${id}`, select: RECORD_SELECT },
       {
-        hora_salida: timestamp,
+        hora_salida: timestampUTC,
         estado: 'Fuera',
       },
     );
