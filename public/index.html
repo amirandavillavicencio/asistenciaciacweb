@@ -29,6 +29,10 @@
               <span>Hora</span>
               <strong id="current-time">--</strong>
             </div>
+            <div>
+              <span>Semestre</span>
+              <strong id="current-semester">--</strong>
+            </div>
           </div>
         </div>
 
@@ -53,6 +57,7 @@
 
         <div class="topbar__actions">
           <button id="export-button">Exportar CSV</button>
+          <button id="export-report-button" type="button">Ver informe</button>
         </div>
 
       </div>
@@ -77,6 +82,7 @@
             <input id="run" placeholder="RUN" required>
             <input id="dv" placeholder="DV" maxlength="1" required>
           </div>
+          <p id="autocomplete-status" class="form-helper">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
 
           <div class="grid">
             <input id="carrera" placeholder="Carrera" required>
@@ -137,6 +143,7 @@
               <th>Actividad</th>
               <th>Temática</th>
               <th>Espacio</th>
+              <th>Semestre</th>
               <th>Entrada</th>
               <th>Salida</th>
               <th>Estado</th>
@@ -146,7 +153,7 @@
 
           <tbody id="records-body">
             <tr>
-              <td colspan="10">No hay registros hoy</td>
+              <td colspan="11">No hay registros hoy</td>
             </tr>
           </tbody>
         </table>
