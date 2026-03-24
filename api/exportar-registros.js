@@ -170,7 +170,8 @@ module.exports = async function handler(req, res) {
     }
 
     const rows = Array.isArray(registros) ? registros : [];
-    console.log('Primer registro:', JSON.stringify(rows?.[0] ?? null, null, 2));
+    console.log('Total registros encontrados:', rows.length);
+    console.log('Primer registro raw:', JSON.stringify(rows[0] ?? null, null, 2));
     const csvLines = [
       CSV_HEADERS.map(escapeCsvCell).join(';'),
       ...rows.map((record) => buildCsvRow(record)),
