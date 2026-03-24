@@ -2,11 +2,8 @@ const fetch = require('node-fetch');
 const { jsPDF } = require('jspdf');
 const autoTable = require('jspdf-autotable').default;
 
-const { supabaseGet } = require('../lib/supabase');
 const { buildAnalytics, getMonthLabel } = require('../lib/reporting');
-const { buildPeriod, applyCommonFilters } = require('../lib/period');
 
-const RECORD_SELECT = 'created_at,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,estado,espacio,observaciones';
 const CHILE_TIMEZONE = 'America/Santiago';
 const LOGO_URL = 'https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png';
 const MARGIN = 20;
@@ -28,6 +25,14 @@ function formatDateTime(date = new Date()) {
   }).format(date);
 }
 
+function formatRecordDateTime(value) {
+  const date = toDate(value);
+  if (!date) {
+    return '—';
+  }
+  return formatDateTime(date);
+}
+
 function formatDurationMinutes(minutes) {
   if (!minutes) return 'N/D';
   return `${Math.round(minutes)} min`;
@@ -46,7 +51,7 @@ function currentSemesterLabel(now = new Date()) {
 }
 
 function periodLabel(period) {
-  if (period.month === 'all') return String(period.year);
+  if (period.month === 'all') return 'Todos los meses';
   return `${getMonthLabel(period.month)} ${period.year}`;
 }
 
@@ -267,11 +272,40 @@ async function fetchLogoDataUrl() {
   }
 }
 
-function generatePdf({ period, filters, analytics, records, generatedAt, logoDataUrl }) {
+function normalizePayload(payload = {}) {
+  const filters = payload.filters && typeof payload.filters === 'object' ? payload.filters : {};
+  const monthRaw = filters.month ?? 'all';
+  const month = monthRaw === 'all' ? 'all' : Number(monthRaw);
+  const year = Number(filters.year) || new Date().getFullYear();
+  const safeRecords = Array.isArray(payload.records) ? payload.records : [];
+  const safeMetrics = payload.metrics && typeof payload.metrics === 'object' ? payload.metrics : {};
+
+  return {
+    filters: {
+      campus: String(filters.campus || '').trim(),
+      topic: String(filters.topic || '').trim(),
+      activity: String(filters.activity || '').trim(),
+    },
+    period: {
+      month: month === 'all' || (Number.isInteger(month) && month >= 1 && month <= 12) ? month : 'all',
+      year,
+      periodLabel: String(filters.periodLabel || '').trim(),
+    },
+    metrics: {
+      totalRecords: Number(safeMetrics.totalRecords) || safeRecords.length,
+      activeEntries: Number(safeMetrics.activeEntries) || 0,
+      completedExits: Number(safeMetrics.completedExits) || 0,
+      averageDuration: String(safeMetrics.averageDuration || '—'),
+    },
+    records: safeRecords,
+  };
+}
+
+function generatePdf({ period, filters, metrics: summaryMetrics, analytics, records, generatedAt, logoDataUrl }) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const width = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const metrics = buildExtendedMetrics(records, analytics);
+  const extendedMetrics = buildExtendedMetrics(records, analytics);
 
   // Página 1: Portada
   doc.setFillColor(255, 255, 255);
@@ -291,7 +325,7 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
 
   doc.setFontSize(12);
   doc.text(`Campus: ${filters.campus || 'Todos los campus'}`, width / 2, 108, { align: 'center' });
-  doc.text(`Período: ${periodLabel(period)}`, width / 2, 116, { align: 'center' });
+  doc.text(`Período: ${period.periodLabel || periodLabel(period)}`, width / 2, 116, { align: 'center' });
   doc.text(`Fecha de generación: ${generatedAt}`, width / 2, 124, { align: 'center' });
   doc.text(`Semestre en curso: ${currentSemesterLabel()}`, width / 2, 132, { align: 'center' });
 
@@ -303,11 +337,11 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
   doc.text('Resumen Ejecutivo', MARGIN, 30);
 
   const summaryRows = [
-    ['Total de atenciones registradas', analytics.executive.total],
-    ['Total de estudiantes únicos (RUN)', analytics.executive.uniqueStudents],
-    ['Promedio de atenciones por día hábil', analytics.executive.averagePerBusinessDay],
-    ['Tiempo promedio de permanencia', formatDurationMinutes(analytics.executive.averageDurationMinutes)],
-    ['Campus con mayor actividad', metrics.campusWinner],
+    ['Total registros', summaryMetrics.totalRecords],
+    ['Entradas activas', summaryMetrics.activeEntries],
+    ['Salidas completadas', summaryMetrics.completedExits],
+    ['Permanencia promedio', summaryMetrics.averageDuration || formatDurationMinutes(analytics.executive.averageDurationMinutes)],
+    ['Campus con mayor actividad', analytics.executive.campusDistribution[0]?.label || 'N/D'],
   ];
 
   autoTable(doc, {
@@ -363,7 +397,7 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
     startY: 36,
     margin: { left: MARGIN, right: 114 },
     head: [['Día de semana', 'N° atenciones']],
-    body: metrics.weekdayRows,
+    body: extendedMetrics.weekdayRows,
     styles: { font: 'helvetica', fontSize: 9 },
     headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
     alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -373,7 +407,7 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
     startY: 36,
     margin: { left: 102, right: MARGIN },
     head: [['Rango horario', 'N° atenciones']],
-    body: metrics.hourRows,
+    body: extendedMetrics.hourRows,
     styles: { font: 'helvetica', fontSize: 9 },
     headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
     alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -381,9 +415,36 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.text(`Día con mayor asistencia: ${metrics.maxAttendanceDay[0]} (${metrics.maxAttendanceDay[1]})`, MARGIN, 170);
+  doc.text(`Día con mayor asistencia: ${extendedMetrics.maxAttendanceDay[0]} (${extendedMetrics.maxAttendanceDay[1]})`, MARGIN, 170);
 
-  // Página 5: Estudiantes
+  // Página 5: Tabla consolidada
+  doc.addPage();
+  doc.setTextColor(0, 51, 102);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Tabla Consolidada', MARGIN, 30);
+
+  autoTable(doc, {
+    startY: 36,
+    margin: { left: MARGIN, right: MARGIN },
+    head: [['RUN', 'DV', 'Carrera', 'Sede', 'Año Ingreso', 'Temática', 'Estado', 'Hora Entrada', 'Hora Salida']],
+    body: records.map((record) => [
+      record?.run || '—',
+      record?.dv || '—',
+      record?.carrera || '—',
+      record?.sede || '—',
+      record?.anio_ingreso || '—',
+      record?.tematica || '—',
+      record?.estado || (record?.hora_salida ? 'salida' : 'entrada'),
+      formatRecordDateTime(record?.hora_entrada),
+      formatRecordDateTime(record?.hora_salida),
+    ]),
+    styles: { font: 'helvetica', fontSize: 7, cellPadding: 1.8 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255], fontSize: 7 },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+
+  // Página 6: Estudiantes
   doc.addPage();
   doc.setTextColor(0, 51, 102);
   doc.setFont('helvetica', 'bold');
@@ -394,7 +455,7 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
     startY: 36,
     margin: { left: MARGIN, right: MARGIN },
     head: [['Carrera', 'N° atenciones', '% del total']],
-    body: metrics.topCareers,
+    body: extendedMetrics.topCareers,
     styles: { font: 'helvetica', fontSize: 9 },
     headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
     alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -404,7 +465,7 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
     startY: doc.lastAutoTable.finalY + 8,
     margin: { left: MARGIN, right: MARGIN },
     head: [['Año ingreso', 'N° estudiantes únicos', 'N° atenciones']],
-    body: metrics.yearsDistribution,
+    body: extendedMetrics.yearsDistribution,
     styles: { font: 'helvetica', fontSize: 9 },
     headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
     alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -412,9 +473,9 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.text(`Estudiantes recurrentes (>1 visita): ${metrics.recurrentCount}`, MARGIN, Math.min(doc.lastAutoTable.finalY + 10, 275));
+  doc.text(`Estudiantes recurrentes (>1 visita): ${extendedMetrics.recurrentCount}`, MARGIN, Math.min(doc.lastAutoTable.finalY + 10, 275));
 
-  // Página 6: Espacios
+  // Página 7: Espacios
   doc.addPage();
   doc.setTextColor(0, 51, 102);
   doc.setFont('helvetica', 'bold');
@@ -425,7 +486,7 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
     startY: 36,
     margin: { left: MARGIN, right: MARGIN },
     head: [['Espacio', 'N° usos', '% del total', 'Horario de mayor uso']],
-    body: metrics.spacesRows,
+    body: extendedMetrics.spacesRows,
     styles: { font: 'helvetica', fontSize: 9 },
     headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
     alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -441,25 +502,11 @@ function generatePdf({ period, filters, analytics, records, generatedAt, logoDat
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido.' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido.' });
 
   try {
-    const period = buildPeriod(req.query?.year, req.query?.month);
-    const query = {
-      select: RECORD_SELECT,
-      order: 'hora_entrada.asc',
-      and: `(dia.gte.${period.start},dia.lte.${period.end})`,
-      limit: 10000,
-    };
-    const filters = applyCommonFilters(query, req.query);
-
-    let registros;
-    try {
-      registros = await supabaseGet('attendance_records', query);
-    } catch (error) {
-      throw new Error(error?.message || 'Error consultando registros para exportación PDF.');
-    }
-    const records = Array.isArray(registros) ? registros : [];
+    const payload = normalizePayload(req.body);
+    const { period, filters, metrics, records } = payload;
     const analytics = buildAnalytics(records);
     const generatedAt = formatDateTime(new Date());
     const logoDataUrl = await fetchLogoDataUrl();
@@ -467,6 +514,7 @@ module.exports = async function handler(req, res) {
     const pdfBuffer = generatePdf({
       period,
       filters,
+      metrics,
       analytics,
       records,
       generatedAt,
