@@ -20,6 +20,36 @@ function getChileDate(date = new Date()) {
   }).format(date);
 }
 
+function extractRunForSearch(value) {
+  const raw = String(value || '').trim().toUpperCase();
+
+  if (!raw) {
+    return '';
+  }
+
+  const withoutDots = raw.replace(/\./g, '').replace(/\s+/g, '');
+
+  if (withoutDots.includes('-')) {
+    const [runPart] = withoutDots.split('-');
+    return cleanRun(runPart);
+  }
+
+  const compact = withoutDots.replace(/-/g, '');
+
+  if (/^\d+$/.test(compact)) {
+    if (compact.length >= 9) {
+      return compact.slice(0, -1);
+    }
+    return compact;
+  }
+
+  if (/^\d+[0-9K]$/.test(compact)) {
+    return cleanRun(compact.slice(0, -1));
+  }
+
+  return cleanRun(compact);
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido.' });
@@ -27,9 +57,9 @@ module.exports = async function handler(req, res) {
 
   try {
     const body = parseBody(req);
-    const run = cleanRun(body.run || '');
+    const run = extractRunForSearch(body.run || '');
 
-    if (!run) {
+    if (!/^\d{7,8}$/.test(run)) {
       return res.status(400).json({ error: 'Debes indicar un RUN válido.' });
     }
 

@@ -50,6 +50,44 @@ function normalizarRut(valor) {
     .toUpperCase();
 }
 
+function normalizarRutBusqueda(valor) {
+  const raw = String(valor || '').trim().toUpperCase();
+  const limpio = raw.replace(/\./g, '').replace(/\s+/g, '');
+
+  if (!limpio) {
+    return { run: '', dv: null };
+  }
+
+  if (limpio.includes('-')) {
+    const [runPart, dvPart = ''] = limpio.split('-');
+    const run = runPart.replace(/\D/g, '');
+    const dv = dvPart.replace(/[^0-9K]/g, '').slice(0, 1) || null;
+    return { run, dv };
+  }
+
+  const compactado = limpio.replace(/-/g, '');
+
+  if (/^\d+$/.test(compactado)) {
+    if (compactado.length >= 9) {
+      return {
+        run: compactado.slice(0, -1),
+        dv: compactado.slice(-1),
+      };
+    }
+
+    return { run: compactado, dv: null };
+  }
+
+  if (/^\d+[0-9K]$/.test(compactado)) {
+    return {
+      run: compactado.slice(0, -1),
+      dv: compactado.slice(-1),
+    };
+  }
+
+  return { run: '', dv: null };
+}
+
 function splitRut(valor) {
   const normalizado = normalizarRut(valor).replace(/[^0-9K]/g, '');
 
@@ -213,6 +251,18 @@ function getRunLabel(item) {
   return [item.run, item.dv].filter(Boolean).join('-') || '—';
 }
 
+function formatRut(run, dv) {
+  const cleanRun = sanitizeRun(run);
+  const cleanDv = sanitizeDv(dv);
+
+  if (!cleanRun) {
+    return '—';
+  }
+
+  const runConPuntos = cleanRun.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return cleanDv ? `${runConPuntos}-${cleanDv}` : runConPuntos;
+}
+
 function getVisibleRecords(records) {
   if (!activeCampusFilter) {
     return records;
@@ -241,7 +291,7 @@ function renderResultadoBusquedaSalida(registro) {
     return;
   }
 
-  const runNormalizado = splitRut(`${registro.run || ''}${registro.dv || ''}`)?.rut || getRunLabel(registro);
+  const runNormalizado = formatRut(registro.run, registro.dv);
   const entrada = formatDateTime(registro.hora_entrada);
 
   rutSalidaResult.innerHTML = `
@@ -562,14 +612,10 @@ rutSalidaSearchButton?.addEventListener('click', async () => {
     return;
   }
 
-  if (!isValidRutInput(rawRut)) {
-    showRutSalidaMessage('Ingresa un RUT válido para buscar.', 'error');
-    return;
-  }
+  const parsedRut = normalizarRutBusqueda(rawRut);
+  const runBusqueda = sanitizeRun(parsedRut.run);
 
-  const parsedRut = splitRut(rawRut);
-
-  if (!parsedRut) {
+  if (!/^\d{7,8}$/.test(runBusqueda)) {
     showRutSalidaMessage('Ingresa un RUT válido para buscar.', 'error');
     return;
   }
@@ -581,7 +627,7 @@ rutSalidaSearchButton?.addEventListener('click', async () => {
   }
 
   try {
-    const data = await buscarRegistroActivoPorRut(parsedRut.run);
+    const data = await buscarRegistroActivoPorRut(runBusqueda);
 
     if (!data?.found) {
       showRutSalidaMessage('No hay un ingreso activo para este RUT hoy.');
