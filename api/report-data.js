@@ -1,5 +1,5 @@
 const { supabaseGet } = require('../lib/supabase');
-const { buildAnalytics } = require('../lib/reporting');
+const { buildAnalytics, buildAttendanceRanking } = require('../lib/reporting');
 const { buildPeriod, applyCommonFilters } = require('../lib/period');
 
 const RECORD_SELECT = 'id,created_at,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,estado,espacio';
@@ -24,6 +24,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       registros: Array.isArray(registros) ? registros : [],
       analytics: buildAnalytics(registros),
+      ranking: buildAttendanceRanking(registros, 10),
       period,
       filters,
     });

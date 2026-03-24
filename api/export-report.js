@@ -1,8 +1,12 @@
 const fetch = require('node-fetch');
 const { jsPDF } = require('jspdf');
 const autoTable = require('jspdf-autotable').default;
+const { supabaseGet } = require('../lib/supabase');
+const { buildPeriod, applyCommonFilters } = require('../lib/period');
 
-const { buildAnalytics, getMonthLabel } = require('../lib/reporting');
+const { buildAnalytics, buildAttendanceRanking, getMonthLabel } = require('../lib/reporting');
+
+const RECORD_SELECT = 'id,created_at,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,estado,espacio';
 
 const CHILE_TIMEZONE = 'America/Santiago';
 const LOGO_URL = 'https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png';
@@ -285,6 +289,7 @@ function normalizePayload(payload = {}) {
       campus: String(filters.campus || '').trim(),
       topic: String(filters.topic || '').trim(),
       activity: String(filters.activity || '').trim(),
+      rut: String(filters.rut || filters.run || '').trim(),
     },
     period: {
       month: month === 'all' || (Number.isInteger(month) && month >= 1 && month <= 12) ? month : 'all',
@@ -297,11 +302,33 @@ function normalizePayload(payload = {}) {
       completedExits: Number(safeMetrics.completedExits) || 0,
       averageDuration: String(safeMetrics.averageDuration || '—'),
     },
+    ranking: Array.isArray(payload.ranking) ? payload.ranking : [],
     records: safeRecords,
   };
 }
 
-function generatePdf({ period, filters, metrics: summaryMetrics, analytics, records, generatedAt, logoDataUrl }) {
+async function fetchRecordsByFilters(period, filters) {
+  const query = {
+    select: RECORD_SELECT,
+    order: 'hora_entrada.desc',
+    and: `(dia.gte.${period.start},dia.lte.${period.end})`,
+    limit: 5000,
+  };
+
+  applyCommonFilters(query, {
+    campus: filters.campus,
+    motivo: filters.topic,
+    actividad: filters.activity,
+    rut: filters.rut,
+  });
+
+  const registros = await supabaseGet('attendance_records', query, { endpointName: 'api/export-report.js' });
+  return Array.isArray(registros) ? registros : [];
+}
+
+function generatePdf({
+  period, filters, metrics: summaryMetrics, analytics, ranking, records, generatedAt, logoDataUrl,
+}) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const width = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -325,7 +352,7 @@ function generatePdf({ period, filters, metrics: summaryMetrics, analytics, reco
 
   doc.setFontSize(12);
   doc.text(`Campus: ${filters.campus || 'Todos los campus'}`, width / 2, 108, { align: 'center' });
-  doc.text(`Período: ${period.periodLabel || periodLabel(period)}`, width / 2, 116, { align: 'center' });
+  doc.text(`Período: ${period.periodLabel || period.label || periodLabel(period)}`, width / 2, 116, { align: 'center' });
   doc.text(`Fecha de generación: ${generatedAt}`, width / 2, 124, { align: 'center' });
   doc.text(`Semestre en curso: ${currentSemesterLabel()}`, width / 2, 132, { align: 'center' });
 
@@ -343,6 +370,13 @@ function generatePdf({ period, filters, metrics: summaryMetrics, analytics, reco
     ['Permanencia promedio', summaryMetrics.averageDuration || formatDurationMinutes(analytics.executive.averageDurationMinutes)],
     ['Campus con mayor actividad', analytics.executive.campusDistribution[0]?.label || 'N/D'],
   ];
+  const filtersRows = [
+    ['Campus', filters.campus || 'Todos los campus'],
+    ['Motivo consulta', filters.topic || 'Todos'],
+    ['Actividad', filters.activity || 'Todas'],
+    ['RUT', filters.rut || 'Todos'],
+    ['Período', period.periodLabel || period.label || periodLabel(period)],
+  ];
 
   autoTable(doc, {
     startY: 38,
@@ -350,6 +384,16 @@ function generatePdf({ period, filters, metrics: summaryMetrics, analytics, reco
     head: [['Indicador', 'Valor']],
     body: summaryRows,
     styles: { font: 'helvetica', fontSize: 10, cellPadding: 3 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 7,
+    margin: { left: MARGIN, right: MARGIN },
+    head: [['Filtro aplicado', 'Valor']],
+    body: filtersRows,
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: 2.5 },
     headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
     alternateRowStyles: { fillColor: [245, 245, 245] },
   });
@@ -454,6 +498,16 @@ function generatePdf({ period, filters, metrics: summaryMetrics, analytics, reco
   autoTable(doc, {
     startY: 36,
     margin: { left: MARGIN, right: MARGIN },
+    head: [['#', 'Estudiante / RUT', 'Carrera', 'Total asistencias']],
+    body: (ranking || []).slice(0, 10).map((row, index) => [index + 1, `${row.student} (${row.rut})`, row.carrera, row.totalAsistencias]),
+    styles: { font: 'helvetica', fontSize: 9 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 8,
+    margin: { left: MARGIN, right: MARGIN },
     head: [['Carrera', 'N° atenciones', '% del total']],
     body: extendedMetrics.topCareers,
     styles: { font: 'helvetica', fontSize: 9 },
@@ -506,8 +560,17 @@ module.exports = async function handler(req, res) {
 
   try {
     const payload = normalizePayload(req.body);
-    const { period, filters, metrics, records } = payload;
+    const { period: requestedPeriod, filters } = payload;
+    const period = buildPeriod(requestedPeriod?.year, requestedPeriod?.month);
+    const records = await fetchRecordsByFilters(period, filters);
     const analytics = buildAnalytics(records);
+    const metrics = {
+      totalRecords: records.length,
+      activeEntries: records.filter((record) => !record?.hora_salida).length,
+      completedExits: records.filter((record) => Boolean(record?.hora_salida)).length,
+      averageDuration: formatDurationMinutes(analytics.executive.averageDurationMinutes),
+    };
+    const ranking = buildAttendanceRanking(records, 10);
     const generatedAt = formatDateTime(new Date());
     const logoDataUrl = await fetchLogoDataUrl();
 
@@ -516,6 +579,7 @@ module.exports = async function handler(req, res) {
       filters,
       metrics,
       analytics,
+      ranking,
       records,
       generatedAt,
       logoDataUrl,
