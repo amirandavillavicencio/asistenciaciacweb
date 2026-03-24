@@ -212,6 +212,40 @@
         </div>
       </article>
     </section>
+
+
+    <section class="panel panel--historical" aria-label="Histórico de registros">
+      <div class="panel__header panel__header--table">
+        <div>
+          <p class="section-tag">Histórico de registros</p>
+          <h2>Consulta mensual y anual</h2>
+          <p>Revisa periodos anteriores, aplica filtros y exporta datos históricos.</p>
+        </div>
+        <div class="historical-actions">
+          <button id="historical-export-csv" class="button" type="button">Exportar período CSV</button>
+          <button id="historical-export-pdf" class="button" type="button">Exportar resumen PDF</button>
+        </div>
+      </div>
+
+      <div class="historical-controls">
+        <label><span>Año</span><select id="historical-year"></select></label>
+        <label><span>Mes</span><select id="historical-month"><option value="all">Todos</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label>
+        <label><span>Campus</span><select id="historical-campus"><option value="">Todos</option><option value="Vitacura">Vitacura</option><option value="San Joaquín">San Joaquín</option></select></label>
+        <label><span>Actividad</span><select id="historical-activity"><option value="">Todas</option><option value="Reforzamiento">Reforzamiento</option><option value="Consultoría">Consultoría</option><option value="Tutoría par integral">Tutoría par integral</option><option value="Mentoría">Mentoría</option><option value="Psicoeducativo individual">Psicoeducativo individual</option><option value="Psicoeducativo grupal">Psicoeducativo grupal</option><option value="Uso de sala">Uso de sala</option></select></label>
+        <label><span>Temática</span><select id="historical-topic"><option value="">Todas</option><option value="Matemática">Matemática</option><option value="Química">Química</option><option value="Física">Física</option><option value="Programación">Programación</option></select></label>
+        <button id="historical-view" class="button" type="button">Ver período</button>
+      </div>
+
+      <section id="historical-cards" class="report-kpis"></section>
+
+      <div class="table-wrap">
+        <table class="records-table" id="historical-table">
+          <thead id="historical-head"></thead>
+          <tbody id="historical-body"><tr><td class="empty">Selecciona un período y presiona "Ver período".</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 
   <script src="/app.js" defer></script>
