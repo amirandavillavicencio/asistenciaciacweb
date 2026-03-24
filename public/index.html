@@ -4,249 +4,159 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CIAC Registro | Universidad Técnica Federico Santa María</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
   <main class="app-shell">
-    <header class="topbar" aria-label="Encabezado institucional">
+
+    <!-- HEADER -->
+    <header class="topbar">
       <div class="topbar__surface">
+
         <div class="topbar__meta">
-          <div class="header-datetime" aria-live="polite">
+          <div class="header-datetime">
             <div>
-              <span class="header-meta__label">Fecha</span>
+              <span>Fecha</span>
               <strong id="current-date">--</strong>
             </div>
             <div>
-              <span class="header-meta__label">Hora</span>
+              <span>Hora</span>
               <strong id="current-time">--</strong>
             </div>
           </div>
         </div>
 
         <div class="topbar__brand">
-          <div class="brand-logo-wrap" aria-hidden="true">
-            <img
-              class="brand-logo"
-              src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
-              alt=""
-            >
-          </div>
-
-          <div class="brand-copy">
-            <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
-            <div class="brand-title-group">
-              <h1>CIAC Registro</h1>
-              <p class="brand-subtitle">Control diario de atenciones, uso de espacios y permanencia estudiantil.</p>
-            </div>
+          <img
+            src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
+            style="height:60px;"
+          >
+          <div>
+            <p style="margin:0;font-size:12px;">Universidad Técnica Federico Santa María</p>
+            <h1 style="margin:0;">CIAC Registro</h1>
           </div>
         </div>
 
         <div class="topbar__campus">
-          <label class="header-field header-field--campus" for="campus-header">
-            <span>Campus</span>
-            <select id="campus-header" aria-label="Campus principal">
-              <option value="">Selecciona campus</option>
-              <option value="Vitacura">Vitacura</option>
-              <option value="San Joaquín">San Joaquín</option>
-            </select>
-          </label>
+          <select id="campus-header">
+            <option value="">Selecciona campus</option>
+            <option value="Vitacura">Vitacura</option>
+            <option value="San Joaquín">San Joaquín</option>
+          </select>
         </div>
 
         <div class="topbar__actions">
-          <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
-          <button id="export-report-button" class="button button--header" type="button">Exportar informe de uso</button>
+          <button id="export-button">Exportar CSV</button>
         </div>
+
       </div>
     </header>
 
-    <div id="message" class="message" aria-live="polite"></div>
+    <!-- MENSAJE -->
+    <div id="message"></div>
 
+    <!-- CONTENIDO -->
     <section class="dashboard-layout">
+
+      <!-- FORMULARIO -->
       <article class="panel panel--form">
-        <div class="panel__header panel__header--stacked">
-          <div>
-            <p class="section-tag">Registro de atención</p>
-            <h2>Ingreso de estudiante</h2>
-            <p>Registro operativo para atención CIAC. Los datos académicos se completan automáticamente desde el RUN.</p>
+
+        <h2>Ingreso de estudiante</h2>
+
+        <form id="registro-form">
+
+          <h3>Identificación</h3>
+
+          <div class="grid">
+            <input id="run" placeholder="RUN" required>
+            <input id="dv" placeholder="DV" maxlength="1" required>
           </div>
-        </div>
 
-        <form id="registro-form" class="form" novalidate>
-          <section class="form-section">
-            <div class="form-section__header">
-              <h3>Identificación</h3>
-              <p>Ingresa RUN y DV para consultar carrera y año de ingreso.</p>
-            </div>
+          <div class="grid">
+            <input id="carrera" placeholder="Carrera" required>
+            <input id="anio_ingreso" placeholder="Año ingreso" required>
+          </div>
 
-            <div class="grid grid--run">
-              <label>
-                <span>RUN</span>
-                <input id="run" name="run" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números" required>
-              </label>
+          <h3>Detalle</h3>
 
-              <label>
-                <span>DV</span>
-                <input id="dv" name="dv" type="text" maxlength="1" autocomplete="off" placeholder="K" required>
-              </label>
-            </div>
+          <div class="grid">
+            <select id="actividad" required>
+              <option value="">Actividad</option>
+              <option>Reforzamiento</option>
+              <option>Consultoría</option>
+              <option>Tutoría par integral</option>
+              <option>Mentoría</option>
+              <option>Psicoeducativo individual</option>
+              <option>Psicoeducativo grupal</option>
+              <option>Uso de sala</option>
+            </select>
 
-            <p id="autocomplete-status" class="hint">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
+            <select id="tematica" required>
+              <option value="">Temática</option>
+              <option>Matemática</option>
+              <option>Química</option>
+              <option>Física</option>
+              <option>Programación</option>
+            </select>
+          </div>
 
-            <div class="grid grid--2">
-              <label>
-                <span>Carrera</span>
-                <input id="carrera" name="carrera" type="text" autocomplete="off" placeholder="Carrera del estudiante" required>
-              </label>
+          <div class="grid">
+            <select id="espacio" required>
+              <option value="">Espacio</option>
+            </select>
 
-              <label>
-                <span>Año de ingreso</span>
-                <input id="anio_ingreso" name="anio_ingreso" type="text" inputmode="numeric" autocomplete="off" placeholder="AAAA" maxlength="4" required>
-              </label>
-            </div>
-          </section>
+            <textarea id="observaciones" placeholder="Observaciones"></textarea>
+          </div>
 
-          <section class="form-section">
-            <div class="form-section__header">
-              <h3>Detalle de atención</h3>
-              <p>Completa únicamente los antecedentes operativos del registro.</p>
-            </div>
+          <button id="submit-button">Registrar entrada</button>
 
-            <div class="grid grid--2">
-              <label>
-                <span>Actividad</span>
-                <select id="actividad" name="actividad" required>
-                  <option value="">Selecciona actividad</option>
-                  <option value="Reforzamiento">Reforzamiento</option>
-                  <option value="Consultoría">Consultoría</option>
-                  <option value="Tutoría par integral">Tutoría par integral</option>
-                  <option value="Mentoría">Mentoría</option>
-                  <option value="Psicoeducativo individual">Psicoeducativo individual</option>
-                  <option value="Psicoeducativo grupal">Psicoeducativo grupal</option>
-                  <option value="Uso de sala">Uso de sala</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Temática</span>
-                <select id="tematica" name="tematica" required>
-                  <option value="">Selecciona temática</option>
-                  <option value="Matemática">Matemática</option>
-                  <option value="Química">Química</option>
-                  <option value="Física">Física</option>
-                  <option value="Programación">Programación</option>
-                </select>
-              </label>
-            </div>
-
-            <div class="grid grid--2 grid--details">
-              <label>
-                <span>Espacio</span>
-                <select id="espacio" name="espacio" required disabled>
-                  <option value="">Selecciona primero el campus superior</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Observaciones</span>
-                <textarea id="observaciones" name="observaciones" rows="4" placeholder="Antecedentes relevantes del registro"></textarea>
-              </label>
-            </div>
-          </section>
-
-          <button id="submit-button" class="button" type="submit">Registrar entrada</button>
         </form>
       </article>
 
+      <!-- TABLA -->
       <article class="panel panel--table">
-        <div class="panel__header panel__header--table">
-          <div>
-            <p class="section-tag">Control diario</p>
-            <h2>Registros del día</h2>
-            <p>Listado operacional de entradas y salidas registradas en la jornada.</p>
-          </div>
-          <div class="table-summary">
-            <span id="records-count" class="summary-chip">0 registros</span>
-            <span id="current-semester" class="summary-chip summary-chip--secondary">Semestre --</span>
-          </div>
-        </div>
 
-        <div class="table-wrap">
-          <table class="records-table">
-            <colgroup>
-              <col class="col-run">
-              <col class="col-student">
-              <col class="col-campus">
-              <col class="col-activity">
-              <col class="col-topic">
-              <col class="col-space">
-              <col class="col-semester">
-              <col class="col-entry">
-              <col class="col-exit">
-              <col class="col-status">
-              <col class="col-action">
-            </colgroup>
-            <thead>
-              <tr>
-                <th>RUN</th>
-                <th>Detalle estudiante</th>
-                <th>Campus</th>
-                <th>Actividad</th>
-                <th>Temática</th>
-                <th>Espacio</th>
-                <th>Semestre</th>
-                <th>Entrada</th>
-                <th>Salida</th>
-                <th>Estado</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody id="records-body">
-              <tr>
-                <td colspan="11" class="empty">No hay registros hoy.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </article>
-    </section>
+        <h2>Registros del día</h2>
 
-
-    <section class="panel panel--historical" aria-label="Histórico de registros">
-      <div class="panel__header panel__header--table">
         <div>
-          <h2>Consulta mensual y anual</h2>
-          <p>Revisa periodos anteriores, aplica filtros y exporta datos históricos.</p>
+          <span id="records-count">0 registros</span>
         </div>
-        <div class="historical-actions">
-          <button id="historical-export-csv" class="button" type="button">Exportar período CSV</button>
-          <button id="historical-export-pdf" class="button" type="button">Exportar resumen PDF</button>
-        </div>
-      </div>
 
-      <div class="historical-controls">
-        <label><span>Año</span><select id="historical-year"></select></label>
-        <label><span>Mes</span><select id="historical-month"><option value="all">Todos</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label>
-        <label><span>Campus</span><select id="historical-campus"><option value="">Todos</option><option value="Vitacura">Vitacura</option><option value="San Joaquín">San Joaquín</option></select></label>
-        <label><span>Actividad</span><select id="historical-activity"><option value="">Todas</option><option value="Reforzamiento">Reforzamiento</option><option value="Consultoría">Consultoría</option><option value="Tutoría par integral">Tutoría par integral</option><option value="Mentoría">Mentoría</option><option value="Psicoeducativo individual">Psicoeducativo individual</option><option value="Psicoeducativo grupal">Psicoeducativo grupal</option><option value="Uso de sala">Uso de sala</option></select></label>
-        <label><span>Temática</span><select id="historical-topic"><option value="">Todas</option><option value="Matemática">Matemática</option><option value="Química">Química</option><option value="Física">Física</option><option value="Programación">Programación</option></select></label>
-        <button id="historical-view" class="button" type="button">Ver período</button>
-      </div>
+        <table>
+          <thead>
+            <tr>
+              <th>RUN</th>
+              <th>Estudiante</th>
+              <th>Campus</th>
+              <th>Actividad</th>
+              <th>Temática</th>
+              <th>Espacio</th>
+              <th>Entrada</th>
+              <th>Salida</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
 
-      <section id="historical-cards" class="report-kpis"></section>
-
-      <div class="table-wrap">
-        <table class="records-table" id="historical-table">
-          <thead id="historical-head"></thead>
-          <tbody id="historical-body"><tr><td class="empty">Selecciona un período y presiona "Ver período".</td></tr></tbody>
+          <tbody id="records-body">
+            <tr>
+              <td colspan="10">No hay registros hoy</td>
+            </tr>
+          </tbody>
         </table>
-      </div>
+
+      </article>
+
     </section>
 
   </main>
 
-  <script src="/app.js" defer></script>
+  <script src="/app.js"></script>
 </body>
 </html>
