@@ -1,62 +1,442 @@
+const fetch = require('node-fetch');
+const { jsPDF } = require('jspdf');
+const autoTable = require('jspdf-autotable').default;
+
 const { supabaseGet } = require('../lib/supabase');
-const { buildAnalytics } = require('../lib/reporting');
+const { buildAnalytics, getMonthLabel } = require('../lib/reporting');
 const { buildPeriod, applyCommonFilters } = require('../lib/period');
 
-const RECORD_SELECT = 'created_at,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,estado,espacio';
+const RECORD_SELECT = 'created_at,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,estado,espacio,jornada,observaciones';
+const CHILE_TIMEZONE = 'America/Santiago';
+const LOGO_URL = 'https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png';
+const MARGIN = 20;
 
-function pdfEscape(value) {
-  return String(value || '').replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+function toDate(value) {
+  const parsed = value ? new Date(value) : null;
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
 }
 
-function buildSimplePdf(lines) {
-  const content = [];
-  content.push('BT');
-  content.push('/F1 18 Tf 50 800 Td (Informe de Uso CIAC - UTFSM) Tj');
-  content.push('/F1 10 Tf 0 -20 Td');
-
-  lines.forEach((line) => {
-    content.push(`(${pdfEscape(line)}) Tj`);
-    content.push('0 -14 Td');
-  });
-  content.push('ET');
-
-  const stream = content.join('\n');
-  const objects = [];
-  const addObj = (body) => objects.push(body);
-
-  addObj('<< /Type /Catalog /Pages 2 0 R >>');
-  addObj('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
-  addObj('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>');
-  addObj(`<< /Length ${Buffer.byteLength(stream, 'utf8')} >>\nstream\n${stream}\nendstream`);
-  addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
-
-  let pdf = '%PDF-1.4\n';
-  const offsets = [0];
-  objects.forEach((obj, idx) => {
-    offsets.push(Buffer.byteLength(pdf, 'utf8'));
-    pdf += `${idx + 1} 0 obj\n${obj}\nendobj\n`;
-  });
-  const xrefStart = Buffer.byteLength(pdf, 'utf8');
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((off) => {
-    pdf += `${String(off).padStart(10, '0')} 00000 n \n`;
-  });
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
-
-  return Buffer.from(pdf, 'utf8');
+function formatDateTime(date = new Date()) {
+  return new Intl.DateTimeFormat('es-CL', {
+    timeZone: CHILE_TIMEZONE,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
 }
 
-function toLineRows(title, rows, formatter) {
-  const output = [`${title}:`];
-  if (!rows.length) return output.concat(['  Sin datos']);
-  return output.concat(rows.map((row) => `  - ${formatter(row)}`));
-}
-
-function formatMinutes(minutes) {
+function formatDurationMinutes(minutes) {
   if (!minutes) return 'N/D';
-  const h = Math.floor(minutes / 60);
-  const m = Math.round(minutes % 60);
-  return h ? `${h}h ${m}m` : `${m} min`;
+  return `${Math.round(minutes)} min`;
+}
+
+function currentSemesterLabel(now = new Date()) {
+  const month = Number(new Intl.DateTimeFormat('en-US', {
+    timeZone: CHILE_TIMEZONE,
+    month: '2-digit',
+  }).format(now));
+  const year = Number(new Intl.DateTimeFormat('en-US', {
+    timeZone: CHILE_TIMEZONE,
+    year: 'numeric',
+  }).format(now));
+  return `${month <= 6 ? 1 : 2}-${year}`;
+}
+
+function periodLabel(period) {
+  if (period.month === 'all') return String(period.year);
+  return `${getMonthLabel(period.month)} ${period.year}`;
+}
+
+
+function weekdayFromRecord(record) {
+  const date = toDate(record.hora_entrada || record.created_at);
+  if (!date) return null;
+  const raw = new Intl.DateTimeFormat('es-CL', {
+    weekday: 'long',
+    timeZone: CHILE_TIMEZONE,
+  }).format(date).toLowerCase();
+
+  if (raw.includes('lunes')) return 'Lunes';
+  if (raw.includes('martes')) return 'Martes';
+  if (raw.includes('miércoles') || raw.includes('miercoles')) return 'Miércoles';
+  if (raw.includes('jueves')) return 'Jueves';
+  if (raw.includes('viernes')) return 'Viernes';
+  return null;
+}
+
+function hourRangeFromRecord(record) {
+  const date = toDate(record.hora_entrada || record.created_at);
+  if (!date) return 'Sin hora';
+
+  const hour = Number(new Intl.DateTimeFormat('en-US', {
+    timeZone: CHILE_TIMEZONE,
+    hour: '2-digit',
+    hour12: false,
+  }).format(date));
+  const nextHour = (hour + 1) % 24;
+  return `${String(hour).padStart(2, '0')}:00-${String(nextHour).padStart(2, '0')}:00`;
+}
+
+function addHeaderFooter(doc, pageNumber, totalPages, logoDataUrl) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  if (pageNumber > 1) {
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, 'PNG', MARGIN, 8, 10, 10);
+    }
+    doc.setTextColor(0, 51, 102);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Informe de Uso CIAC', pageWidth - MARGIN, 14, { align: 'right' });
+    doc.setDrawColor(0, 51, 102);
+    doc.line(MARGIN, 20, pageWidth - MARGIN, 20);
+  }
+
+  doc.setTextColor(80, 80, 80);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(`Pág. ${pageNumber} de ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+  doc.text('Generado por sistema CIAC - UTFSM', pageWidth - MARGIN, pageHeight - 8, { align: 'right' });
+}
+
+function drawBarChart(doc, data, opts = {}) {
+  const x = opts.x || MARGIN;
+  const y = opts.y || 130;
+  const width = opts.width || 120;
+  const barHeight = opts.barHeight || 7;
+  const gap = opts.gap || 4;
+  const max = data.reduce((acc, item) => Math.max(acc, item.count), 0) || 1;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0, 51, 102);
+  doc.text('Gráfico barras - Actividades', x, y - 6);
+
+  data.slice(0, 7).forEach((item, index) => {
+    const top = y + (barHeight + gap) * index;
+    const valueWidth = (item.count / max) * width;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(30, 30, 30);
+    doc.text(item.label.slice(0, 22), x, top + 5);
+
+    doc.setFillColor(220, 228, 236);
+    doc.rect(x + 36, top, width, barHeight, 'F');
+    doc.setFillColor(0, 51, 102);
+    doc.rect(x + 36, top, valueWidth, barHeight, 'F');
+
+    doc.text(String(item.count), x + 36 + width + 3, top + 5);
+  });
+}
+
+function drawPieChart(doc, data, opts = {}) {
+  const centerX = opts.centerX || 158;
+  const centerY = opts.centerY || 165;
+  const radius = opts.radius || 28;
+  const palette = [
+    [0, 51, 102],
+    [0, 102, 153],
+    [102, 153, 204],
+    [153, 51, 102],
+    [102, 102, 102],
+  ];
+
+  const total = data.reduce((acc, item) => acc + item.count, 0) || 1;
+  let start = -Math.PI / 2;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0, 51, 102);
+  doc.text('Gráfico torta - Temáticas', centerX - 30, centerY - radius - 10);
+
+  data.slice(0, 5).forEach((item, index) => {
+    const angle = (item.count / total) * Math.PI * 2;
+    const color = palette[index % palette.length];
+    doc.setFillColor(...color);
+
+    const steps = 18;
+    const points = [[centerX, centerY]];
+    for (let i = 0; i <= steps; i += 1) {
+      const t = start + (angle * i) / steps;
+      points.push([centerX + radius * Math.cos(t), centerY + radius * Math.sin(t)]);
+    }
+
+    doc.lines(points.slice(1).map((point, idx) => [point[0] - points[idx][0], point[1] - points[idx][1]]), points[0][0], points[0][1], [1, 1], 'F', true);
+    start += angle;
+  });
+
+  data.slice(0, 5).forEach((item, index) => {
+    const color = palette[index % palette.length];
+    const legendY = centerY + radius + 8 + index * 5;
+    doc.setFillColor(...color);
+    doc.rect(centerX - 32, legendY - 3, 3, 3, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`${item.label.slice(0, 16)} (${item.percentage}%)`, centerX - 27, legendY);
+  });
+}
+
+function buildExtendedMetrics(records, analytics) {
+  const campusWinner = analytics.executive.campusDistribution[0]?.label || 'N/D';
+
+  const weekdays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+  const weekdayMap = weekdays.reduce((acc, day) => ({ ...acc, [day]: 0 }), {});
+  const hourMap = {};
+  const dayMap = {};
+
+  const runVisits = {};
+  const yearMap = {};
+  const spaceUsage = {};
+  const spaceHourPeak = {};
+
+  records.forEach((record) => {
+    const weekday = weekdayFromRecord(record);
+    if (weekday && weekdayMap[weekday] !== undefined) weekdayMap[weekday] += 1;
+
+    const hourRange = hourRangeFromRecord(record);
+    hourMap[hourRange] = (hourMap[hourRange] || 0) + 1;
+
+    const day = record.dia || (toDate(record.created_at) ? new Intl.DateTimeFormat('en-CA', {
+      timeZone: CHILE_TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(toDate(record.created_at)) : '');
+    if (day) dayMap[day] = (dayMap[day] || 0) + 1;
+
+    const runKey = `${record.run || ''}-${record.dv || ''}`;
+    runVisits[runKey] = (runVisits[runKey] || 0) + 1;
+
+    const yearKey = String(record.anio_ingreso || 'Sin año');
+    if (!yearMap[yearKey]) yearMap[yearKey] = { unique: new Set(), attentions: 0 };
+    yearMap[yearKey].unique.add(runKey);
+    yearMap[yearKey].attentions += 1;
+
+    const spaceKey = String(record.espacio || 'Sin espacio');
+    spaceUsage[spaceKey] = (spaceUsage[spaceKey] || 0) + 1;
+
+    if (!spaceHourPeak[spaceKey]) spaceHourPeak[spaceKey] = {};
+    spaceHourPeak[spaceKey][hourRange] = (spaceHourPeak[spaceKey][hourRange] || 0) + 1;
+  });
+
+  const maxDayEntry = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0] || ['N/D', 0];
+  const recurrentCount = Object.values(runVisits).filter((count) => count > 1).length;
+
+  const topCareers = analytics.students.careers.slice(0, 10).map((row) => [row.label, row.count, `${analytics.executive.total ? ((row.count / analytics.executive.total) * 100).toFixed(1) : '0.0'}%`]);
+  const yearsDistribution = Object.entries(yearMap)
+    .sort((a, b) => Number(b[0]) - Number(a[0]))
+    .map(([year, value]) => [year, value.unique.size, value.attentions]);
+
+  const spacesRows = Object.entries(spaceUsage)
+    .sort((a, b) => b[1] - a[1])
+    .map(([space, count]) => {
+      const peak = Object.entries(spaceHourPeak[space] || {}).sort((a, b) => b[1] - a[1])[0];
+      const pct = analytics.executive.total ? ((count / analytics.executive.total) * 100).toFixed(1) : '0.0';
+      return [space, count, `${pct}%`, peak ? peak[0] : 'N/D'];
+    });
+
+  return {
+    campusWinner,
+    weekdayRows: weekdays.map((day) => [day, weekdayMap[day] || 0]),
+    hourRows: Object.entries(hourMap)
+      .filter(([range]) => range !== 'Sin hora')
+      .sort((a, b) => a[0].localeCompare(b[0], 'es-CL'))
+      .map(([range, count]) => [range, count]),
+    maxAttendanceDay: maxDayEntry,
+    recurrentCount,
+    topCareers,
+    yearsDistribution,
+    spacesRows,
+  };
+}
+
+async function fetchLogoDataUrl() {
+  try {
+    const response = await fetch(LOGO_URL);
+    if (!response.ok) return null;
+    const buffer = await response.buffer();
+    return `data:image/png;base64,${buffer.toString('base64')}`;
+  } catch (error) {
+    return null;
+  }
+}
+
+function generatePdf({ period, filters, analytics, records, generatedAt, logoDataUrl }) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const width = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const metrics = buildExtendedMetrics(records, analytics);
+
+  // Página 1: Portada
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, width, pageHeight, 'F');
+  if (logoDataUrl) {
+    doc.addImage(logoDataUrl, 'PNG', width / 2 - 18, 28, 36, 36);
+  }
+
+  doc.setTextColor(0, 51, 102);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(26);
+  doc.text('Informe de Uso CIAC', width / 2, 80, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(13);
+  doc.text('Centro de Innovación, Aprendizaje y Creatividad', width / 2, 89, { align: 'center' });
+
+  doc.setFontSize(12);
+  doc.text(`Campus: ${filters.campus || 'Todos los campus'}`, width / 2, 108, { align: 'center' });
+  doc.text(`Período: ${periodLabel(period)}`, width / 2, 116, { align: 'center' });
+  doc.text(`Fecha de generación: ${generatedAt}`, width / 2, 124, { align: 'center' });
+  doc.text(`Semestre en curso: ${currentSemesterLabel()}`, width / 2, 132, { align: 'center' });
+
+  // Página 2: Resumen Ejecutivo
+  doc.addPage();
+  doc.setTextColor(0, 51, 102);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Resumen Ejecutivo', MARGIN, 30);
+
+  const summaryRows = [
+    ['Total de atenciones registradas', analytics.executive.total],
+    ['Total de estudiantes únicos (RUN)', analytics.executive.uniqueStudents],
+    ['Promedio de atenciones por día hábil', analytics.executive.averagePerBusinessDay],
+    ['Tiempo promedio de permanencia', formatDurationMinutes(analytics.executive.averageDurationMinutes)],
+    ['Campus con mayor actividad', metrics.campusWinner],
+  ];
+
+  autoTable(doc, {
+    startY: 38,
+    margin: { left: MARGIN, right: MARGIN },
+    head: [['Indicador', 'Valor']],
+    body: summaryRows,
+    styles: { font: 'helvetica', fontSize: 10, cellPadding: 3 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+
+  // Página 3: Actividad y temática
+  doc.addPage();
+  doc.setTextColor(0, 51, 102);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Análisis por Actividad y Temática', MARGIN, 30);
+
+  autoTable(doc, {
+    startY: 36,
+    margin: { left: MARGIN, right: MARGIN },
+    head: [['Actividad', 'N° atenciones', '% del total']],
+    body: analytics.activity.rows.map((row) => [row.label, row.count, `${row.percentage}%`]),
+    styles: { font: 'helvetica', fontSize: 9 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+    tableWidth: 84,
+  });
+
+  autoTable(doc, {
+    startY: 36,
+    margin: { left: 108, right: MARGIN },
+    head: [['Temática', 'N° atenciones', '% del total']],
+    body: analytics.topic.rows.map((row) => [row.label, row.count, `${row.percentage}%`]),
+    styles: { font: 'helvetica', fontSize: 9 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+    tableWidth: 82,
+  });
+
+  drawBarChart(doc, analytics.activity.rows, { x: MARGIN, y: 145, width: 80, barHeight: 6, gap: 3 });
+  drawPieChart(doc, analytics.topic.rows, { centerX: 154, centerY: 185, radius: 24 });
+
+  // Página 4: Temporal
+  doc.addPage();
+  doc.setTextColor(0, 51, 102);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Análisis Temporal', MARGIN, 30);
+
+  autoTable(doc, {
+    startY: 36,
+    margin: { left: MARGIN, right: 114 },
+    head: [['Día de semana', 'N° atenciones']],
+    body: metrics.weekdayRows,
+    styles: { font: 'helvetica', fontSize: 9 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+
+  autoTable(doc, {
+    startY: 36,
+    margin: { left: 102, right: MARGIN },
+    head: [['Rango horario', 'N° atenciones']],
+    body: metrics.hourRows,
+    styles: { font: 'helvetica', fontSize: 9 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text(`Día con mayor asistencia: ${metrics.maxAttendanceDay[0]} (${metrics.maxAttendanceDay[1]})`, MARGIN, 170);
+
+  // Página 5: Estudiantes
+  doc.addPage();
+  doc.setTextColor(0, 51, 102);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Análisis de Estudiantes', MARGIN, 30);
+
+  autoTable(doc, {
+    startY: 36,
+    margin: { left: MARGIN, right: MARGIN },
+    head: [['Carrera', 'N° atenciones', '% del total']],
+    body: metrics.topCareers,
+    styles: { font: 'helvetica', fontSize: 9 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 8,
+    margin: { left: MARGIN, right: MARGIN },
+    head: [['Año ingreso', 'N° estudiantes únicos', 'N° atenciones']],
+    body: metrics.yearsDistribution,
+    styles: { font: 'helvetica', fontSize: 9 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text(`Estudiantes recurrentes (>1 visita): ${metrics.recurrentCount}`, MARGIN, Math.min(doc.lastAutoTable.finalY + 10, 275));
+
+  // Página 6: Espacios
+  doc.addPage();
+  doc.setTextColor(0, 51, 102);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Detalle por Espacio', MARGIN, 30);
+
+  autoTable(doc, {
+    startY: 36,
+    margin: { left: MARGIN, right: MARGIN },
+    head: [['Espacio', 'N° usos', '% del total', 'Horario de mayor uso']],
+    body: metrics.spacesRows,
+    styles: { font: 'helvetica', fontSize: 9 },
+    headStyles: { fillColor: [0, 51, 102], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+
+  const pages = doc.getNumberOfPages();
+  for (let page = 1; page <= pages; page += 1) {
+    doc.setPage(page);
+    addHeaderFooter(doc, page, pages, logoDataUrl);
+  }
+
+  return Buffer.from(doc.output('arraybuffer'));
 }
 
 module.exports = async function handler(req, res) {
@@ -70,38 +450,27 @@ module.exports = async function handler(req, res) {
       and: `(dia.gte.${period.start},dia.lte.${period.end})`,
       limit: 10000,
     };
-    applyCommonFilters(query, req.query);
+    const filters = applyCommonFilters(query, req.query);
 
     const registros = await supabaseGet('attendance_records', query);
-    const analytics = buildAnalytics(registros);
+    const records = Array.isArray(registros) ? registros : [];
+    const analytics = buildAnalytics(records);
+    const generatedAt = formatDateTime(new Date());
+    const logoDataUrl = await fetchLogoDataUrl();
 
-    const lines = [
-      `Fecha de generación: ${new Date().toLocaleString('es-CL')}`,
-      `Periodo cubierto: ${period.start} a ${period.end}`,
-      '',
-      'Resumen ejecutivo',
-      `Total de atenciones: ${analytics.executive.total}`,
-      `Estudiantes únicos: ${analytics.executive.uniqueStudents}`,
-      `Promedio atenciones por día hábil: ${analytics.executive.averagePerBusinessDay}`,
-      `Tiempo promedio de permanencia: ${formatMinutes(analytics.executive.averageDurationMinutes)}`,
-      ...toLineRows('Distribución por campus', analytics.executive.campusDistribution, (row) => `${row.label}: ${row.count} (${row.percentage}%)`),
-      ...toLineRows('Desglose por actividad', analytics.activity.rows, (row) => `${row.label}: ${row.count} (${row.percentage}%)`),
-      `Actividad más demandada: ${analytics.activity.top?.label || 'Sin datos'}`,
-      ...toLineRows('Desglose por temática', analytics.topic.rows, (row) => `${row.label}: ${row.count} (${row.percentage}%)`),
-      `Temática más consultada: ${analytics.topic.top?.label || 'Sin datos'}`,
-      ...toLineRows('Uso por espacio', analytics.spaces.rows, (row) => `${row.label}: ${row.count}`),
-      ...toLineRows('Horas pico', analytics.spaces.peakHours, (row) => `${row.range}: ${row.count}`),
-      ...toLineRows('Estudiantes recurrentes', analytics.students.recurrent, (row) => `${row.student}: ${row.visits} visitas`),
-      ...toLineRows('Distribución por carrera', analytics.students.careers, (row) => `${row.label}: ${row.count}`),
-      ...toLineRows('Distribución por año ingreso', analytics.students.admissionYears, (row) => `${row.label}: ${row.count}`),
-      ...toLineRows('Atenciones por día de semana', analytics.temporal.weekday, (row) => `${row.day}: ${row.count}`),
-      `Día con mayor asistencia: ${analytics.temporal.maxDay.day} (${analytics.temporal.maxDay.count})`,
-      `Día con menor asistencia: ${analytics.temporal.minDay.day} (${analytics.temporal.minDay.count})`,
-    ];
+    const pdfBuffer = generatePdf({
+      period,
+      filters,
+      analytics,
+      records,
+      generatedAt,
+      logoDataUrl,
+    });
 
-    const pdfBuffer = buildSimplePdf(lines);
+    const filename = `informe_uso_CIAC_${String(period.year)}-${String(period.month === 'all' ? 'all' : period.month).padStart(2, '0')}.pdf`;
+
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="informe-uso-ciac-${period.start}-${period.end}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Length', pdfBuffer.length);
     return res.status(200).send(pdfBuffer);
