@@ -993,6 +993,10 @@ th:last-child { padding-right: 12px; }
   width: 100%;
 }
 
+.report-filters__field input {
+  width: 100%;
+}
+
 .report-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1042,6 +1046,15 @@ th:last-child { padding-right: 12px; }
 .report-card--chart,
 .report-card--table {
   grid-column: 1 / -1;
+}
+
+.report-card--ranking {
+  grid-column: 1 / -1;
+}
+
+.report-ranking-table th:first-child,
+.report-ranking-table td:first-child {
+  width: 56px;
 }
 
 .report-card__header {

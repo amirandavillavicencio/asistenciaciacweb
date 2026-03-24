@@ -19,17 +19,21 @@ const activityFilter = document.getElementById('report-filter-activity');
 const clearFiltersButton = document.getElementById('report-clear-filters');
 const yearFilter = document.getElementById('report-filter-year');
 const monthFilter = document.getElementById('report-filter-month');
+const rutFilter = document.getElementById('report-filter-rut');
+const rankingBody = document.getElementById('report-ranking-body');
 
 const params = new URLSearchParams(window.location.search);
 const DEFAULT_FILTERS = {
   campus: params.get('campus') || '',
   topic: params.get('motivo') || params.get('tematica') || '',
   activity: params.get('actividad') || '',
+  rut: params.get('rut') || params.get('run') || '',
   year: params.get('year') || String(new Date().getFullYear()),
   month: params.get('month') || 'all',
 };
 
 window.__REPORT_RECORDS__ = [];
+window.__REPORT_RANKING__ = [];
 let activeFilters = { ...DEFAULT_FILTERS };
 
 function escapeHtml(value) {
@@ -116,6 +120,23 @@ function normalizeState(record) {
   return record.hora_salida ? 'salida' : 'entrada';
 }
 
+function normalizeRunFromInput(value) {
+  const compact = String(value || '')
+    .replaceAll('.', '')
+    .replace(/\s+/g, '');
+  const [runPart = ''] = compact.split('-');
+  return runPart.replace(/\D/g, '');
+}
+
+function formatRut(run, dv) {
+  const cleanRun = String(run || '').replace(/\D/g, '');
+  const cleanDv = String(dv || '').trim().toUpperCase();
+
+  if (!cleanRun) return '—';
+  const withDots = cleanRun.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return cleanDv ? `${withDots}-${cleanDv}` : withDots;
+}
+
 function normalizeLabel(value, fallback) {
   return String(value || fallback).trim() || fallback;
 }
@@ -147,6 +168,9 @@ function syncFilterControls() {
   if (activityFilter) {
     activityFilter.value = activeFilters.activity;
   }
+  if (rutFilter) {
+    rutFilter.value = activeFilters.rut;
+  }
   if (yearFilter) {
     yearFilter.value = activeFilters.year;
   }
@@ -175,6 +199,7 @@ function updateUrlFilters() {
     ['campus', activeFilters.campus],
     ['motivo', activeFilters.topic],
     ['actividad', activeFilters.activity],
+    ['rut', activeFilters.rut],
     ['year', activeFilters.year],
     ['month', activeFilters.month],
   ];
@@ -194,14 +219,17 @@ function updateUrlFilters() {
 }
 
 function getVisibleRecords(records) {
+  const runFilter = normalizeRunFromInput(activeFilters.rut);
   return records.filter((record) => {
     const campusLabel = normalizeLabel(record.sede, 'Sin sede');
     const topicLabel = normalizeLabel(record.tematica, 'Sin motivo');
     const activityLabel = normalizeLabel(record.actividad, 'Sin actividad');
+    const run = String(record.run || '').replace(/\D/g, '');
 
     return (!activeFilters.campus || campusLabel === activeFilters.campus)
       && (!activeFilters.topic || topicLabel === activeFilters.topic)
-      && (!activeFilters.activity || activityLabel === activeFilters.activity);
+      && (!activeFilters.activity || activityLabel === activeFilters.activity)
+      && (!runFilter || run === runFilter);
   });
 }
 
@@ -425,12 +453,44 @@ function getActiveFilterSummary() {
   if (activeFilters.activity) {
     labels.push(`Actividad: ${activeFilters.activity}`);
   }
+  if (activeFilters.rut) {
+    labels.push(`RUT: ${formatRut(normalizeRunFromInput(activeFilters.rut), '')}`);
+  }
 
   return labels.length ? labels.join(' · ') : 'Todos';
 }
 
-function renderRecords(records) {
+function renderRanking(rankingRows = []) {
+  const rows = Array.isArray(rankingRows) ? rankingRows : [];
+  window.__REPORT_RANKING__ = rows;
+
+  if (!rankingBody) {
+    return;
+  }
+
+  if (!rows.length) {
+    rankingBody.innerHTML = '<tr><td colspan="4" class="empty">Sin datos para ranking con los filtros actuales.</td></tr>';
+    return;
+  }
+
+  rankingBody.innerHTML = rows.map((row, index) => `
+    <tr>
+      <td>${escapeHtml(row.position || index + 1)}</td>
+      <td>
+        <div class="student-cell">
+          <strong>${escapeHtml(row.student || 'Sin nombre')}</strong>
+          <span class="student-cell__meta">${escapeHtml(row.rut || formatRut(row.run, row.dv))}</span>
+        </div>
+      </td>
+      <td>${escapeHtml(row.carrera || 'Sin carrera')}</td>
+      <td>${escapeHtml(row.totalAsistencias || 0)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderRecords(records, rankingRows = []) {
   window.__REPORT_RECORDS__ = Array.isArray(records) ? records : [];
+  renderRanking(rankingRows);
   updateFilterOptions(window.__REPORT_RECORDS__);
   const visibleRecords = getVisibleRecords(window.__REPORT_RECORDS__);
   const openRecords = visibleRecords.filter((record) => !record.hora_salida).length;
@@ -485,6 +545,7 @@ function getReportSnapshot() {
       campus: activeFilters.campus || '',
       topic: activeFilters.topic || '',
       activity: activeFilters.activity || '',
+      rut: activeFilters.rut || '',
       year: activeFilters.year || '',
       month: activeFilters.month || 'all',
       periodLabel,
@@ -495,13 +556,14 @@ function getReportSnapshot() {
       completedExits: closedRecords,
       averageDuration: formatDuration(averageDuration),
     },
+    ranking: window.__REPORT_RANKING__ || [],
     records: visibleRecords,
   };
 }
 
 function applyFilters() {
   updateUrlFilters();
-  renderRecords(window.__REPORT_RECORDS__ || []);
+  renderRecords(window.__REPORT_RECORDS__ || [], window.__REPORT_RANKING__ || []);
 }
 
 function buildReportQuery() {
@@ -515,6 +577,9 @@ function buildReportQuery() {
   }
   if (activeFilters.activity) {
     query.set('actividad', activeFilters.activity);
+  }
+  if (activeFilters.rut) {
+    query.set('rut', activeFilters.rut);
   }
   query.set('year', activeFilters.year);
   query.set('month', activeFilters.month);
@@ -534,7 +599,7 @@ async function loadRecords() {
     throw new Error(buildApiError(data, 'No se pudieron cargar los registros del informe.'));
   }
 
-  renderRecords(data.registros || []);
+  renderRecords(data.registros || [], data.ranking || []);
 }
 
 async function exportReport() {
@@ -581,12 +646,13 @@ async function exportReport() {
   }
 }
 
-[campusFilter, topicFilter, activityFilter, yearFilter, monthFilter].forEach((element) => {
+[campusFilter, topicFilter, activityFilter, rutFilter, yearFilter, monthFilter].forEach((element) => {
   element?.addEventListener('change', () => {
     activeFilters = {
       campus: campusFilter?.value || '',
       topic: topicFilter?.value || '',
       activity: activityFilter?.value || '',
+      rut: rutFilter?.value || '',
       year: yearFilter?.value || String(new Date().getFullYear()),
       month: monthFilter?.value || 'all',
     };
@@ -597,7 +663,7 @@ async function exportReport() {
 });
 
 clearFiltersButton?.addEventListener('click', () => {
-  activeFilters = { campus: '', topic: '', activity: '', year: String(new Date().getFullYear()), month: 'all' };
+  activeFilters = { campus: '', topic: '', activity: '', rut: '', year: String(new Date().getFullYear()), month: 'all' };
   syncFilterControls();
   applyFilters();
   loadRecords().catch((error) => {

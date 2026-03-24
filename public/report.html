@@ -46,6 +46,10 @@
             <option value="">Todas las actividades</option>
           </select>
         </label>
+        <label class="field report-filters__field">
+          <span>RUT</span>
+          <input id="report-filter-rut" name="report-filter-rut" type="text" placeholder="Ej: 12345678-9" autocomplete="off">
+        </label>
         
         <label class="field report-filters__field">
           <span>Año</span>
@@ -126,6 +130,33 @@
             </div>
           </div>
           <ul id="report-highlights" class="report-highlights"></ul>
+        </article>
+
+        <article class="report-card report-card--ranking">
+          <div class="report-card__header">
+            <div>
+              <p class="section-tag">Asistencia</p>
+              <h2>Ranking de estudiantes con más asistencias</h2>
+            </div>
+            <span class="report-card__meta">Top 10</span>
+          </div>
+          <div class="table-wrap report-table-wrap">
+            <table class="records-table report-table report-ranking-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Estudiante / RUT</th>
+                  <th>Carrera</th>
+                  <th>Total asistencias</th>
+                </tr>
+              </thead>
+              <tbody id="report-ranking-body">
+                <tr>
+                  <td colspan="4" class="empty">Cargando ranking...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </article>
       </section>
 
