@@ -6,7 +6,7 @@ const { supabaseGet } = require('../lib/supabase');
 const { buildAnalytics, getMonthLabel } = require('../lib/reporting');
 const { buildPeriod, applyCommonFilters } = require('../lib/period');
 
-const RECORD_SELECT = 'created_at,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,estado,espacio,jornada,observaciones';
+const RECORD_SELECT = 'created_at,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,estado,espacio,observaciones';
 const CHILE_TIMEZONE = 'America/Santiago';
 const LOGO_URL = 'https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png';
 const MARGIN = 20;
@@ -52,7 +52,7 @@ function periodLabel(period) {
 
 
 function weekdayFromRecord(record) {
-  const date = toDate(record.hora_entrada || record.created_at);
+  const date = toDate(record?.hora_entrada ?? record?.created_at);
   if (!date) return null;
   const raw = new Intl.DateTimeFormat('es-CL', {
     weekday: 'long',
@@ -68,7 +68,7 @@ function weekdayFromRecord(record) {
 }
 
 function hourRangeFromRecord(record) {
-  const date = toDate(record.hora_entrada || record.created_at);
+  const date = toDate(record?.hora_entrada ?? record?.created_at);
   if (!date) return 'Sin hora';
 
   const hour = Number(new Intl.DateTimeFormat('en-US', {
@@ -195,29 +195,30 @@ function buildExtendedMetrics(records, analytics) {
   const spaceHourPeak = {};
 
   records.forEach((record) => {
-    const weekday = weekdayFromRecord(record);
+    const safeRecord = record ?? {};
+    const weekday = weekdayFromRecord(safeRecord);
     if (weekday && weekdayMap[weekday] !== undefined) weekdayMap[weekday] += 1;
 
-    const hourRange = hourRangeFromRecord(record);
+    const hourRange = hourRangeFromRecord(safeRecord);
     hourMap[hourRange] = (hourMap[hourRange] || 0) + 1;
 
-    const day = record.dia || (toDate(record.created_at) ? new Intl.DateTimeFormat('en-CA', {
+    const day = safeRecord?.dia ?? (toDate(safeRecord?.created_at) ? new Intl.DateTimeFormat('en-CA', {
       timeZone: CHILE_TIMEZONE,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-    }).format(toDate(record.created_at)) : '');
+    }).format(toDate(safeRecord?.created_at)) : '');
     if (day) dayMap[day] = (dayMap[day] || 0) + 1;
 
-    const runKey = `${record.run || ''}-${record.dv || ''}`;
+    const runKey = `${safeRecord?.run ?? ''}-${safeRecord?.dv ?? ''}`;
     runVisits[runKey] = (runVisits[runKey] || 0) + 1;
 
-    const yearKey = String(record.anio_ingreso || 'Sin año');
+    const yearKey = String(safeRecord?.anio_ingreso ?? 'Sin año');
     if (!yearMap[yearKey]) yearMap[yearKey] = { unique: new Set(), attentions: 0 };
     yearMap[yearKey].unique.add(runKey);
     yearMap[yearKey].attentions += 1;
 
-    const spaceKey = String(record.espacio || 'Sin espacio');
+    const spaceKey = String(safeRecord?.espacio ?? 'Sin espacio');
     spaceUsage[spaceKey] = (spaceUsage[spaceKey] || 0) + 1;
 
     if (!spaceHourPeak[spaceKey]) spaceHourPeak[spaceKey] = {};
@@ -452,7 +453,12 @@ module.exports = async function handler(req, res) {
     };
     const filters = applyCommonFilters(query, req.query);
 
-    const registros = await supabaseGet('attendance_records', query);
+    let registros;
+    try {
+      registros = await supabaseGet('attendance_records', query);
+    } catch (error) {
+      throw new Error(error?.message || 'Error consultando registros para exportación PDF.');
+    }
     const records = Array.isArray(registros) ? registros : [];
     const analytics = buildAnalytics(records);
     const generatedAt = formatDateTime(new Date());

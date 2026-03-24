@@ -1,7 +1,7 @@
 const { supabaseGet } = require('../lib/supabase');
 
 const CHILE_TIMEZONE = 'America/Santiago';
-const RECORD_SELECT = 'created_at,dia,hora_entrada,hora_salida,run,dv,carrera,jornada,anio_ingreso,actividad,tematica,observaciones';
+const RECORD_SELECT = 'created_at,dia,hora_entrada,hora_salida,run,dv,carrera,anio_ingreso,actividad,tematica,observaciones';
 const CSV_HEADERS = [
   'Día',
   'Hora Entrada',
@@ -112,18 +112,19 @@ function formatRunValue(run) {
 }
 
 function buildCsvRow(record) {
+  const safeRecord = record ?? {};
   return [
-    formatDateDDMMYYYY(getDateValue(record)),
-    formatHourHHMM(record.hora_entrada),
-    formatHourHHMM(record.hora_salida),
-    formatRunValue(record.run),
-    sanitizeCell(record.dv).toUpperCase(),
-    record.carrera || '',
-    record.jornada || '',
-    record.anio_ingreso || '',
-    record.actividad || '',
-    record.tematica || '',
-    record.observaciones || '',
+    formatDateDDMMYYYY(getDateValue(safeRecord)),
+    formatHourHHMM(safeRecord?.hora_entrada ?? ''),
+    formatHourHHMM(safeRecord?.hora_salida ?? ''),
+    formatRunValue(safeRecord?.run ?? ''),
+    sanitizeCell(safeRecord?.dv ?? '').toUpperCase(),
+    sanitizeCell(safeRecord?.carrera ?? ''),
+    '', // Jornada (placeholder hasta que exista el campo en BD)
+    sanitizeCell(safeRecord?.anio_ingreso ?? ''),
+    sanitizeCell(safeRecord?.actividad ?? ''),
+    sanitizeCell(safeRecord?.tematica ?? ''),
+    sanitizeCell(safeRecord?.observaciones ?? ''),
   ].map(escapeCsvCell).join(';');
 }
 
@@ -134,11 +135,16 @@ module.exports = async function handler(req, res) {
 
   try {
     const today = getChileDate();
-    const registros = await supabaseGet('attendance_records', {
-      select: RECORD_SELECT,
-      dia: `eq.${today}`,
-      order: 'hora_entrada.desc',
-    });
+    let registros;
+    try {
+      registros = await supabaseGet('attendance_records', {
+        select: RECORD_SELECT,
+        dia: `eq.${today}`,
+        order: 'hora_entrada.desc',
+      });
+    } catch (error) {
+      throw new Error(error?.message || 'Error consultando registros para exportación CSV.');
+    }
 
     const rows = Array.isArray(registros) ? registros : [];
     const csvLines = [
