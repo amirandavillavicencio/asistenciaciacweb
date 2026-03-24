@@ -3,6 +3,18 @@ const CAMPUS_SPACES = {
   'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
 };
 
+const LOGIN_USERNAME = 'administradores';
+const LOGIN_EMAIL = 'Ciacvitacura@proton.me';
+
+const loginScreen = document.getElementById('login-screen');
+const appShell = document.getElementById('app-shell');
+const loginForm = document.getElementById('login-form');
+const loginUserInput = document.getElementById('login-user');
+const loginPasswordInput = document.getElementById('login-password');
+const loginButton = document.getElementById('login-button');
+const loginMessage = document.getElementById('login-message');
+const logoutButton = document.getElementById('logout-button');
+
 const form = document.getElementById('registro-form');
 const campusHeaderInput = document.getElementById('campus-header');
 const runInput = document.getElementById('run');
@@ -33,6 +45,73 @@ let lookupTimer = null;
 let activeCampusFilter = '';
 let todayRecordsCache = [];
 let rutSalidaLoading = false;
+let appInitialized = false;
+let supabaseClient = null;
+
+function getSupabaseClient() {
+  if (supabaseClient) return supabaseClient;
+  const supabaseUrl = window.localStorage.getItem('supabase_url') || window.__SUPABASE_URL__;
+  const supabaseAnonKey = window.localStorage.getItem('supabase_anon_key') || window.__SUPABASE_ANON_KEY__;
+
+  if (!supabaseUrl || !supabaseAnonKey || !window.supabase?.createClient) {
+    return null;
+  }
+
+  supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+  return supabaseClient;
+}
+
+function setLoginMessage(text) {
+  if (!loginMessage) return;
+  loginMessage.textContent = text || '';
+}
+
+function setAuthView(isAuthenticated) {
+  if (loginScreen) {
+    loginScreen.hidden = isAuthenticated;
+  }
+  if (appShell) {
+    appShell.classList.toggle('app-shell--hidden', !isAuthenticated);
+  }
+}
+
+function initializeAppIfNeeded() {
+  if (appInitialized) return;
+  appInitialized = true;
+  if (campusHeaderInput) {
+    syncCampus(getSelectedCampus());
+  }
+  updateEspacios();
+  updateClock();
+  loadTodayRecords().catch((error) => {
+    showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
+  });
+  window.setInterval(updateClock, 1000);
+}
+
+async function checkInitialSession() {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    setLoginMessage('Falta configurar Supabase Auth (URL/anon key) para habilitar el acceso.');
+    setAuthView(false);
+    return;
+  }
+
+  const { data, error } = await client.auth.getSession();
+
+  if (error) {
+    setLoginMessage('No se pudo validar la sesión actual.');
+    setAuthView(false);
+    return;
+  }
+
+  const hasSession = Boolean(data?.session);
+  setAuthView(hasSession);
+  if (hasSession) {
+    initializeAppIfNeeded();
+  }
+}
 
 function sanitizeRun(value) {
   return String(value || '').replace(/\D/g, '');
@@ -559,6 +638,67 @@ function updateClock() {
   currentSemesterBadge.textContent = `Semestre ${getCurrentSemester(now)}`;
 }
 
+loginForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  setLoginMessage('');
+  const username = String(loginUserInput?.value || '').trim().toLowerCase();
+  const password = String(loginPasswordInput?.value || '');
+
+  if (username !== LOGIN_USERNAME) {
+    setLoginMessage('Usuario no autorizado.');
+    return;
+  }
+
+  const client = getSupabaseClient();
+  if (!client) {
+    setLoginMessage('Falta configurar Supabase Auth (URL/anon key).');
+    return;
+  }
+
+  if (loginButton) {
+    loginButton.disabled = true;
+    loginButton.textContent = 'Ingresando...';
+  }
+
+  try {
+    const { error } = await client.auth.signInWithPassword({
+      email: LOGIN_EMAIL,
+      password,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (loginPasswordInput) {
+      loginPasswordInput.value = '';
+    }
+    setAuthView(true);
+    initializeAppIfNeeded();
+  } catch (error) {
+    setLoginMessage(error?.message || 'No se pudo iniciar sesión.');
+    setAuthView(false);
+  } finally {
+    if (loginButton) {
+      loginButton.disabled = false;
+      loginButton.textContent = 'Ingresar';
+    }
+  }
+});
+
+logoutButton?.addEventListener('click', async () => {
+  const client = getSupabaseClient();
+  if (client) {
+    await client.auth.signOut();
+  }
+  setAuthView(false);
+  clearMessage();
+  showRutSalidaMessage('');
+  clearRutSalidaResult();
+  setLoginMessage('');
+  loginUserInput?.focus();
+});
+
 campusHeaderInput?.addEventListener('change', () => {
   syncCampus(campusHeaderInput.value);
   updateEspacios();
@@ -738,15 +878,19 @@ form?.addEventListener('submit', async (event) => {
   }
 });
 
-if (campusHeaderInput) {
-  syncCampus(getSelectedCampus());
-}
-updateEspacios();
-updateClock();
-loadTodayRecords().catch((error) => {
-  showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
+checkInitialSession().catch(() => {
+  setLoginMessage('No se pudo validar la sesión actual.');
+  setAuthView(false);
 });
-window.setInterval(updateClock, 1000);
+
+getSupabaseClient()?.auth.onAuthStateChange((_event, session) => {
+  const hasSession = Boolean(session);
+  setAuthView(hasSession);
+  if (hasSession) {
+    initializeAppIfNeeded();
+    setLoginMessage('');
+  }
+});
 
 const historicalYear = document.getElementById('historical-year');
 const historicalMonth = document.getElementById('historical-month');

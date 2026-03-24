@@ -13,7 +13,31 @@
 </head>
 
 <body>
-  <main class="app-shell container">
+  <section id="login-screen" class="auth-shell container" aria-live="polite">
+    <article class="auth-card card">
+      <header class="auth-card__header">
+        <p class="section-tag">Acceso</p>
+        <h2>Ingreso CIAC Registro</h2>
+        <p>Autentícate para acceder al panel institucional.</p>
+      </header>
+
+      <form id="login-form" class="form auth-form">
+        <label>
+          <span>Usuario</span>
+          <input id="login-user" type="text" autocomplete="username" placeholder="administradores" required>
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <input id="login-password" type="password" autocomplete="current-password" required>
+        </label>
+        <button id="login-button" type="submit">Ingresar</button>
+      </form>
+
+      <p id="login-message" class="auth-message" aria-live="polite"></p>
+    </article>
+  </section>
+
+  <main id="app-shell" class="app-shell container app-shell--hidden">
     <header class="topbar">
       <div class="topbar__surface">
         <div class="topbar__main">
@@ -66,6 +90,7 @@
         <div class="topbar__actions">
           <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
           <button id="export-report-button" class="button button--header" type="button">Ver informe</button>
+          <button id="logout-button" class="button button--header button--danger" type="button">Cerrar sesión</button>
         </div>
       </div>
     </header>
@@ -238,6 +263,7 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/app.js"></script>
 </body>
 </html>
