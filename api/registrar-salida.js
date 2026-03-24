@@ -34,8 +34,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes indicar un registro válido.' });
     }
 
-    const { hora, timestamp } = getFechaHoraCL();
-    const dia = String(timestamp).slice(0, 10);
+    const { hora, dia, timestamp } = getFechaHoraCL();
 
     console.log('Hora Chile:', hora);
     console.log('Timestamp:', timestamp);
