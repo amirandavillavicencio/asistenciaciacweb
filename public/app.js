@@ -97,8 +97,8 @@ function updateEspacios() {
 }
 
 function getCurrentSemester(date = new Date()) {
-  const month = date.getUTCMonth() + 1;
-  const year = date.getUTCFullYear();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
   return `${month <= 6 ? 1 : 2}-${year}`;
 }
 
@@ -182,7 +182,7 @@ function renderRecords(records) {
     const isOpen = !item.hora_salida;
     const estadoClass = isOpen ? 'estado--activo' : 'estado--cerrado';
     const estadoText = isOpen ? 'Entrada activa' : 'Salida registrada';
-    const semestre = getCurrentSemester(item.dia ? new Date(`${item.dia}T12:00:00Z`) : new Date());
+    const semestre = getCurrentSemester(item.dia ? new Date(`${item.dia}T12:00:00`) : new Date());
     const student = getStudentDetails(item);
     const actionButton = isOpen
       ? `<button type="button" class="table-action" data-action="salida" data-id="${escapeHtml(item.id)}">Salida</button>`

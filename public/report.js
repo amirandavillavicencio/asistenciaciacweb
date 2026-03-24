@@ -234,13 +234,13 @@ function formatDuration(minutes) {
 
 function getMonthLabel(monthValue) {
   const month = Number.parseInt(monthValue, 10);
-  const date = new Date(Date.UTC(2024, month - 1, 1));
+  const date = new Date(2024, month - 1, 1);
 
   if (!Number.isInteger(month) || month < 1 || month > 12 || Number.isNaN(date.getTime())) {
     return 'Todos los meses';
   }
 
-  const label = new Intl.DateTimeFormat('es-CL', { month: 'long', timeZone: 'UTC' }).format(date);
+  const label = new Intl.DateTimeFormat('es-CL', { month: 'long', timeZone: 'America/Santiago' }).format(date);
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 

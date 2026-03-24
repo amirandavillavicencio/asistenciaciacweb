@@ -1,35 +1,7 @@
 const { supabaseGet, supabasePatch } = require('../lib/supabase');
+const { getFechaHoraCL } = require('../lib/fecha-hora-cl');
 
-const CHILE_TIMEZONE = 'America/Santiago';
 const RECORD_SELECT = 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado,created_at';
-
-function getChileParts(date = new Date()) {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: CHILE_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  });
-
-  return Object.fromEntries(
-    formatter
-      .formatToParts(date)
-      .filter((part) => part.type !== 'literal')
-      .map((part) => [part.type, part.value]),
-  );
-}
-
-function getChileNow(date = new Date()) {
-  const parts = getChileParts(date);
-  const dia = `${parts.year}-${parts.month}-${parts.day}`;
-  const timestamp = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
-
-  return { dia, timestamp };
-}
 
 function parseBody(req) {
   if (typeof req.body === 'string') {
@@ -62,11 +34,15 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes indicar un registro válido.' });
     }
 
-    const now = getChileNow();
+    const { hora, timestamp } = getFechaHoraCL();
+    const dia = String(timestamp).slice(0, 10);
+
+    console.log('Hora Chile:', hora);
+    console.log('Timestamp:', timestamp);
     const existing = await supabaseGet('attendance_records', {
       select: RECORD_SELECT,
       id: `eq.${id}`,
-      dia: `eq.${now.dia}`,
+      dia: `eq.${dia}`,
       limit: '1',
     });
 
@@ -84,13 +60,13 @@ module.exports = async function handler(req, res) {
       'attendance_records',
       { id: `eq.${id}`, select: RECORD_SELECT },
       {
-        hora_salida: now.timestamp,
+        hora_salida: timestamp,
         estado: 'Fuera',
       },
     );
 
     const registroActualizado = Array.isArray(updated) ? updated[0] || null : updated;
-    const registrosHoy = await getTodayRecords(now.dia);
+    const registrosHoy = await getTodayRecords(dia);
 
     return res.status(200).json({
       message: 'Salida registrada correctamente.',

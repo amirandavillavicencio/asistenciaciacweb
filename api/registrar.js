@@ -1,7 +1,7 @@
 const { supabaseGet, supabasePost } = require('../lib/supabase');
 const { cleanRun, cleanDv } = require('../lib/rut');
+const { getFechaHoraCL } = require('../lib/fecha-hora-cl');
 
-const CHILE_TIMEZONE = 'America/Santiago';
 const CAMPUS_OPTIONS = ['Vitacura', 'San Joaquín'];
 const ACTIVITY_OPTIONS = [
   'Reforzamiento',
@@ -18,34 +18,6 @@ const SPACE_OPTIONS = {
   'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
 };
 const RECORD_SELECT = 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado,created_at';
-
-function getChileParts(date = new Date()) {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: CHILE_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  });
-
-  return Object.fromEntries(
-    formatter
-      .formatToParts(date)
-      .filter((part) => part.type !== 'literal')
-      .map((part) => [part.type, part.value]),
-  );
-}
-
-function getChileNow(date = new Date()) {
-  const parts = getChileParts(date);
-  const dia = `${parts.year}-${parts.month}-${parts.day}`;
-  const timestamp = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
-
-  return { dia, timestamp };
-}
 
 function parseBody(req) {
   if (typeof req.body === 'string') {
@@ -148,8 +120,12 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes seleccionar un espacio válido para el campus elegido.' });
     }
 
-    const now = getChileNow();
-    const openRecord = await getOpenRecord(now.dia, run);
+    const { fecha, hora, timestamp } = getFechaHoraCL();
+    const dia = String(timestamp).slice(0, 10);
+
+    console.log('Hora Chile:', hora);
+    console.log('Timestamp:', timestamp);
+    const openRecord = await getOpenRecord(dia, run);
 
     if (openRecord) {
       return res.status(409).json({
@@ -160,8 +136,8 @@ module.exports = async function handler(req, res) {
     const inserted = await supabasePost(
       'attendance_records',
       {
-        dia: now.dia,
-        hora_entrada: now.timestamp,
+        dia,
+        hora_entrada: timestamp,
         run,
         dv,
         carrera,
@@ -177,7 +153,7 @@ module.exports = async function handler(req, res) {
     );
 
     const registroActualizado = Array.isArray(inserted) ? inserted[0] || null : inserted;
-    const registrosHoy = await getTodayRecords(now.dia);
+    const registrosHoy = await getTodayRecords(dia);
 
     return res.status(200).json({
       message: 'Entrada registrada correctamente.',
