@@ -13,8 +13,8 @@
   --surface: #ffffff;
   --surface-muted: #f6f8fa;
   --surface-subtle: #eef2f5;
-  --shell-max-width: 1640px;
-  --shell-padding-x: clamp(18px, 2vw, 34px);
+  --shell-max-width: 1200px;
+  --shell-padding-x: 16px;
   --shell-padding-y: 14px;
   --panel-padding: clamp(18px, 1.7vw, 24px);
   --radius-sm: 8px;
@@ -47,9 +47,15 @@ textarea {
 }
 
 .app-shell {
-  width: min(100%, var(--shell-max-width));
+  width: 100%;
+  max-width: var(--shell-max-width);
   margin: 0 auto;
   padding: var(--shell-padding-y) var(--shell-padding-x) 28px;
+}
+
+.container, .card, .section {
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .topbar {
@@ -475,13 +481,15 @@ button:disabled {
 }
 
 .table-wrap {
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: #fff;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .table-wrap::-webkit-scrollbar {
@@ -497,11 +505,14 @@ button:disabled {
   border-radius: 999px;
 }
 
-.records-table {
+table {
   width: 100%;
+  min-width: 1100px;
   border-collapse: collapse;
+}
+
+.records-table {
   table-layout: auto;
-  min-width: 1180px;
 }
 
 .records-table .col-run {
@@ -569,15 +580,16 @@ tbody tr:hover {
   background: #f5f8fb;
 }
 
+th, td {
+  white-space: nowrap;
+}
+
 td {
   padding: 11px 12px;
   border-top: 1px solid var(--border);
   vertical-align: top;
   font-size: 0.91rem;
   line-height: 1.32;
-  word-break: normal;
-  overflow-wrap: break-word;
-  hyphens: none;
 }
 
 td:first-child,
@@ -685,20 +697,6 @@ th:last-child {
   vertical-align: top;
 }
 
-.records-table td:nth-child(3),
-.records-table td:nth-child(4),
-.records-table td:nth-child(5),
-.records-table td:nth-child(6) {
-  white-space: normal;
-}
-
-.records-table td:nth-child(7),
-.records-table td:nth-child(8),
-.records-table td:nth-child(9),
-.records-table td:nth-child(10),
-.records-table td:nth-child(11) {
-  white-space: nowrap;
-}
 
 .table-datetime {
   display: grid;
@@ -753,11 +751,6 @@ th:last-child {
   }
 }
 
-@media (max-width: 1180px) {
-  .records-table {
-    min-width: 1080px;
-  }
-}
 
 @media (max-width: 900px) {
   .panel__header {
