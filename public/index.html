@@ -72,7 +72,7 @@
 
     <div id="message" class="message" aria-live="polite"></div>
 
-    <section class="dashboard-layout section">
+    <section class="operations-layout section">
       <article class="panel panel--form card">
         <header class="panel__header">
           <div>
@@ -162,16 +162,12 @@
         </form>
       </article>
 
-      <article class="panel panel--table card">
+      <article class="panel panel--quick-exit card">
         <header class="panel__header">
           <div>
-            <p class="section-tag">Seguimiento</p>
-            <h2>Registros del día</h2>
-            <p>Visualiza y cierra atenciones activas del campus seleccionado.</p>
-          </div>
-          <div class="table-summary">
-            <span id="records-count" class="summary-chip">0 registros</span>
-            <span class="summary-chip summary-chip--secondary">Actualización automática</span>
+            <p class="section-tag">Salida rápida</p>
+            <h2>Cierre por RUN/RUT</h2>
+            <p>Busca un registro activo y cierra la salida sin ir a la tabla.</p>
           </div>
         </header>
 
@@ -184,6 +180,22 @@
           <div id="rut-salida-message" class="rut-salida-message" aria-live="polite"></div>
           <div id="rut-salida-result" class="rut-salida-result" aria-live="polite"></div>
         </section>
+      </article>
+    </section>
+
+    <section class="dashboard-layout section">
+      <article class="panel panel--table card">
+        <header class="panel__header">
+          <div>
+            <p class="section-tag">Seguimiento</p>
+            <h2>Registros del día</h2>
+            <p>Visualiza y cierra atenciones activas del campus seleccionado.</p>
+          </div>
+          <div class="table-summary">
+            <span id="records-count" class="summary-chip">0 registros</span>
+            <span class="summary-chip summary-chip--secondary">Actualización automática</span>
+          </div>
+        </header>
 
         <div class="table-wrap table-wrapper">
           <table class="records-table">
