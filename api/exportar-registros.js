@@ -1,7 +1,6 @@
 const { supabaseGet } = require('../lib/supabase');
 
 const CHILE_TIMEZONE = 'America/Santiago';
-const RECORD_SELECT = 'created_at,dia,hora_entrada,hora_salida,run,dv,carrera,anio_ingreso,actividad,tematica,observaciones';
 const CSV_HEADERS = [
   'Día',
   'Hora Entrada',
@@ -9,10 +8,12 @@ const CSV_HEADERS = [
   'RUN',
   'Dígito V',
   'Carrera',
-  'Jornada',
   'Año Ingreso',
+  'Campus',
   'Actividad',
   'Temática',
+  'Espacio',
+  'Estado',
   'Observaciones',
 ];
 
@@ -108,22 +109,35 @@ function escapeCsvCell(value) {
 }
 
 function formatRunValue(run) {
-  return sanitizeCell(run).replace(/\D/g, '');
+  const normalized = sanitizeCell(run);
+  if (!normalized) return '';
+  return normalized.replace(/\./g, '').split('-')[0].replace(/\D/g, '');
+}
+
+function getDvValue(record) {
+  const directDv = sanitizeCell(record?.dv ?? record?.digito_verificador ?? '');
+  if (directDv) return directDv.toUpperCase();
+
+  const runSource = sanitizeCell(record?.run ?? record?.rut ?? '');
+  const runParts = runSource.split('-');
+  return sanitizeCell(runParts[1] ?? '').toUpperCase();
 }
 
 function buildCsvRow(record) {
   const safeRecord = record ?? {};
   return [
     formatDateDDMMYYYY(getDateValue(safeRecord)),
-    formatHourHHMM(safeRecord?.hora_entrada ?? ''),
-    formatHourHHMM(safeRecord?.hora_salida ?? ''),
-    formatRunValue(safeRecord?.run ?? ''),
-    sanitizeCell(safeRecord?.dv ?? '').toUpperCase(),
+    formatHourHHMM(safeRecord?.hora_entrada ?? safeRecord?.entrada ?? safeRecord?.check_in ?? ''),
+    formatHourHHMM(safeRecord?.hora_salida ?? safeRecord?.salida ?? safeRecord?.check_out ?? ''),
+    formatRunValue(safeRecord?.run ?? safeRecord?.rut ?? ''),
+    getDvValue(safeRecord),
     sanitizeCell(safeRecord?.carrera ?? ''),
-    '', // Jornada (placeholder hasta que exista el campo en BD)
-    sanitizeCell(safeRecord?.anio_ingreso ?? ''),
+    sanitizeCell(safeRecord?.anio_ingreso ?? safeRecord?.año_ingreso ?? safeRecord?.year_ingreso ?? ''),
+    sanitizeCell(safeRecord?.campus ?? safeRecord?.sede ?? ''),
     sanitizeCell(safeRecord?.actividad ?? ''),
-    sanitizeCell(safeRecord?.tematica ?? ''),
+    sanitizeCell(safeRecord?.tematica ?? safeRecord?.temática ?? ''),
+    sanitizeCell(safeRecord?.espacio ?? ''),
+    sanitizeCell(safeRecord?.estado ?? ''),
     sanitizeCell(safeRecord?.observaciones ?? ''),
   ].map(escapeCsvCell).join(';');
 }
@@ -137,16 +151,26 @@ module.exports = async function handler(req, res) {
     const today = getChileDate();
     let registros;
     try {
-      registros = await supabaseGet('attendance_records', {
-        select: RECORD_SELECT,
+      const campusSeleccionado = sanitizeCell(req.query?.campus || '');
+      const query = {
+        select: '*',
         dia: `eq.${today}`,
-        order: 'hora_entrada.desc',
+        order: 'created_at.asc',
+      };
+
+      if (campusSeleccionado) {
+        query.sede = `eq.${campusSeleccionado}`;
+      }
+
+      registros = await supabaseGet('attendance_records', {
+        ...query,
       });
     } catch (error) {
       throw new Error(error?.message || 'Error consultando registros para exportación CSV.');
     }
 
     const rows = Array.isArray(registros) ? registros : [];
+    console.log('Primer registro:', JSON.stringify(rows?.[0] ?? null, null, 2));
     const csvLines = [
       CSV_HEADERS.map(escapeCsvCell).join(';'),
       ...rows.map((record) => buildCsvRow(record)),
