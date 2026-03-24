@@ -276,8 +276,8 @@ textarea {
 
 .dashboard-layout {
   display: grid;
-  grid-template-columns: minmax(340px, 29%) minmax(0, 71%);
-  gap: 24px;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(0, 2.1fr);
+  gap: 28px;
   width: 100%;
   margin-top: 18px;
   align-items: start;
@@ -806,6 +806,14 @@ th:last-child {
     justify-content: flex-end;
   }
 
+  .dashboard-layout {
+    grid-template-columns: minmax(300px, 0.92fr) minmax(0, 2.08fr);
+    gap: 24px;
+  }
+}
+
+
+@media (max-width: 1180px) {
   .dashboard-layout {
     grid-template-columns: 1fr;
   }
