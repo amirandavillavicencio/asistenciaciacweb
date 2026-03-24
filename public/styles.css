@@ -17,6 +17,9 @@
   --shell-padding-x: clamp(18px, 2vw, 34px);
   --shell-padding-y: 14px;
   --panel-padding: clamp(18px, 1.7vw, 24px);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --shadow-soft: 0 6px 20px rgba(15, 37, 58, 0.08);
 }
 
 * {
@@ -62,6 +65,8 @@ textarea {
   width: 100%;
   padding: calc(var(--panel-padding) + 22px) var(--panel-padding) var(--panel-padding);
   border: 1px solid #0f2f4f;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
   background: linear-gradient(135deg, var(--usm-blue-deep) 0%, var(--usm-blue) 58%, #0a4c86 100%);
   color: #fff;
 }
@@ -201,7 +206,7 @@ textarea {
 
 .header-field select {
   padding: 0 14px;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
 }
 
 .header-field select option {
@@ -262,6 +267,8 @@ textarea {
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
 }
 
 .panel--form,
@@ -319,6 +326,7 @@ textarea {
   gap: 14px;
   padding: 16px;
   border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   background: var(--surface-muted);
 }
 
@@ -359,7 +367,7 @@ textarea {
   min-height: 46px;
   padding: 10px 12px;
   border: 1px solid var(--border-strong);
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   background: #fff;
   color: var(--ink-strong);
 }
@@ -399,7 +407,7 @@ button {
   max-width: 100%;
   padding: 0 18px;
   border: 1px solid var(--usm-blue);
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   background: var(--usm-blue);
   color: #fff;
   font-weight: 700;
@@ -424,6 +432,7 @@ button:disabled {
   padding: 12px 14px;
   border-left: 4px solid transparent;
   background: #fff;
+  border-radius: var(--radius-sm);
 }
 
 .message.is-visible {
@@ -471,7 +480,21 @@ button:disabled {
   overflow-y: hidden;
   padding: 0;
   border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   background: #fff;
+}
+
+.table-wrap::-webkit-scrollbar {
+  height: 10px;
+}
+
+.table-wrap::-webkit-scrollbar-track {
+  background: #e8edf2;
+}
+
+.table-wrap::-webkit-scrollbar-thumb {
+  background: #b5c3d0;
+  border-radius: 999px;
 }
 
 .records-table {
@@ -533,6 +556,9 @@ thead th {
   letter-spacing: 0.025em;
   line-height: 1.2;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 tbody tr:nth-child(even) {
@@ -633,6 +659,7 @@ th:last-child {
   border-color: var(--usm-blue);
   background: var(--usm-blue);
   white-space: nowrap;
+  border-radius: 6px;
 }
 
 .table-action--muted {

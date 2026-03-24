@@ -14,11 +14,8 @@
 
 <body>
   <main class="app-shell">
-
-    <!-- HEADER -->
     <header class="topbar">
       <div class="topbar__surface">
-
         <div class="topbar__meta">
           <div class="header-datetime">
             <div>
@@ -37,131 +34,171 @@
         </div>
 
         <div class="topbar__brand">
-          <img
-            src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
-            style="height:60px;"
-          >
-          <div>
-            <p style="margin:0;font-size:12px;">Universidad Técnica Federico Santa María</p>
-            <h1 style="margin:0;">CIAC Registro</h1>
+          <div class="brand-logo-wrap">
+            <img
+              class="brand-logo"
+              src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
+              alt="Logo USM"
+            >
+          </div>
+          <div class="brand-copy">
+            <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
+            <div class="brand-title-group">
+              <h1>CIAC Registro</h1>
+              <p class="brand-subtitle">Panel de registro diario de atenciones estudiantiles.</p>
+            </div>
           </div>
         </div>
 
         <div class="topbar__campus">
-          <select id="campus-header">
-            <option value="">Selecciona campus</option>
-            <option value="Vitacura">Vitacura</option>
-            <option value="San Joaquín">San Joaquín</option>
-          </select>
+          <label class="header-field header-field--campus">
+            <span>Campus de trabajo</span>
+            <select id="campus-header">
+              <option value="">Selecciona campus</option>
+              <option value="Vitacura">Vitacura</option>
+              <option value="San Joaquín">San Joaquín</option>
+            </select>
+          </label>
         </div>
 
         <div class="topbar__actions">
-          <button id="export-button">Exportar CSV</button>
-          <button id="export-report-button" type="button">Ver informe</button>
+          <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
+          <button id="export-report-button" class="button button--header" type="button">Ver informe</button>
         </div>
-
       </div>
     </header>
 
-    <!-- MENSAJE -->
-    <div id="message"></div>
+    <div id="message" class="message" aria-live="polite"></div>
 
-    <!-- CONTENIDO -->
     <section class="dashboard-layout">
-
-      <!-- FORMULARIO -->
       <article class="panel panel--form">
-
-        <h2>Ingreso de estudiante</h2>
-
-        <form id="registro-form">
-
-          <h3>Identificación</h3>
-
-          <div class="grid">
-            <input id="run" placeholder="RUN" required>
-            <input id="dv" placeholder="DV" maxlength="1" required>
+        <header class="panel__header">
+          <div>
+            <p class="section-tag">Ingreso</p>
+            <h2>Ingreso de estudiante</h2>
+            <p>Completa los datos para registrar una nueva atención.</p>
           </div>
-          <p id="autocomplete-status" class="form-helper">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
+        </header>
 
-          <div class="grid">
-            <input id="carrera" placeholder="Carrera" required>
-            <input id="anio_ingreso" placeholder="Año ingreso" required>
-          </div>
+        <form id="registro-form" class="form">
+          <section class="form-section">
+            <header class="form-section__header">
+              <h3>Identificación</h3>
+            </header>
 
-          <h3>Detalle</h3>
+            <div class="grid grid--run">
+              <label>
+                <span>RUN</span>
+                <input id="run" placeholder="Ej: 12345678" required>
+              </label>
+              <label>
+                <span>DV</span>
+                <input id="dv" placeholder="K" maxlength="1" required>
+              </label>
+            </div>
+            <p id="autocomplete-status" class="form-helper">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
 
-          <div class="grid">
-            <select id="actividad" required>
-              <option value="">Actividad</option>
-              <option>Reforzamiento</option>
-              <option>Consultoría</option>
-              <option>Tutoría par integral</option>
-              <option>Mentoría</option>
-              <option>Psicoeducativo individual</option>
-              <option>Psicoeducativo grupal</option>
-              <option>Uso de sala</option>
-            </select>
+            <div class="grid grid--2">
+              <label>
+                <span>Carrera</span>
+                <input id="carrera" placeholder="Carrera" required>
+              </label>
+              <label>
+                <span>Año ingreso</span>
+                <input id="anio_ingreso" placeholder="Ej: 2023" required>
+              </label>
+            </div>
+          </section>
 
-            <select id="tematica" required>
-              <option value="">Temática</option>
-              <option>Matemática</option>
-              <option>Química</option>
-              <option>Física</option>
-              <option>Programación</option>
-            </select>
-          </div>
+          <section class="form-section">
+            <header class="form-section__header">
+              <h3>Detalle de atención</h3>
+            </header>
 
-          <div class="grid">
-            <select id="espacio" required>
-              <option value="">Espacio</option>
-            </select>
+            <div class="grid grid--2">
+              <label>
+                <span>Actividad</span>
+                <select id="actividad" required>
+                  <option value="">Actividad</option>
+                  <option>Reforzamiento</option>
+                  <option>Consultoría</option>
+                  <option>Tutoría par integral</option>
+                  <option>Mentoría</option>
+                  <option>Psicoeducativo individual</option>
+                  <option>Psicoeducativo grupal</option>
+                  <option>Uso de sala</option>
+                </select>
+              </label>
+              <label>
+                <span>Temática</span>
+                <select id="tematica" required>
+                  <option value="">Temática</option>
+                  <option>Matemática</option>
+                  <option>Química</option>
+                  <option>Física</option>
+                  <option>Programación</option>
+                </select>
+              </label>
+            </div>
 
-            <textarea id="observaciones" placeholder="Observaciones"></textarea>
-          </div>
+            <div class="grid grid--2 grid--details">
+              <label>
+                <span>Espacio</span>
+                <select id="espacio" required>
+                  <option value="">Espacio</option>
+                </select>
+              </label>
+              <label>
+                <span>Observaciones</span>
+                <textarea id="observaciones" placeholder="Observaciones"></textarea>
+              </label>
+            </div>
+          </section>
 
-          <button id="submit-button">Registrar entrada</button>
+          <button id="submit-button" type="submit">Registrar entrada</button>
 
         </form>
       </article>
 
-      <!-- TABLA -->
       <article class="panel panel--table">
+        <header class="panel__header">
+          <div>
+            <p class="section-tag">Seguimiento</p>
+            <h2>Registros del día</h2>
+            <p>Visualiza y cierra atenciones activas del campus seleccionado.</p>
+          </div>
+          <div class="table-summary">
+            <span id="records-count" class="summary-chip">0 registros</span>
+            <span class="summary-chip summary-chip--secondary">Actualización automática</span>
+          </div>
+        </header>
 
-        <h2>Registros del día</h2>
-
-        <div>
-          <span id="records-count">0 registros</span>
+        <div class="table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th class="col-run">RUN</th>
+                <th class="col-student">Estudiante</th>
+                <th class="col-campus">Campus</th>
+                <th class="col-activity">Actividad</th>
+                <th class="col-topic">Temática</th>
+                <th class="col-space">Espacio</th>
+                <th class="col-semester">Semestre</th>
+                <th class="col-entry">Entrada</th>
+                <th class="col-exit">Salida</th>
+                <th class="col-status">Estado</th>
+                <th class="col-action">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="records-body">
+              <tr>
+                <td colspan="11" class="empty">No hay registros hoy</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>RUN</th>
-              <th>Estudiante</th>
-              <th>Campus</th>
-              <th>Actividad</th>
-              <th>Temática</th>
-              <th>Espacio</th>
-              <th>Semestre</th>
-              <th>Entrada</th>
-              <th>Salida</th>
-              <th>Estado</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-
-          <tbody id="records-body">
-            <tr>
-              <td colspan="11">No hay registros hoy</td>
-            </tr>
-          </tbody>
-        </table>
-
       </article>
-
     </section>
-
   </main>
 
   <script src="/app.js"></script>
