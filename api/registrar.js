@@ -23,7 +23,6 @@ function parseBody(req) {
   if (typeof req.body === 'string') {
     return JSON.parse(req.body || '{}');
   }
-
   return req.body || {};
 }
 
@@ -37,7 +36,6 @@ async function getOpenRecord(dia, run) {
     order: 'hora_entrada.desc',
     limit: '1',
   });
-
   return Array.isArray(data) ? data[0] || null : null;
 }
 
@@ -47,7 +45,6 @@ async function getTodayRecords(dia) {
     dia: `eq.${dia}`,
     order: 'hora_entrada.desc',
   });
-
   return Array.isArray(data) ? data : [];
 }
 
@@ -68,66 +65,27 @@ module.exports = async function handler(req, res) {
     const observaciones = String(body.observaciones || '').trim();
     const espacio = String(body.espacio || '').trim();
 
-    if (!campus) {
-      return res.status(400).json({ error: 'Debes seleccionar un campus.' });
-    }
+    if (!campus) return res.status(400).json({ error: 'Debes seleccionar un campus.' });
+    if (!CAMPUS_OPTIONS.includes(campus)) return res.status(400).json({ error: 'Debes seleccionar un campus válido.' });
+    if (!run) return res.status(400).json({ error: 'Debes ingresar el RUN.' });
+    if (!/^\d+$/.test(run)) return res.status(400).json({ error: 'El RUN debe contener solo números.' });
+    if (!dv || dv.length !== 1) return res.status(400).json({ error: 'Debes ingresar un dígito verificador válido.' });
+    if (!carrera) return res.status(400).json({ error: 'Debes ingresar la carrera.' });
+    if (!anioIngreso || !/^\d{4}$/.test(anioIngreso)) return res.status(400).json({ error: 'Debes ingresar un año de ingreso válido.' });
+    if (!actividad) return res.status(400).json({ error: 'Debes seleccionar una actividad.' });
+    if (!ACTIVITY_OPTIONS.includes(actividad)) return res.status(400).json({ error: 'Debes seleccionar una actividad válida.' });
+    if (!tematica) return res.status(400).json({ error: 'Debes seleccionar una temática.' });
+    if (!TOPIC_OPTIONS.includes(tematica)) return res.status(400).json({ error: 'Debes seleccionar una temática válida.' });
+    if (!espacio) return res.status(400).json({ error: 'Debes seleccionar un espacio.' });
+    if (!SPACE_OPTIONS[campus].includes(espacio)) return res.status(400).json({ error: 'Debes seleccionar un espacio válido para el campus elegido.' });
 
-    if (!CAMPUS_OPTIONS.includes(campus)) {
-      return res.status(400).json({ error: 'Debes seleccionar un campus válido.' });
-    }
+    const { fecha, hora, timestampUTC } = getFechaHoraCL();
 
-    if (!run) {
-      return res.status(400).json({ error: 'Debes ingresar el RUN.' });
-    }
-
-    if (!/^\d+$/.test(run)) {
-      return res.status(400).json({ error: 'El RUN debe contener solo números.' });
-    }
-
-    if (!dv || dv.length !== 1) {
-      return res.status(400).json({ error: 'Debes ingresar un dígito verificador válido.' });
-    }
-
-    if (!carrera) {
-      return res.status(400).json({ error: 'Debes ingresar la carrera.' });
-    }
-
-    if (!anioIngreso || !/^\d{4}$/.test(anioIngreso)) {
-      return res.status(400).json({ error: 'Debes ingresar un año de ingreso válido.' });
-    }
-
-    if (!actividad) {
-      return res.status(400).json({ error: 'Debes seleccionar una actividad.' });
-    }
-
-    if (!ACTIVITY_OPTIONS.includes(actividad)) {
-      return res.status(400).json({ error: 'Debes seleccionar una actividad válida.' });
-    }
-
-    if (!tematica) {
-      return res.status(400).json({ error: 'Debes seleccionar una temática.' });
-    }
-
-    if (!TOPIC_OPTIONS.includes(tematica)) {
-      return res.status(400).json({ error: 'Debes seleccionar una temática válida.' });
-    }
-
-    if (!espacio) {
-      return res.status(400).json({ error: 'Debes seleccionar un espacio.' });
-    }
-
-    if (!SPACE_OPTIONS[campus].includes(espacio)) {
-      return res.status(400).json({ error: 'Debes seleccionar un espacio válido para el campus elegido.' });
-    }
-
-    const { fecha, hora } = getFechaHoraCL();
-
-    // Fecha local de Chile para agrupar registros del día
+    // Fecha local de Chile para agrupar registros del día → "2026-03-24"
     const dia = fecha;
 
-    // Timestamp inequívoco en UTC para guardar en base de datos
-    // Luego el frontend lo muestra en America/Santiago
-    const horaEntrada = new Date().toISOString();
+    // Timestamp UTC con Z explícito → Supabase lo interpreta correctamente
+    const horaEntrada = timestampUTC;
 
     console.log('Hora Chile:', hora);
     console.log('Día Chile:', dia);
