@@ -296,6 +296,10 @@ textarea {
   padding: var(--panel-padding);
 }
 
+.panel--table {
+  padding-inline: clamp(14px, 1.2vw, 18px);
+}
+
 .panel__header {
   display: flex;
   align-items: flex-start;
@@ -502,7 +506,7 @@ button:disabled {
 
 .table-wrapper {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .table-wrap::-webkit-scrollbar {
@@ -520,66 +524,78 @@ button:disabled {
 
 table {
   width: 100%;
-  min-width: 1100px;
   border-collapse: collapse;
 }
 
 .records-table {
-  table-layout: auto;
+  table-layout: fixed;
+  font-size: 0.86rem;
+  min-width: 0;
 }
 
+.records-table col.col-run,
 .records-table .col-run {
   width: 9%;
 }
 
+.records-table col.col-student,
 .records-table .col-student {
-  width: 24%;
+  width: 25%;
 }
 
+.records-table col.col-campus,
 .records-table .col-campus {
-  width: 10%;
+  width: 8%;
 }
 
+.records-table col.col-activity,
 .records-table .col-activity {
-  width: 11%;
-}
-
-.records-table .col-topic {
   width: 10%;
 }
 
-.records-table .col-space {
+.records-table col.col-topic,
+.records-table .col-topic {
   width: 9%;
 }
 
+.records-table col.col-space,
+.records-table .col-space {
+  width: 11%;
+}
+
+.records-table col.col-semester,
 .records-table .col-semester {
   width: 8%;
 }
 
+.records-table col.col-entry,
 .records-table .col-entry,
+.records-table col.col-exit,
 .records-table .col-exit {
-  width: 9%;
+  width: 8%;
 }
 
+.records-table col.col-status,
 .records-table .col-status {
-  width: 10%;
+  width: 6%;
 }
 
+.records-table col.col-action,
 .records-table .col-action {
-  width: 10%;
+  width: 6%;
 }
 
-thead th {
+.records-table thead th {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border-strong);
   background: #f1f5f8;
   color: var(--usm-blue-ink);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   text-align: left;
   text-transform: uppercase;
-  letter-spacing: 0.025em;
-  line-height: 1.2;
-  white-space: nowrap;
+  letter-spacing: 0.015em;
+  line-height: 1.15;
+  white-space: normal;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -593,16 +609,12 @@ tbody tr:hover {
   background: #f5f8fb;
 }
 
-th, td {
-  white-space: nowrap;
-}
-
 td {
-  padding: 11px 12px;
+  padding: 8px 10px;
   border-top: 1px solid var(--border);
   vertical-align: top;
-  font-size: 0.91rem;
-  line-height: 1.32;
+  font-size: 0.86rem;
+  line-height: 1.22;
 }
 
 td:first-child,
@@ -623,14 +635,15 @@ th:last-child {
 
 .student-cell {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
 .student-cell strong {
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--ink-strong);
-  line-height: 1.25;
+  line-height: 1.18;
 }
 
 .student-cell__meta,
@@ -641,28 +654,31 @@ th:last-child {
 
 .student-cell__meta {
   color: #3d5366;
-  font-size: 0.84rem;
+  font-size: 0.74rem;
 }
 
 .student-cell__notes {
   color: var(--ink-muted);
-  font-size: 0.82rem;
-  overflow-wrap: anywhere;
+  font-size: 0.73rem;
+  line-height: 1.18;
+  overflow-wrap: break-word;
 }
 
 .estado {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 24px;
-  padding: 2px 8px;
+  min-height: 20px;
+  max-width: 100%;
+  padding: 1px 6px;
   border: 1px solid transparent;
   border-radius: 4px;
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   line-height: 1.1;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
 }
 
 .estado--activo {
@@ -678,13 +694,15 @@ th:last-child {
 }
 
 .table-action {
-  min-width: 78px;
-  min-height: 32px;
-  padding: 0 10px;
+  min-width: 56px;
+  min-height: 26px;
+  padding: 0 7px;
   border-color: var(--usm-blue);
   background: var(--usm-blue);
   white-space: nowrap;
-  border-radius: 6px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  line-height: 1;
 }
 
 .table-action--muted {
@@ -705,15 +723,43 @@ th:last-child {
 .records-table th,
 .records-table td {
   word-break: normal;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
   hyphens: none;
   vertical-align: top;
+}
+
+.records-table .col-student,
+.records-table .col-activity,
+.records-table .col-topic,
+.records-table .col-space {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.records-table .col-run,
+.records-table .col-campus,
+.records-table .col-semester,
+.records-table .col-entry,
+.records-table .col-exit,
+.records-table .col-status,
+.records-table .col-action {
+  white-space: nowrap;
+}
+
+.records-table .col-status,
+.records-table .col-action {
+  text-align: center;
+}
+
+.records-table th.col-status,
+.records-table th.col-action {
+  text-align: center;
 }
 
 
 .table-datetime {
   display: grid;
-  gap: 1px;
+  gap: 0;
   min-width: 0;
   white-space: nowrap;
 }
@@ -725,7 +771,7 @@ th:last-child {
 
 .table-datetime__time {
   color: var(--ink-muted);
-  font-size: 0.83rem;
+  font-size: 0.74rem;
 }
 
 /* Identificación sigue en 2 columnas */
@@ -834,7 +880,7 @@ th:last-child {
   }
 
   .records-table {
-    min-width: 960px;
+    min-width: 920px;
   }
 
   .table-summary {

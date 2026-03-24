@@ -190,23 +190,23 @@ function renderRecords(records) {
 
     return `
       <tr>
-        <td class="cell-run">${escapeHtml(getRunLabel(item))}</td>
-        <td>
+        <td class="cell-run col-run">${escapeHtml(getRunLabel(item))}</td>
+        <td class="col-student">
           <div class="student-cell">
             <strong>${escapeHtml(student.career)}</strong>
             <span class="student-cell__meta">${escapeHtml(student.admission)}</span>
             <span class="student-cell__notes">${escapeHtml(student.notes)}</span>
           </div>
         </td>
-        <td>${escapeHtml(getCellValue(item.sede))}</td>
-        <td>${escapeHtml(getCellValue(item.actividad))}</td>
-        <td>${escapeHtml(getCellValue(item.tematica))}</td>
-        <td>${escapeHtml(getCellValue(item.espacio))}</td>
-        <td>${escapeHtml(semestre)}</td>
-        <td>${renderDateTimeCell(item.hora_entrada)}</td>
-        <td>${renderDateTimeCell(item.hora_salida)}</td>
-        <td><span class="estado ${estadoClass}">${escapeHtml(estadoText)}</span></td>
-        <td>${actionButton}</td>
+        <td class="col-campus">${escapeHtml(getCellValue(item.sede))}</td>
+        <td class="col-activity">${escapeHtml(getCellValue(item.actividad))}</td>
+        <td class="col-topic">${escapeHtml(getCellValue(item.tematica))}</td>
+        <td class="col-space">${escapeHtml(getCellValue(item.espacio))}</td>
+        <td class="col-semester">${escapeHtml(semestre)}</td>
+        <td class="col-entry">${renderDateTimeCell(item.hora_entrada)}</td>
+        <td class="col-exit">${renderDateTimeCell(item.hora_salida)}</td>
+        <td class="col-status"><span class="estado ${estadoClass}">${escapeHtml(estadoText)}</span></td>
+        <td class="col-action">${actionButton}</td>
       </tr>
     `;
   }).join('');
