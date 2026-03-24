@@ -464,6 +464,17 @@ async function downloadExport() {
   }
 }
 
+function validateExportKey() {
+  const exportKey = window.prompt('Ingresa la clave para exportar:');
+
+  if (exportKey !== 'Ciac.2011') {
+    window.alert('Clave incorrecta');
+    return false;
+  }
+
+  return true;
+}
+
 function openUsageReport() {
   clearMessage();
   const claveInforme = window.prompt('Ingresa la clave para abrir Informe:');
@@ -575,7 +586,13 @@ anioInput?.addEventListener('input', () => {
   anioInput.value = String(anioInput.value || '').replace(/\D/g, '').slice(0, 4);
 });
 
-exportButton?.addEventListener('click', downloadExport);
+exportButton?.addEventListener('click', () => {
+  if (!validateExportKey()) {
+    return;
+  }
+
+  downloadExport();
+});
 exportReportButton?.addEventListener('click', openUsageReport);
 
 recordsBody?.addEventListener('click', (event) => {
@@ -824,6 +841,10 @@ historicalViewButton?.addEventListener('click', () => {
 });
 
 historicalExportCsv?.addEventListener('click', () => {
+  if (!validateExportKey()) {
+    return;
+  }
+
   downloadByUrl(`/api/export-historical?${getHistoricalQuery()}&format=csv`, 'historico.csv');
 });
 
