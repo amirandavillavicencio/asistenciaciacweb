@@ -46,11 +46,13 @@ function escapeHtml(value) {
 }
 
 function showMessage(text, type) {
+  if (!messageBox) return;
   messageBox.textContent = text;
   messageBox.className = `message is-visible message--${type}`;
 }
 
 function clearMessage() {
+  if (!messageBox) return;
   messageBox.textContent = '';
   messageBox.className = 'message';
 }
@@ -63,15 +65,17 @@ function buildApiError(data, fallback) {
 }
 
 function getSelectedCampus() {
-  return campusHeaderInput.value;
+  return campusHeaderInput?.value || '';
 }
 
 function syncCampus(value) {
+  if (!campusHeaderInput) return;
   campusHeaderInput.value = value;
   activeCampusFilter = value;
 }
 
 function updateEspacios() {
+  if (!espacioInput) return;
   const selectedCampus = getSelectedCampus();
   const spaces = CAMPUS_SPACES[selectedCampus] || [];
   const previousValue = espacioInput.value;
@@ -165,6 +169,7 @@ function getVisibleRecords(records) {
 }
 
 function renderRecords(records) {
+  if (!recordsBody || !recordsCount) return;
   const visibleRecords = getVisibleRecords(Array.isArray(records) ? records : []);
 
   if (visibleRecords.length === 0) {
@@ -221,6 +226,7 @@ async function loadTodayRecords() {
 }
 
 async function lookupStudent(runValue) {
+  if (!autocompleteStatus || !dvInput || !carreraInput || !anioInput) return;
   const run = sanitizeRun(runValue);
 
   if (run.length < 3) {
@@ -265,6 +271,7 @@ async function lookupStudent(runValue) {
 }
 
 async function downloadExport() {
+  if (!exportButton) return;
   clearMessage();
   exportButton.disabled = true;
   exportButton.textContent = 'Exportando CSV...';
@@ -335,6 +342,7 @@ async function registerExit(id) {
 }
 
 function updateClock() {
+  if (!currentDate || !currentTime || !currentSemesterBadge) return;
   const now = new Date();
   currentDate.textContent = new Intl.DateTimeFormat('es-CL', {
     weekday: 'long',
@@ -353,7 +361,7 @@ function updateClock() {
   currentSemesterBadge.textContent = `Semestre ${getCurrentSemester(now)}`;
 }
 
-campusHeaderInput.addEventListener('change', () => {
+campusHeaderInput?.addEventListener('change', () => {
   syncCampus(campusHeaderInput.value);
   updateEspacios();
   clearMessage();
@@ -362,26 +370,26 @@ campusHeaderInput.addEventListener('change', () => {
   });
 });
 
-runInput.addEventListener('input', () => {
+runInput?.addEventListener('input', () => {
   runInput.value = sanitizeRun(runInput.value);
   clearMessage();
   window.clearTimeout(lookupTimer);
   lookupTimer = window.setTimeout(() => lookupStudent(runInput.value), 300);
 });
 
-dvInput.addEventListener('input', () => {
+dvInput?.addEventListener('input', () => {
   dvInput.value = sanitizeDv(dvInput.value);
   clearMessage();
 });
 
-anioInput.addEventListener('input', () => {
+anioInput?.addEventListener('input', () => {
   anioInput.value = String(anioInput.value || '').replace(/\D/g, '').slice(0, 4);
 });
 
-exportButton.addEventListener('click', downloadExport);
-exportReportButton.addEventListener('click', openUsageReport);
+exportButton?.addEventListener('click', downloadExport);
+exportReportButton?.addEventListener('click', openUsageReport);
 
-recordsBody.addEventListener('click', (event) => {
+recordsBody?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-action="salida"]');
 
   if (!button) {
@@ -396,7 +404,7 @@ recordsBody.addEventListener('click', (event) => {
   });
 });
 
-form.addEventListener('submit', async (event) => {
+form?.addEventListener('submit', async (event) => {
   event.preventDefault();
   clearMessage();
 
@@ -412,8 +420,10 @@ form.addEventListener('submit', async (event) => {
     espacio: espacioInput.value,
   };
 
-  submitButton.disabled = true;
-  submitButton.textContent = 'Registrando...';
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = 'Registrando...';
+  }
 
   try {
     const response = await fetch('/api/registrar', {
@@ -438,17 +448,23 @@ form.addEventListener('submit', async (event) => {
     syncCampus(selectedCampus);
     actividadInput.value = selectedActividad;
     updateEspacios();
-    autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
-    runInput.focus();
+    if (autocompleteStatus) {
+      autocompleteStatus.textContent = 'Ingresa al menos 3 dígitos para consultar datos del estudiante.';
+    }
+    runInput?.focus();
   } catch (error) {
     showMessage(error.message || 'No se pudo registrar la asistencia.', 'error');
   } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = 'Registrar entrada';
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = 'Registrar entrada';
+    }
   }
 });
 
-syncCampus(getSelectedCampus());
+if (campusHeaderInput) {
+  syncCampus(getSelectedCampus());
+}
 updateEspacios();
 updateClock();
 loadTodayRecords().catch((error) => {
@@ -490,6 +506,7 @@ function renderHistoricalCards(analytics) {
 }
 
 function renderHistoricalMonth(records) {
+  if (!historicalHead || !historicalBody) return;
   historicalHead.innerHTML = '<tr><th>Fecha</th><th>RUN</th><th>Campus</th><th>Actividad</th><th>Temática</th><th>Espacio</th><th>Entrada</th><th>Salida</th></tr>';
   if (!records.length) {
     historicalBody.innerHTML = '<tr><td colspan="8" class="empty">Sin registros para este período.</td></tr>';
@@ -510,6 +527,7 @@ function renderHistoricalMonth(records) {
 }
 
 function renderHistoricalYear(monthly) {
+  if (!historicalHead || !historicalBody) return;
   historicalHead.innerHTML = '<tr><th>Mes</th><th>Total atenciones</th><th>Estudiantes únicos</th><th>Actividad top</th><th>Temática top</th></tr>';
   historicalBody.innerHTML = monthly.map((row) => `
     <tr>
