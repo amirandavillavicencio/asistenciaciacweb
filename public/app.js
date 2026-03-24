@@ -23,10 +23,15 @@ const recordsCount = document.getElementById('records-count');
 const currentDate = document.getElementById('current-date');
 const currentTime = document.getElementById('current-time');
 const currentSemesterBadge = document.getElementById('current-semester');
+const rutSalidaInput = document.getElementById('rut-salida-input');
+const rutSalidaSearchButton = document.getElementById('rut-salida-search');
+const rutSalidaResult = document.getElementById('rut-salida-result');
+const rutSalidaMessage = document.getElementById('rut-salida-message');
 
 
 let lookupTimer = null;
 let activeCampusFilter = '';
+let todayRecordsCache = [];
 
 function sanitizeRun(value) {
   return String(value || '').replace(/\D/g, '');
@@ -34,6 +39,23 @@ function sanitizeRun(value) {
 
 function sanitizeDv(value) {
   return String(value || '').trim().toUpperCase().replace(/[^0-9K]/g, '').slice(0, 1);
+}
+
+function normalizarRut(valor) {
+  const cleaned = String(valor || '').trim().toUpperCase().replace(/\./g, '').replace(/-/g, '').replace(/[^0-9K]/g, '');
+
+  if (cleaned.length < 2) {
+    return '';
+  }
+
+  const cuerpo = cleaned.slice(0, -1).replace(/\D/g, '');
+  const dv = cleaned.slice(-1).replace(/[^0-9K]/g, '');
+
+  if (!cuerpo || !dv || cuerpo.length < 7 || cuerpo.length > 8) {
+    return '';
+  }
+
+  return `${cuerpo}-${dv}`;
 }
 
 function escapeHtml(value) {
@@ -168,8 +190,75 @@ function getVisibleRecords(records) {
   return records.filter((item) => item.sede === activeCampusFilter);
 }
 
+function getChileDateString(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+function showRutSalidaMessage(text, type = '') {
+  if (!rutSalidaMessage) return;
+  rutSalidaMessage.textContent = text || '';
+  rutSalidaMessage.className = `rut-salida-message${text ? ' is-visible' : ''}${type ? ` rut-salida-message--${type}` : ''}`;
+}
+
+function clearRutSalidaResult() {
+  if (rutSalidaResult) {
+    rutSalidaResult.innerHTML = '';
+    rutSalidaResult.className = 'rut-salida-result';
+  }
+}
+
+function renderResultadoBusquedaSalida(registro) {
+  if (!rutSalidaResult) return;
+
+  if (!registro) {
+    clearRutSalidaResult();
+    return;
+  }
+
+  const runNormalizado = normalizarRut(`${registro.run || ''}${registro.dv || ''}`) || getRunLabel(registro);
+  const entrada = formatDateTime(registro.hora_entrada);
+
+  rutSalidaResult.innerHTML = `
+    <article class="rut-salida-result__card">
+      <div class="rut-salida-result__meta">
+        <strong>${escapeHtml(registro.carrera || 'Alumno CIAC')}</strong>
+        <span><strong>RUN:</strong> ${escapeHtml(runNormalizado)}</span>
+        <span><strong>Entrada:</strong> ${escapeHtml(entrada.time ? `${entrada.date} ${entrada.time}` : entrada.date)}</span>
+        <span><strong>Estado:</strong> Entrada activa</span>
+      </div>
+      <div class="rut-salida-result__actions">
+        <button type="button" class="table-action" data-action="salida-rut" data-id="${escapeHtml(registro.id)}">Registrar salida</button>
+      </div>
+    </article>
+  `;
+  rutSalidaResult.className = 'rut-salida-result is-visible';
+}
+
+function buscarRegistroActivoPorRut(rutNormalizado) {
+  if (!rutNormalizado) return null;
+  const campusSeleccionado = getSelectedCampus();
+
+  if (!campusSeleccionado) {
+    return null;
+  }
+
+  const hoyChile = getChileDateString();
+  return todayRecordsCache.find((item) => {
+    const rutRegistro = normalizarRut(`${item.run || ''}${item.dv || ''}`);
+    const isActive = !item.hora_salida;
+    const sameDay = (item.dia || '') === hoyChile;
+    return isActive && sameDay && item.sede === campusSeleccionado && rutRegistro === rutNormalizado;
+  }) || null;
+}
+
 function renderRecords(records) {
   if (!recordsBody || !recordsCount) return;
+  todayRecordsCache = Array.isArray(records) ? records : [];
   const visibleRecords = getVisibleRecords(Array.isArray(records) ? records : []);
 
   if (visibleRecords.length === 0) {
@@ -336,8 +425,30 @@ async function registerExit(id) {
 
     renderRecords(data.registrosHoy || []);
     showMessage(data.message || 'Salida registrada correctamente.', 'success');
+    return true;
   } catch (error) {
     showMessage(error.message || 'No se pudo registrar la salida.', 'error');
+    return false;
+  }
+}
+
+async function registrarSalidaDesdeBuscador(idRegistro, button) {
+  if (!button) return;
+  button.disabled = true;
+  button.textContent = 'Registrando...';
+  const ok = await registerExit(idRegistro);
+  button.disabled = false;
+  button.textContent = 'Registrar salida';
+
+  if (ok) {
+    if (rutSalidaInput) {
+      rutSalidaInput.value = '';
+      rutSalidaInput.focus();
+    }
+    clearRutSalidaResult();
+    showRutSalidaMessage('Salida registrada correctamente.', 'success');
+  } else {
+    showRutSalidaMessage('No se pudo registrar la salida. Intenta nuevamente.', 'error');
   }
 }
 
@@ -365,6 +476,8 @@ campusHeaderInput?.addEventListener('change', () => {
   syncCampus(campusHeaderInput.value);
   updateEspacios();
   clearMessage();
+  showRutSalidaMessage('');
+  clearRutSalidaResult();
   loadTodayRecords().catch((error) => {
     showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
   });
@@ -402,6 +515,54 @@ recordsBody?.addEventListener('click', (event) => {
     button.disabled = false;
     button.textContent = 'Salida';
   });
+});
+
+rutSalidaInput?.addEventListener('input', () => {
+  showRutSalidaMessage('');
+  clearRutSalidaResult();
+});
+
+rutSalidaInput?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  rutSalidaSearchButton?.click();
+});
+
+rutSalidaSearchButton?.addEventListener('click', () => {
+  clearMessage();
+  showRutSalidaMessage('');
+  clearRutSalidaResult();
+
+  const rutNormalizado = normalizarRut(rutSalidaInput?.value || '');
+
+  if (!getSelectedCampus()) {
+    showRutSalidaMessage('Selecciona un campus para buscar un ingreso activo.', 'error');
+    return;
+  }
+
+  if (!rutNormalizado) {
+    showRutSalidaMessage('Ingresa un RUT válido para buscar.', 'error');
+    return;
+  }
+
+  const registro = buscarRegistroActivoPorRut(rutNormalizado);
+
+  if (!registro) {
+    showRutSalidaMessage('No hay un ingreso activo para este RUT en el día actual.');
+    return;
+  }
+
+  renderResultadoBusquedaSalida(registro);
+});
+
+rutSalidaResult?.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-action="salida-rut"]');
+
+  if (!button) {
+    return;
+  }
+
+  registrarSalidaDesdeBuscador(button.dataset.id, button);
 });
 
 form?.addEventListener('submit', async (event) => {
