@@ -120,11 +120,19 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes seleccionar un espacio válido para el campus elegido.' });
     }
 
-    const { fecha, hora, timestamp } = getFechaHoraCL();
-    const dia = String(timestamp).slice(0, 10);
+    const { fecha, hora } = getFechaHoraCL();
+
+    // Fecha local de Chile para agrupar registros del día
+    const dia = fecha;
+
+    // Timestamp inequívoco en UTC para guardar en base de datos
+    // Luego el frontend lo muestra en America/Santiago
+    const horaEntrada = new Date().toISOString();
 
     console.log('Hora Chile:', hora);
-    console.log('Timestamp:', timestamp);
+    console.log('Día Chile:', dia);
+    console.log('Hora entrada persistida UTC:', horaEntrada);
+
     const openRecord = await getOpenRecord(dia, run);
 
     if (openRecord) {
@@ -137,7 +145,7 @@ module.exports = async function handler(req, res) {
       'attendance_records',
       {
         dia,
-        hora_entrada: timestamp,
+        hora_entrada: horaEntrada,
         run,
         dv,
         carrera,
