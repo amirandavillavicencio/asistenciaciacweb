@@ -16,49 +16,51 @@
   <main class="app-shell container">
     <header class="topbar">
       <div class="topbar__surface">
-        <div class="topbar__meta">
-          <div class="header-datetime">
-            <div>
-              <span>Fecha</span>
-              <strong id="current-date">--</strong>
+        <div class="topbar__main">
+          <div class="topbar__brand">
+            <div class="brand-logo-wrap">
+              <img
+                class="brand-logo"
+                src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
+                alt="Logo USM"
+              >
             </div>
-            <div>
-              <span>Hora</span>
-              <strong id="current-time">--</strong>
-            </div>
-            <div>
-              <span>Semestre</span>
-              <strong id="current-semester">--</strong>
+            <div class="brand-copy">
+              <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
+              <div class="brand-title-group">
+                <h1>CIAC Registro</h1>
+                <p class="brand-subtitle">Panel de registro diario de atenciones estudiantiles.</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="topbar__brand">
-          <div class="brand-logo-wrap">
-            <img
-              class="brand-logo"
-              src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
-              alt="Logo USM"
-            >
+          <div class="topbar__campus">
+            <label class="header-field header-field--campus">
+              <span>Campus de trabajo</span>
+              <select id="campus-header">
+                <option value="">Selecciona campus</option>
+                <option value="Vitacura">Vitacura</option>
+                <option value="San Joaquín">San Joaquín</option>
+              </select>
+            </label>
           </div>
-          <div class="brand-copy">
-            <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
-            <div class="brand-title-group">
-              <h1>CIAC Registro</h1>
-              <p class="brand-subtitle">Panel de registro diario de atenciones estudiantiles.</p>
-            </div>
-          </div>
-        </div>
 
-        <div class="topbar__campus">
-          <label class="header-field header-field--campus">
-            <span>Campus de trabajo</span>
-            <select id="campus-header">
-              <option value="">Selecciona campus</option>
-              <option value="Vitacura">Vitacura</option>
-              <option value="San Joaquín">San Joaquín</option>
-            </select>
-          </label>
+          <aside class="topbar__meta">
+            <div class="header-datetime">
+              <div>
+                <span>Fecha</span>
+                <strong id="current-date">--</strong>
+              </div>
+              <div>
+                <span>Hora</span>
+                <strong id="current-time">--</strong>
+              </div>
+              <div>
+                <span>Semestre</span>
+                <strong id="current-semester">--</strong>
+              </div>
+            </div>
+          </aside>
         </div>
 
         <div class="topbar__actions">
