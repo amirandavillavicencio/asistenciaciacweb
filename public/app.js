@@ -190,23 +190,23 @@ function renderRecords(records) {
 
     return `
       <tr>
-        <td class="cell-run col-run">${escapeHtml(getRunLabel(item))}</td>
-        <td class="col-student">
+        <td class="cell-run col-run" data-label="RUN">${escapeHtml(getRunLabel(item))}</td>
+        <td class="col-student" data-label="Estudiante">
           <div class="student-cell">
             <strong>${escapeHtml(student.career)}</strong>
             <span class="student-cell__meta">${escapeHtml(student.admission)}</span>
             <span class="student-cell__notes">${escapeHtml(student.notes)}</span>
           </div>
         </td>
-        <td class="col-campus">${escapeHtml(getCellValue(item.sede))}</td>
-        <td class="col-activity">${escapeHtml(getCellValue(item.actividad))}</td>
-        <td class="col-topic">${escapeHtml(getCellValue(item.tematica))}</td>
-        <td class="col-space">${escapeHtml(getCellValue(item.espacio))}</td>
-        <td class="col-semester">${escapeHtml(semestre)}</td>
-        <td class="col-entry">${renderDateTimeCell(item.hora_entrada)}</td>
-        <td class="col-exit">${renderDateTimeCell(item.hora_salida)}</td>
-        <td class="col-status"><span class="estado ${estadoClass}">${escapeHtml(estadoText)}</span></td>
-        <td class="col-action">${actionButton}</td>
+        <td class="col-campus" data-label="Campus">${escapeHtml(getCellValue(item.sede))}</td>
+        <td class="col-activity" data-label="Actividad">${escapeHtml(getCellValue(item.actividad))}</td>
+        <td class="col-topic" data-label="Temática">${escapeHtml(getCellValue(item.tematica))}</td>
+        <td class="col-space" data-label="Espacio">${escapeHtml(getCellValue(item.espacio))}</td>
+        <td class="col-semester" data-label="Semestre">${escapeHtml(semestre)}</td>
+        <td class="col-entry" data-label="Entrada">${renderDateTimeCell(item.hora_entrada)}</td>
+        <td class="col-exit" data-label="Salida">${renderDateTimeCell(item.hora_salida)}</td>
+        <td class="col-status" data-label="Estado"><span class="estado ${estadoClass}">${escapeHtml(estadoText)}</span></td>
+        <td class="col-action" data-label="Acción">${actionButton}</td>
       </tr>
     `;
   }).join('');
