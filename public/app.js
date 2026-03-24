@@ -32,6 +32,7 @@ const rutSalidaMessage = document.getElementById('rut-salida-message');
 let lookupTimer = null;
 let activeCampusFilter = '';
 let todayRecordsCache = [];
+let rutSalidaLoading = false;
 
 function sanitizeRun(value) {
   return String(value || '').replace(/\D/g, '');
@@ -42,20 +43,49 @@ function sanitizeDv(value) {
 }
 
 function normalizarRut(valor) {
-  const cleaned = String(valor || '').trim().toUpperCase().replace(/\./g, '').replace(/-/g, '').replace(/[^0-9K]/g, '');
+  return String(valor || '')
+    .replace(/\./g, '')
+    .replace('-', '')
+    .trim()
+    .toUpperCase();
+}
 
-  if (cleaned.length < 2) {
-    return '';
+function splitRut(valor) {
+  const normalizado = normalizarRut(valor).replace(/[^0-9K]/g, '');
+
+  if (normalizado.length < 2) {
+    return null;
   }
 
-  const cuerpo = cleaned.slice(0, -1).replace(/\D/g, '');
-  const dv = cleaned.slice(-1).replace(/[^0-9K]/g, '');
+  const run = normalizado.slice(0, -1).replace(/\D/g, '');
+  const dv = normalizado.slice(-1).replace(/[^0-9K]/g, '');
 
-  if (!cuerpo || !dv || cuerpo.length < 7 || cuerpo.length > 8) {
-    return '';
+  if (!run || !dv || run.length < 7 || run.length > 8) {
+    return null;
   }
 
-  return `${cuerpo}-${dv}`;
+  return { run, dv, rut: `${run}-${dv}` };
+}
+
+function calculateDv(run) {
+  let suma = 0;
+  let multiplicador = 2;
+
+  for (let i = run.length - 1; i >= 0; i -= 1) {
+    suma += Number(run[i]) * multiplicador;
+    multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+  }
+
+  const resto = 11 - (suma % 11);
+  if (resto === 11) return '0';
+  if (resto === 10) return 'K';
+  return String(resto);
+}
+
+function isValidRutInput(value) {
+  const parts = splitRut(value);
+  if (!parts) return false;
+  return calculateDv(parts.run) === parts.dv;
 }
 
 function escapeHtml(value) {
@@ -190,15 +220,6 @@ function getVisibleRecords(records) {
   return records.filter((item) => item.sede === activeCampusFilter);
 }
 
-function getChileDateString(date = new Date()) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Santiago',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
-
 function showRutSalidaMessage(text, type = '') {
   if (!rutSalidaMessage) return;
   rutSalidaMessage.textContent = text || '';
@@ -220,7 +241,7 @@ function renderResultadoBusquedaSalida(registro) {
     return;
   }
 
-  const runNormalizado = normalizarRut(`${registro.run || ''}${registro.dv || ''}`) || getRunLabel(registro);
+  const runNormalizado = splitRut(`${registro.run || ''}${registro.dv || ''}`)?.rut || getRunLabel(registro);
   const entrada = formatDateTime(registro.hora_entrada);
 
   rutSalidaResult.innerHTML = `
@@ -239,21 +260,19 @@ function renderResultadoBusquedaSalida(registro) {
   rutSalidaResult.className = 'rut-salida-result is-visible';
 }
 
-function buscarRegistroActivoPorRut(rutNormalizado) {
-  if (!rutNormalizado) return null;
-  const campusSeleccionado = getSelectedCampus();
+async function buscarRegistroActivoPorRut(run) {
+  const response = await fetch('/api/buscar-activo-rut', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ run }),
+  });
+  const data = await response.json();
 
-  if (!campusSeleccionado) {
-    return null;
+  if (!response.ok) {
+    throw new Error(buildApiError(data, 'No se pudo buscar el ingreso activo.'));
   }
 
-  const hoyChile = getChileDateString();
-  return todayRecordsCache.find((item) => {
-    const rutRegistro = normalizarRut(`${item.run || ''}${item.dv || ''}`);
-    const isActive = !item.hora_salida;
-    const sameDay = (item.dia || '') === hoyChile;
-    return isActive && sameDay && item.sede === campusSeleccionado && rutRegistro === rutNormalizado;
-  }) || null;
+  return data;
 }
 
 function renderRecords(records) {
@@ -528,31 +547,57 @@ rutSalidaInput?.addEventListener('keydown', (event) => {
   rutSalidaSearchButton?.click();
 });
 
-rutSalidaSearchButton?.addEventListener('click', () => {
-  clearMessage();
-  showRutSalidaMessage('');
-  clearRutSalidaResult();
-
-  const rutNormalizado = normalizarRut(rutSalidaInput?.value || '');
-
-  if (!getSelectedCampus()) {
-    showRutSalidaMessage('Selecciona un campus para buscar un ingreso activo.', 'error');
+rutSalidaSearchButton?.addEventListener('click', async () => {
+  if (rutSalidaLoading) {
     return;
   }
 
-  if (!rutNormalizado) {
+  clearMessage();
+  showRutSalidaMessage('');
+  clearRutSalidaResult();
+  const rawRut = rutSalidaInput?.value || '';
+
+  if (!rawRut.trim()) {
+    showRutSalidaMessage('Ingresa un RUT para buscar.', 'error');
+    return;
+  }
+
+  if (!isValidRutInput(rawRut)) {
     showRutSalidaMessage('Ingresa un RUT válido para buscar.', 'error');
     return;
   }
 
-  const registro = buscarRegistroActivoPorRut(rutNormalizado);
+  const parsedRut = splitRut(rawRut);
 
-  if (!registro) {
-    showRutSalidaMessage('No hay un ingreso activo para este RUT en el día actual.');
+  if (!parsedRut) {
+    showRutSalidaMessage('Ingresa un RUT válido para buscar.', 'error');
     return;
   }
 
-  renderResultadoBusquedaSalida(registro);
+  rutSalidaLoading = true;
+  if (rutSalidaSearchButton) {
+    rutSalidaSearchButton.disabled = true;
+    rutSalidaSearchButton.textContent = 'Buscando...';
+  }
+
+  try {
+    const data = await buscarRegistroActivoPorRut(parsedRut.run);
+
+    if (!data?.found) {
+      showRutSalidaMessage('No hay un ingreso activo para este RUT hoy.');
+      return;
+    }
+
+    renderResultadoBusquedaSalida(data.record);
+  } catch (error) {
+    showRutSalidaMessage(error.message || 'No se pudo buscar el ingreso activo.', 'error');
+  } finally {
+    rutSalidaLoading = false;
+    if (rutSalidaSearchButton) {
+      rutSalidaSearchButton.disabled = false;
+      rutSalidaSearchButton.textContent = 'Buscar';
+    }
+  }
 });
 
 rutSalidaResult?.addEventListener('click', (event) => {
