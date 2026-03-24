@@ -207,28 +207,34 @@ textarea {
  display: flex;
  flex-wrap: wrap;
  gap: 10px;
+ justify-content: flex-end;
 }
 
 .button--header {
  min-height: 40px;
  padding: 0 16px;
- border: 1px solid var(--usm-blue);
+ border: 1px solid #b9c8d7;
  border-radius: var(--radius-sm);
- background: #fff;
- color: var(--usm-blue);
- font-weight: 700;
+ background: #f7f9fc;
+ color: #304a63;
+ font-weight: 600;
 }
 
 .button--header:hover {
- background: #eef4fa;
- border-color: var(--usm-blue-deep);
+ background: #eef3f8;
+ border-color: #9eb2c5;
+}
+
+.operations-layout {
+ display: grid;
+ grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.8fr);
+ gap: 16px;
+ align-items: start;
+ margin-bottom: 16px;
 }
 
 .dashboard-layout {
- display: grid;
- grid-template-columns: 340px minmax(0, 1fr);
- gap: 16px;
- align-items: start;
+ display: block;
 }
 
 .panel {
@@ -239,8 +245,13 @@ textarea {
 }
 
 .panel--form,
-.panel--table {
+.panel--table,
+.panel--quick-exit {
  padding: 16px;
+}
+
+.panel--quick-exit .panel__header {
+ margin-bottom: 10px;
 }
 
 .panel__header {
@@ -451,7 +462,7 @@ button:disabled {
 .rut-salida-tools {
  display: grid;
  gap: 8px;
- margin: -2px 0 12px;
+ margin: 0;
  padding: 10px 12px;
  border: 1px solid var(--border);
  border-radius: 12px;
@@ -743,8 +754,8 @@ th:last-child { padding-right: 12px; }
 }
 
 @media (max-width: 1179px) {
- .dashboard-layout {
-   grid-template-columns: 300px minmax(0, 1fr);
+ .operations-layout {
+   grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
    gap: 14px;
  }
 
@@ -817,9 +828,13 @@ th:last-child { padding-right: 12px; }
    width: 100%;
  }
 
- .dashboard-layout {
+ .operations-layout {
    grid-template-columns: 1fr;
    gap: 14px;
+ }
+
+ .dashboard-layout {
+   display: block;
  }
 
  .panel--form,
