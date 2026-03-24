@@ -232,6 +232,18 @@ function formatDuration(minutes) {
   return `${hours} h ${remainingMinutes} min`;
 }
 
+function getMonthLabel(monthValue) {
+  const month = Number.parseInt(monthValue, 10);
+  const date = new Date(Date.UTC(2024, month - 1, 1));
+
+  if (!Number.isInteger(month) || month < 1 || month > 12 || Number.isNaN(date.getTime())) {
+    return 'Todos los meses';
+  }
+
+  const label = new Intl.DateTimeFormat('es-CL', { month: 'long', timeZone: 'UTC' }).format(date);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 function getAverageDuration(records) {
   const durations = records
     .map((record) => {
@@ -459,6 +471,34 @@ function renderRecords(records) {
   `).join('');
 }
 
+function getReportSnapshot() {
+  const visibleRecords = getVisibleRecords(window.__REPORT_RECORDS__ || []);
+  const openRecords = visibleRecords.filter((record) => !record.hora_salida).length;
+  const closedRecords = visibleRecords.length - openRecords;
+  const averageDuration = getAverageDuration(visibleRecords);
+  const periodLabel = activeFilters.month === 'all'
+    ? 'Todos los meses'
+    : `${getMonthLabel(activeFilters.month)} ${activeFilters.year}`;
+
+  return {
+    filters: {
+      campus: activeFilters.campus || '',
+      topic: activeFilters.topic || '',
+      activity: activeFilters.activity || '',
+      year: activeFilters.year || '',
+      month: activeFilters.month || 'all',
+      periodLabel,
+    },
+    metrics: {
+      totalRecords: visibleRecords.length,
+      activeEntries: openRecords,
+      completedExits: closedRecords,
+      averageDuration: formatDuration(averageDuration),
+    },
+    records: visibleRecords,
+  };
+}
+
 function applyFilters() {
   updateUrlFilters();
   renderRecords(window.__REPORT_RECORDS__ || []);
@@ -503,8 +543,14 @@ async function exportReport() {
   exportButton.textContent = 'Exportando...';
 
   try {
-    const query = buildReportQuery();
-    const response = await fetch(`/api/export-report${query ? `?${query}` : ''}`);
+    const snapshot = getReportSnapshot();
+    const response = await fetch('/api/export-report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(snapshot),
+    });
     const contentType = response.headers.get('Content-Type') || '';
     const isJsonResponse = contentType.includes('application/json');
 
