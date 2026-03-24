@@ -21,7 +21,7 @@
         <div class="report-panel__actions">
           <span id="report-date" class="summary-chip summary-chip--secondary">Fecha --</span>
           <span id="report-campus" class="summary-chip summary-chip--secondary">Campus: Todos</span>
-          <button id="report-export-button" class="button" type="button">Exportar Excel</button>
+          <button id="report-export-button" class="button" type="button">Exportar informe PDF</button>
         </div>
       </div>
 
@@ -46,7 +46,19 @@
             <option value="">Todas las actividades</option>
           </select>
         </label>
-        <button id="report-clear-filters" class="button" type="button">Limpiar filtros</button>
+        
+        <label class="field report-filters__field">
+          <span>Año</span>
+          <select id="report-filter-year" name="report-filter-year"></select>
+        </label>
+        <label class="field report-filters__field">
+          <span>Mes</span>
+          <select id="report-filter-month" name="report-filter-month">
+            <option value="all">Todos</option>
+            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+        </label>
+<button id="report-clear-filters" class="button" type="button">Limpiar filtros</button>
       </section>
 
       <section class="report-kpis" aria-label="Resumen del día">

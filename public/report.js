@@ -17,12 +17,16 @@ const campusFilter = document.getElementById('report-filter-campus');
 const topicFilter = document.getElementById('report-filter-topic');
 const activityFilter = document.getElementById('report-filter-activity');
 const clearFiltersButton = document.getElementById('report-clear-filters');
+const yearFilter = document.getElementById('report-filter-year');
+const monthFilter = document.getElementById('report-filter-month');
 
 const params = new URLSearchParams(window.location.search);
 const DEFAULT_FILTERS = {
   campus: params.get('campus') || '',
   topic: params.get('motivo') || params.get('tematica') || '',
   activity: params.get('actividad') || '',
+  year: params.get('year') || String(new Date().getFullYear()),
+  month: params.get('month') || 'all',
 };
 
 window.__REPORT_RECORDS__ = [];
@@ -143,6 +147,12 @@ function syncFilterControls() {
   if (activityFilter) {
     activityFilter.value = activeFilters.activity;
   }
+  if (yearFilter) {
+    yearFilter.value = activeFilters.year;
+  }
+  if (monthFilter) {
+    monthFilter.value = activeFilters.month;
+  }
 }
 
 function updateFilterOptions(records) {
@@ -152,12 +162,21 @@ function updateFilterOptions(records) {
   syncFilterControls();
 }
 
+function initPeriodFilters() {
+  if (!yearFilter) return;
+  const nowYear = new Date().getFullYear();
+  const years = [nowYear - 2, nowYear - 1, nowYear, nowYear + 1];
+  yearFilter.innerHTML = years.map((year) => `<option value="${year}">${year}</option>`).join('');
+}
+
 function updateUrlFilters() {
   const nextParams = new URLSearchParams(window.location.search);
   const mappings = [
     ['campus', activeFilters.campus],
     ['motivo', activeFilters.topic],
     ['actividad', activeFilters.activity],
+    ['year', activeFilters.year],
+    ['month', activeFilters.month],
   ];
 
   mappings.forEach(([key, value]) => {
@@ -457,6 +476,8 @@ function buildReportQuery() {
   if (activeFilters.activity) {
     query.set('actividad', activeFilters.activity);
   }
+  query.set('year', activeFilters.year);
+  query.set('month', activeFilters.month);
 
   return query.toString();
 }
@@ -495,7 +516,7 @@ async function exportReport() {
     const blob = await response.blob();
     const disposition = response.headers.get('Content-Disposition') || '';
     const match = disposition.match(/filename\*?=(?:UTF-8''|"?)([^";]+)"?/i);
-    const filename = match ? decodeURIComponent(match[1]) : 'reporte.xlsx';
+    const filename = match ? decodeURIComponent(match[1]) : 'informe-uso-ciac.pdf';
     const link = document.createElement('a');
     const objectUrl = window.URL.createObjectURL(blob);
 
@@ -510,16 +531,18 @@ async function exportReport() {
     showMessage(error.message || 'No se pudo exportar el informe.', 'error');
   } finally {
     exportButton.disabled = false;
-    exportButton.textContent = 'Exportar Excel';
+    exportButton.textContent = 'Exportar informe PDF';
   }
 }
 
-[campusFilter, topicFilter, activityFilter].forEach((element) => {
+[campusFilter, topicFilter, activityFilter, yearFilter, monthFilter].forEach((element) => {
   element?.addEventListener('change', () => {
     activeFilters = {
       campus: campusFilter?.value || '',
       topic: topicFilter?.value || '',
       activity: activityFilter?.value || '',
+      year: yearFilter?.value || String(new Date().getFullYear()),
+      month: monthFilter?.value || 'all',
     };
     loadRecords().catch((error) => {
       showMessage(error.message || 'No se pudieron cargar los registros del informe.', 'error');
@@ -528,7 +551,7 @@ async function exportReport() {
 });
 
 clearFiltersButton?.addEventListener('click', () => {
-  activeFilters = { campus: '', topic: '', activity: '' };
+  activeFilters = { campus: '', topic: '', activity: '', year: String(new Date().getFullYear()), month: 'all' };
   syncFilterControls();
   applyFilters();
   loadRecords().catch((error) => {
@@ -539,6 +562,7 @@ clearFiltersButton?.addEventListener('click', () => {
 exportButton.addEventListener('click', exportReport);
 window.addEventListener('resize', () => drawHourlyChart(getVisibleRecords(window.__REPORT_RECORDS__ || [])));
 
+initPeriodFilters();
 syncFilterControls();
 loadRecords().catch((error) => {
   showMessage(error.message || 'No se pudieron cargar los registros del informe.', 'error');

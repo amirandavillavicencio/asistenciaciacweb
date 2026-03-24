@@ -1019,3 +1019,30 @@ th:last-child {
     align-items: flex-start;
   }
 }
+
+.panel--historical {
+  margin-top: 24px;
+  padding: var(--panel-padding);
+}
+
+.historical-controls {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.historical-actions {
+  display: flex;
+  gap: 10px;
+}
+
+#historical-cards {
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1100px) {
+  .historical-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

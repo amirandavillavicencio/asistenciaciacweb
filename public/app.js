@@ -455,3 +455,109 @@ loadTodayRecords().catch((error) => {
   showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
 });
 window.setInterval(updateClock, 1000);
+
+const historicalYear = document.getElementById('historical-year');
+const historicalMonth = document.getElementById('historical-month');
+const historicalCampus = document.getElementById('historical-campus');
+const historicalActivity = document.getElementById('historical-activity');
+const historicalTopic = document.getElementById('historical-topic');
+const historicalViewButton = document.getElementById('historical-view');
+const historicalHead = document.getElementById('historical-head');
+const historicalBody = document.getElementById('historical-body');
+const historicalCards = document.getElementById('historical-cards');
+const historicalExportCsv = document.getElementById('historical-export-csv');
+const historicalExportPdf = document.getElementById('historical-export-pdf');
+
+function getHistoricalQuery() {
+  const q = new URLSearchParams({
+    year: historicalYear?.value || String(new Date().getFullYear()),
+    month: historicalMonth?.value || 'all',
+  });
+  if (historicalCampus?.value) q.set('campus', historicalCampus.value);
+  if (historicalActivity?.value) q.set('actividad', historicalActivity.value);
+  if (historicalTopic?.value) q.set('tematica', historicalTopic.value);
+  return q.toString();
+}
+
+function renderHistoricalCards(analytics) {
+  if (!historicalCards) return;
+  historicalCards.innerHTML = `
+    <article class="report-kpi"><span class="report-kpi__label">Total atenciones</span><strong class="report-kpi__value">${analytics.executive.total}</strong></article>
+    <article class="report-kpi"><span class="report-kpi__label">Estudiantes únicos</span><strong class="report-kpi__value">${analytics.executive.uniqueStudents}</strong></article>
+    <article class="report-kpi"><span class="report-kpi__label">Actividad top</span><strong class="report-kpi__value">${escapeHtml(analytics.activity.top?.label || 'Sin datos')}</strong></article>
+    <article class="report-kpi"><span class="report-kpi__label">Temática top</span><strong class="report-kpi__value">${escapeHtml(analytics.topic.top?.label || 'Sin datos')}</strong></article>
+  `;
+}
+
+function renderHistoricalMonth(records) {
+  historicalHead.innerHTML = '<tr><th>Fecha</th><th>RUN</th><th>Campus</th><th>Actividad</th><th>Temática</th><th>Espacio</th><th>Entrada</th><th>Salida</th></tr>';
+  if (!records.length) {
+    historicalBody.innerHTML = '<tr><td colspan="8" class="empty">Sin registros para este período.</td></tr>';
+    return;
+  }
+
+  historicalBody.innerHTML = records.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.dia || '—')}</td>
+      <td>${escapeHtml(getRunLabel(row))}</td>
+      <td>${escapeHtml(getCellValue(row.sede))}</td>
+      <td>${escapeHtml(getCellValue(row.actividad))}</td>
+      <td>${escapeHtml(getCellValue(row.tematica))}</td>
+      <td>${escapeHtml(getCellValue(row.espacio))}</td>
+      <td>${escapeHtml(formatDateTime(row.hora_entrada).date)} ${escapeHtml(formatDateTime(row.hora_entrada).time)}</td>
+      <td>${escapeHtml(formatDateTime(row.hora_salida).date)} ${escapeHtml(formatDateTime(row.hora_salida).time)}</td>
+    </tr>`).join('');
+}
+
+function renderHistoricalYear(monthly) {
+  historicalHead.innerHTML = '<tr><th>Mes</th><th>Total atenciones</th><th>Estudiantes únicos</th><th>Actividad top</th><th>Temática top</th></tr>';
+  historicalBody.innerHTML = monthly.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.monthLabel)}</td>
+      <td>${row.total}</td>
+      <td>${row.uniqueStudents}</td>
+      <td>${escapeHtml(row.topActivity)}</td>
+      <td>${escapeHtml(row.topTopic)}</td>
+    </tr>`).join('');
+}
+
+async function loadHistoricalRecords() {
+  const response = await fetch(`/api/historical-records?${getHistoricalQuery()}`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(buildApiError(data, 'No se pudo cargar histórico.'));
+  renderHistoricalCards(data.analytics);
+  if (data.mode === 'year') {
+    renderHistoricalYear(data.monthly || []);
+  } else {
+    renderHistoricalMonth(data.records || []);
+  }
+}
+
+function downloadByUrl(url, fallback) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fallback;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+historicalViewButton?.addEventListener('click', () => {
+  loadHistoricalRecords().catch((error) => showMessage(error.message, 'error'));
+});
+
+historicalExportCsv?.addEventListener('click', () => {
+  downloadByUrl(`/api/export-historical?${getHistoricalQuery()}&format=csv`, 'historico.csv');
+});
+
+historicalExportPdf?.addEventListener('click', () => {
+  downloadByUrl(`/api/export-report?${getHistoricalQuery()}`, 'historico.pdf');
+});
+
+(function initHistorical() {
+  if (!historicalYear) return;
+  const nowYear = new Date().getFullYear();
+  historicalYear.innerHTML = [nowYear - 2, nowYear - 1, nowYear, nowYear + 1]
+    .map((year) => `<option value="${year}">${year}</option>`).join('');
+  historicalYear.value = String(nowYear);
+})();
