@@ -120,8 +120,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Debes seleccionar un espacio válido para el campus elegido.' });
     }
 
-    const { fecha, hora, timestamp } = getFechaHoraCL();
-    const dia = String(timestamp).slice(0, 10);
+    const { fecha, hora, dia, timestamp } = getFechaHoraCL();
 
     console.log('Hora Chile:', hora);
     console.log('Timestamp:', timestamp);
