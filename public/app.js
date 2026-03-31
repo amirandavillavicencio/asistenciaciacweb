@@ -33,6 +33,7 @@ let lookupTimer = null;
 let activeCampusFilter = '';
 let todayRecordsCache = [];
 let rutSalidaLoading = false;
+const SENSITIVE_ACTION_KEY = 'Ciac.2011';
 
 function sanitizeRun(value) {
   return String(value || '').replace(/\D/g, '');
@@ -464,11 +465,23 @@ async function downloadExport() {
   }
 }
 
-function validateExportKey() {
-  const exportKey = window.prompt('Ingresa la clave para exportar:');
+function requestSensitiveActionKey(actionLabel) {
+  const accessKey = window.prompt(`Ingresa la clave adicional para ${actionLabel}:`);
 
-  if (exportKey !== 'Ciac.2011') {
+  if (accessKey === null) {
+    return false;
+  }
+
+  if (accessKey !== SENSITIVE_ACTION_KEY) {
     window.alert('Clave incorrecta');
+    return false;
+  }
+
+  return true;
+}
+
+function validateExportKey() {
+  if (!requestSensitiveActionKey('exportar')) {
     return false;
   }
 
@@ -477,10 +490,7 @@ function validateExportKey() {
 
 function openUsageReport() {
   clearMessage();
-  const claveInforme = window.prompt('Ingresa la clave para abrir Informe:');
-
-  if (claveInforme !== 'Ciac.2011') {
-    window.alert('Clave incorrecta');
+  if (!requestSensitiveActionKey('abrir Informe')) {
     return;
   }
 
