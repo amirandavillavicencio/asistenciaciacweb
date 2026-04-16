@@ -1,6 +1,5 @@
 const CAMPUS_SPACES = {
-  Vitacura: ['Espacio común'],
-  'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
+  Conce: ['Espacio común'],
 };
 
 const form = document.getElementById('registro-form');
@@ -712,7 +711,7 @@ form?.addEventListener('submit', async (event) => {
   }
 
   try {
-    const response = await fetch('/api/registrar', {
+    const response = await fetch('/api/registrar-conce', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -749,7 +748,8 @@ form?.addEventListener('submit', async (event) => {
 });
 
 if (campusHeaderInput) {
-  syncCampus(getSelectedCampus());
+  syncCampus('Conce');
+  campusHeaderInput.disabled = true;
 }
 updateEspacios();
 updateClock();
