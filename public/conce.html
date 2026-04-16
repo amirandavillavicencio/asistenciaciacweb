@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIAC Registro | Universidad Técnica Federico Santa María</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/conce.css">
+</head>
+
+<body>
+  <main class="app-shell container">
+    <header class="topbar">
+      <div class="topbar__surface">
+        <div class="topbar__main">
+          <div class="topbar__brand">
+            <div class="brand-logo-wrap">
+              <img
+                class="brand-logo"
+                src="https://comunicaciones.usm.cl/wp-content/uploads/2024/04/Mesa-de-trabajo-5-copia-4-300x300.png"
+                alt="Logo USM"
+              >
+            </div>
+            <div class="brand-copy">
+              <p class="brand-kicker">Universidad Técnica Federico Santa María</p>
+              <div class="brand-title-group">
+                <h1>CIAC Registro</h1>
+                <p class="brand-subtitle">Panel de registro diario de atenciones estudiantiles.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="topbar__campus">
+            <label class="header-field header-field--campus">
+              <span>Campus de trabajo</span>
+              <select id="campus-header">
+                <option value="">Selecciona campus</option>
+                <option value="Vitacura">Vitacura</option>
+                <option value="San Joaquín">San Joaquín</option>
+              </select>
+            </label>
+          </div>
+
+          <aside class="topbar__meta">
+            <div class="header-datetime">
+              <div>
+                <span>Fecha</span>
+                <strong id="current-date">--</strong>
+              </div>
+              <div>
+                <span>Hora</span>
+                <strong id="current-time">--</strong>
+              </div>
+              <div>
+                <span>Semestre</span>
+                <strong id="current-semester">--</strong>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="topbar__actions">
+          <button id="export-button" class="button button--header" type="button">Exportar registros CSV</button>
+          <button id="export-report-button" class="button button--header" type="button">Ver informe</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="message" class="message" aria-live="polite"></div>
+
+    <section class="operations-layout section">
+      <article class="panel panel--form card">
+        <header class="panel__header">
+          <div>
+            <p class="section-tag">Ingreso</p>
+            <h2>Ingreso de estudiante</h2>
+            <p>Completa los datos para registrar una nueva atención.</p>
+          </div>
+        </header>
+
+        <form id="registro-form" class="form">
+          <section class="form-section">
+            <header class="form-section__header">
+              <h3>Identificación</h3>
+            </header>
+
+            <div class="grid grid--run">
+              <label>
+                <span>RUN</span>
+                <input id="run" placeholder="Ej: 12345678" required>
+              </label>
+              <label>
+                <span>DV</span>
+                <input id="dv" placeholder="K" maxlength="1" required>
+              </label>
+            </div>
+            <p id="autocomplete-status" class="form-helper">Ingresa al menos 3 dígitos para consultar datos del estudiante.</p>
+
+            <div class="grid grid--2">
+              <label>
+                <span>Carrera</span>
+                <input id="carrera" placeholder="Carrera" required>
+              </label>
+              <label>
+                <span>Año ingreso</span>
+                <input id="anio_ingreso" placeholder="Ej: 2023" required>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <header class="form-section__header">
+              <h3>Detalle de atención</h3>
+            </header>
+
+            <div class="grid grid--2">
+              <label>
+                <span>Actividad</span>
+                <select id="actividad" required>
+                  <option value="">Actividad</option>
+                  <option>Reforzamiento</option>
+                  <option>Consultoría</option>
+                  <option>Tutoría par integral</option>
+                  <option>Mentoría</option>
+                  <option>Psicoeducativo individual</option>
+                  <option>Psicoeducativo grupal</option>
+                  <option>Uso de sala</option>
+                </select>
+              </label>
+              <label>
+                <span>Temática</span>
+                <select id="tematica" required>
+                  <option value="">Otros</option>
+                  <option>Matemática</option>
+                  <option>Química</option>
+                  <option>Física</option>
+                  <option>Programación</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid grid--2 grid--details">
+              <label>
+                <span>Espacio</span>
+                <select id="espacio" >
+                  <option value="">Espacio</option>
+                </select>
+              </label>
+              <label>
+                <span>Observaciones</span>
+                <textarea id="observaciones" placeholder="Observaciones"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <button id="submit-button" type="submit">Registrar entrada</button>
+
+        </form>
+      </article>
+
+      <article class="panel panel--quick-exit card">
+        <header class="panel__header">
+          <div>
+            <p class="section-tag">Salida rápida</p>
+            <h2>Cierre por RUN/RUT</h2>
+            <p>Busca un registro activo y cierra la salida sin ir a la tabla.</p>
+          </div>
+        </header>
+
+        <section class="rut-salida-tools" aria-label="Cerrar salida por RUT">
+          <p class="rut-salida-tools__label">Cerrar salida por RUT</p>
+          <div class="rut-salida-form">
+            <input id="rut-salida-input" type="text" inputmode="text" autocomplete="off" placeholder="Ej: 12345678-9" aria-label="RUT para cerrar salida">
+            <button id="rut-salida-search" type="button">Buscar</button>
+          </div>
+          <div id="rut-salida-message" class="rut-salida-message" aria-live="polite"></div>
+          <div id="rut-salida-result" class="rut-salida-result" aria-live="polite"></div>
+        </section>
+      </article>
+    </section>
+
+    <section class="dashboard-layout section">
+      <article class="panel panel--table card">
+        <header class="panel__header">
+          <div>
+            <p class="section-tag">Seguimiento</p>
+            <h2>Registros del día</h2>
+            <p>Visualiza y cierra atenciones activas del campus seleccionado.</p>
+          </div>
+          <div class="table-summary">
+            <span id="records-count" class="summary-chip">0 registros</span>
+            <span class="summary-chip summary-chip--secondary">Actualización automática</span>
+          </div>
+        </header>
+
+        <div class="table-wrap table-wrapper">
+          <table class="records-table">
+            <colgroup>
+              <col class="col-run">
+              <col class="col-student">
+              <col class="col-campus">
+              <col class="col-activity">
+              <col class="col-topic">
+              <col class="col-space">
+              <col class="col-semester">
+              <col class="col-entry">
+              <col class="col-exit">
+              <col class="col-status">
+              <col class="col-action">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col-run">RUN</th>
+                <th class="col-student">Estudiante</th>
+                <th class="col-campus">Campus</th>
+                <th class="col-activity">Actividad</th>
+                <th class="col-topic">Temática</th>
+                <th class="col-space">Espacio</th>
+                <th class="col-semester">Semestre</th>
+                <th class="col-entry">Entrada</th>
+                <th class="col-exit">Salida</th>
+                <th class="col-status">Estado</th>
+                <th class="col-action">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="records-body">
+              <tr>
+                <td colspan="11" class="empty">No hay registros hoy</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="/conce.js"></script>
+</body>
+</html>
