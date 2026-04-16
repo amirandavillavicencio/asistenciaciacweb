@@ -1,4 +1,6 @@
+const FORCED_CAMPUS = 'Conce';
 const CAMPUS_SPACES = {
+  Conce: ['Espacio común'],
   Vitacura: ['Espacio común'],
   'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
 };
@@ -156,13 +158,14 @@ function buildApiError(data, fallback) {
 }
 
 function getSelectedCampus() {
-  return campusHeaderInput?.value || '';
+  return FORCED_CAMPUS;
 }
 
-function syncCampus(value) {
+function syncCampus(value = FORCED_CAMPUS) {
   if (!campusHeaderInput) return;
-  campusHeaderInput.value = value;
-  activeCampusFilter = value;
+  campusHeaderInput.value = FORCED_CAMPUS;
+  campusHeaderInput.disabled = true;
+  activeCampusFilter = FORCED_CAMPUS;
 }
 
 function updateEspacios() {
@@ -695,7 +698,7 @@ form?.addEventListener('submit', async (event) => {
   clearMessage();
 
   const payload = {
-    campus: getSelectedCampus(),
+    campus: FORCED_CAMPUS,
     run: sanitizeRun(runInput.value),
     dv: sanitizeDv(dvInput.value),
     carrera: carreraInput.value.trim(),
@@ -749,7 +752,7 @@ form?.addEventListener('submit', async (event) => {
 });
 
 if (campusHeaderInput) {
-  syncCampus(getSelectedCampus());
+  syncCampus(FORCED_CAMPUS);
 }
 updateEspacios();
 updateClock();
