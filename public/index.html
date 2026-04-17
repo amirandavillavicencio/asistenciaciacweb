@@ -13,7 +13,7 @@
 </head>
 
 <body>
-  <main class="app-shell container">
+  <main id="app-shell" class="app-shell container">
     <header class="topbar">
       <div class="topbar__surface">
         <div class="topbar__main">
@@ -237,6 +237,20 @@
       </article>
     </section>
   </main>
+
+
+  <div id="access-overlay" class="access-overlay" role="dialog" aria-modal="true" aria-labelledby="access-title">
+    <div class="access-overlay__panel">
+      <h2 id="access-title">Acceso CIAC</h2>
+      <p class="access-overlay__description">Ingresa la clave para acceder al sistema.</p>
+      <form id="access-form" class="access-overlay__form">
+        <label for="access-password">Clave de acceso</label>
+        <input id="access-password" name="password" type="password" autocomplete="current-password" required>
+        <button id="access-submit" type="submit">Ingresar</button>
+      </form>
+      <p id="access-error" class="access-overlay__error" aria-live="polite"></p>
+    </div>
+  </div>
 
   <script src="/app.js"></script>
 </body>
