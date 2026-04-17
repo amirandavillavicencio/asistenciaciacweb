@@ -27,13 +27,141 @@ const rutSalidaInput = document.getElementById('rut-salida-input');
 const rutSalidaSearchButton = document.getElementById('rut-salida-search');
 const rutSalidaResult = document.getElementById('rut-salida-result');
 const rutSalidaMessage = document.getElementById('rut-salida-message');
+const accessOverlay = document.getElementById('access-overlay');
+const accessForm = document.getElementById('access-form');
+const accessPasswordInput = document.getElementById('access-password');
+const accessSubmitButton = document.getElementById('access-submit');
+const accessError = document.getElementById('access-error');
 
 
 let lookupTimer = null;
 let activeCampusFilter = '';
 let todayRecordsCache = [];
 let rutSalidaLoading = false;
+let appInitialized = false;
+const ACCESS_SESSION_KEY = 'ciac_access_authorized';
 const SENSITIVE_ACTION_KEY = 'Ciac.2011';
+
+function setAccessError(message = '') {
+  if (!accessError) return;
+  accessError.textContent = message;
+}
+
+function isAccessAuthorizedSession() {
+  try {
+    return window.sessionStorage.getItem(ACCESS_SESSION_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function persistAccessAuthorized() {
+  try {
+    window.sessionStorage.setItem(ACCESS_SESSION_KEY, 'true');
+  } catch {
+    // no-op
+  }
+}
+
+function showAccessOverlay() {
+  if (accessOverlay) {
+    accessOverlay.classList.add('is-visible');
+  }
+  document.body.classList.add('access-locked');
+  window.setTimeout(() => {
+    accessPasswordInput?.focus();
+  }, 0);
+}
+
+function hideAccessOverlay() {
+  if (accessOverlay) {
+    accessOverlay.classList.remove('is-visible');
+  }
+  document.body.classList.remove('access-locked');
+}
+
+async function validateAccessPassword(password) {
+  const response = await fetch('/api/validate-access', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || !data.ok) {
+    throw new Error('Clave incorrecta. Intenta nuevamente.');
+  }
+
+  return true;
+}
+
+function initializeApp() {
+  if (appInitialized) {
+    return;
+  }
+
+  appInitialized = true;
+
+  if (campusHeaderInput) {
+    syncCampus(getSelectedCampus());
+  }
+  updateEspacios();
+  updateClock();
+  loadTodayRecords().catch((error) => {
+    showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
+  });
+  window.setInterval(updateClock, 1000);
+}
+
+function setupAccessControl() {
+  if (!accessOverlay || !accessForm || !accessPasswordInput) {
+    initializeApp();
+    return;
+  }
+
+  if (isAccessAuthorizedSession()) {
+    hideAccessOverlay();
+    initializeApp();
+    return;
+  }
+
+  showAccessOverlay();
+
+  accessForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const password = String(accessPasswordInput.value || '');
+
+    if (!password.trim()) {
+      setAccessError('Debes ingresar la clave de acceso.');
+      accessPasswordInput.focus();
+      return;
+    }
+
+    setAccessError('');
+    if (accessSubmitButton) {
+      accessSubmitButton.disabled = true;
+      accessSubmitButton.textContent = 'Validando...';
+    }
+
+    try {
+      await validateAccessPassword(password);
+      persistAccessAuthorized();
+      accessForm.reset();
+      hideAccessOverlay();
+      initializeApp();
+    } catch (error) {
+      setAccessError(error.message || 'No se pudo validar la clave.');
+      accessPasswordInput.focus();
+      accessPasswordInput.select();
+    } finally {
+      if (accessSubmitButton) {
+        accessSubmitButton.disabled = false;
+        accessSubmitButton.textContent = 'Ingresar';
+      }
+    }
+  });
+}
 
 function sanitizeRun(value) {
   return String(value || '').replace(/\D/g, '');
@@ -748,16 +876,6 @@ form?.addEventListener('submit', async (event) => {
   }
 });
 
-if (campusHeaderInput) {
-  syncCampus(getSelectedCampus());
-}
-updateEspacios();
-updateClock();
-loadTodayRecords().catch((error) => {
-  showMessage(error.message || 'No se pudieron cargar los registros del día.', 'error');
-});
-window.setInterval(updateClock, 1000);
-
 const historicalYear = document.getElementById('historical-year');
 const historicalMonth = document.getElementById('historical-month');
 const historicalCampus = document.getElementById('historical-campus');
@@ -869,3 +987,5 @@ historicalExportPdf?.addEventListener('click', () => {
     .map((year) => `<option value="${year}">${year}</option>`).join('');
   historicalYear.value = String(nowYear);
 })();
+
+setupAccessControl();
