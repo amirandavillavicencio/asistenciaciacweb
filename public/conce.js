@@ -264,10 +264,7 @@ function formatRut(run, dv) {
 }
 
 function getVisibleRecords(records) {
-  if (!activeCampusFilter) {
-    return records;
-  }
-  return records.filter((item) => item.sede === activeCampusFilter);
+  return records.filter((item) => item.sede === 'Conce');
 }
 
 function showRutSalidaMessage(text, type = '') {
@@ -311,7 +308,7 @@ function renderResultadoBusquedaSalida(registro) {
 }
 
 async function buscarRegistroActivoPorRut(run) {
-  const response = await fetch('/api/buscar-activo-rut', {
+  const response = await fetch('/api/buscar-activo-rut-conce', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ run }),
@@ -328,6 +325,9 @@ async function buscarRegistroActivoPorRut(run) {
 function renderRecords(records) {
   if (!recordsBody || !recordsCount) return;
   todayRecordsCache = Array.isArray(records) ? records : [];
+  if (todayRecordsCache.some((r) => r.sede !== 'Conce')) {
+    console.error('DATA LEAK: registros de otra sede en endpoint Conce', todayRecordsCache);
+  }
   const visibleRecords = getVisibleRecords(Array.isArray(records) ? records : []);
 
   if (visibleRecords.length === 0) {
@@ -373,7 +373,7 @@ function renderRecords(records) {
 }
 
 async function loadTodayRecords() {
-  const response = await fetch('/api/registros-hoy');
+  const response = await fetch('/api/registros-conce');
   const data = await response.json();
 
   if (!response.ok) {
@@ -507,7 +507,7 @@ async function registerExit(id) {
   clearMessage();
 
   try {
-    const response = await fetch('/api/registrar-salida', {
+    const response = await fetch('/api/registrar-salida-conce', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
