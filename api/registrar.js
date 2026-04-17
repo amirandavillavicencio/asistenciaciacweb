@@ -2,7 +2,7 @@ const { supabaseGet, supabasePost } = require('../lib/supabase');
 const { cleanRun, cleanDv } = require('../lib/rut');
 const { getFechaHoraCL } = require('../lib/fecha-hora-cl');
 
-const CAMPUS_OPTIONS = ['Vitacura', 'San Joaquín'];
+const CAMPUS_OPTIONS = ['Vitacura', 'San Joaquín', 'Conce'];
 const ACTIVITY_OPTIONS = [
   'Reforzamiento',
   'Consultoría',
@@ -16,6 +16,7 @@ const TOPIC_OPTIONS = ['Matemática', 'Química', 'Física', 'Programación'];
 const SPACE_OPTIONS = {
   Vitacura: ['Espacio común'],
   'San Joaquín': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Sala 6', 'Espacio común'],
+  Conce: ['Espacio común'],
 };
 const RECORD_SELECT = 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado,created_at';
 

@@ -1,6 +1,7 @@
 const { supabaseGet } = require('../lib/supabase');
 const { cleanRun } = require('../lib/rut');
 
+const CAMPUS_OPTIONS = ['Vitacura', 'San Joaquín', 'Conce'];
 const RECORD_SELECT = 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,estado';
 
 function parseBody(req) {
@@ -57,7 +58,16 @@ module.exports = async function handler(req, res) {
 
   try {
     const body = parseBody(req);
+    const campus = String(body.campus || '').trim();
     const run = extractRunForSearch(body.run || '');
+
+    if (!campus) {
+      return res.status(400).json({ error: 'Debes indicar el campus.' });
+    }
+
+    if (!CAMPUS_OPTIONS.includes(campus)) {
+      return res.status(400).json({ error: 'Debes indicar un campus válido.' });
+    }
 
     if (!/^\d{7,8}$/.test(run)) {
       return res.status(400).json({ error: 'Debes indicar un RUN válido.' });
@@ -68,6 +78,7 @@ module.exports = async function handler(req, res) {
       select: RECORD_SELECT,
       dia: `eq.${dia}`,
       run: `eq.${run}`,
+      sede: `eq.${campus}`,
       hora_salida: 'is.null',
       estado: 'eq.Dentro',
       order: 'hora_entrada.desc',
