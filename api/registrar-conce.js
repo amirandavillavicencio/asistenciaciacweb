@@ -30,6 +30,7 @@ async function getOpenRecord(dia, run) {
     select: RECORD_SELECT,
     dia: `eq.${dia}`,
     run: `eq.${run}`,
+    sede: `eq.${FIXED_CAMPUS}`,
     hora_salida: 'is.null',
     or: '(estado.eq.Dentro,estado.is.null)',
     order: 'hora_entrada.desc',
@@ -42,6 +43,7 @@ async function getTodayRecords(dia) {
   const data = await supabaseGet('attendance_records', {
     select: RECORD_SELECT,
     dia: `eq.${dia}`,
+    sede: `eq.${FIXED_CAMPUS}`,
     order: 'hora_entrada.desc',
   });
   return Array.isArray(data) ? data : [];
