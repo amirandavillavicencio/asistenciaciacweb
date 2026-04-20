@@ -6,6 +6,7 @@ const CHILE_TIMEZONE = 'America/Santiago';
 const RECORD_SELECT = '*';
 const RECORD_LIMIT = 20;
 const ENDPOINT_NAME = 'api/registros-hoy.js';
+const CAMPUS_OPTIONS = ['Vitacura', 'San Joaquín', 'Conce'];
 
 function getChileDate(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -35,9 +36,19 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const campus = String(req.query?.campus || '').trim();
+    if (!campus) {
+      return res.status(400).json({ error: 'Debes indicar el campus.' });
+    }
+    if (!CAMPUS_OPTIONS.includes(campus)) {
+      return res.status(400).json({ error: 'Debes indicar un campus válido.' });
+    }
+
     const dia = getChileDate();
     const query = {
       select: RECORD_SELECT,
+      dia: `eq.${dia}`,
+      sede: `eq.${campus}`,
       order: 'created_at.desc',
       limit: RECORD_LIMIT,
     };
@@ -48,7 +59,7 @@ module.exports = async function handler(req, res) {
       intended_filters: {
         dia_current_date_chile: dia,
         estado: null,
-        sede: null,
+        sede: campus,
         other_filters: [],
       },
       applied_filters: Object.fromEntries(
@@ -57,7 +68,7 @@ module.exports = async function handler(req, res) {
       query,
       env: buildEnvDiagnostic(),
       notes: [
-        'Consulta temporalmente reducida a select *, order by created_at desc, limit 20 para descartar filtros problemáticos.',
+        'Consulta filtrada por día de Chile y sede solicitada.',
         'El path usado hacia Supabase REST sigue siendo attendance_records, que corresponde a /rest/v1/attendance_records (schema public por defecto).',
       ],
     };

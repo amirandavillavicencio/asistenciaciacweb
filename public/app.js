@@ -440,10 +440,11 @@ function renderResultadoBusquedaSalida(registro) {
 }
 
 async function buscarRegistroActivoPorRut(run) {
+  const campus = getSelectedCampus();
   const response = await fetch('/api/buscar-activo-rut', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ run }),
+    body: JSON.stringify({ run, campus }),
   });
   const data = await response.json();
 
@@ -502,7 +503,9 @@ function renderRecords(records) {
 }
 
 async function loadTodayRecords() {
-  const response = await fetch('/api/registros-hoy');
+  const campus = getSelectedCampus();
+  const query = new URLSearchParams({ campus });
+  const response = await fetch(`/api/registros-hoy?${query.toString()}`);
   const data = await response.json();
 
   if (!response.ok) {
@@ -634,12 +637,13 @@ function openUsageReport() {
 
 async function registerExit(id) {
   clearMessage();
+  const campus = getSelectedCampus();
 
   try {
     const response = await fetch('/api/registrar-salida', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ id, campus }),
     });
 
     const data = await response.json();

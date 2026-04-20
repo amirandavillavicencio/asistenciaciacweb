@@ -1,6 +1,7 @@
 const { supabaseGet, supabasePatch } = require('../lib/supabase');
 const { getFechaHoraCL } = require('../lib/fecha-hora-cl');
 
+const CAMPUS_OPTIONS = ['Vitacura', 'San Joaquín', 'Conce'];
 const RECORD_SELECT = 'id,dia,hora_entrada,hora_salida,run,dv,carrera,sede,anio_ingreso,actividad,tematica,observaciones,espacio,estado,created_at';
 
 function parseBody(req) {
@@ -11,10 +12,11 @@ function parseBody(req) {
   return req.body || {};
 }
 
-async function getTodayRecords(dia) {
+async function getTodayRecords(dia, campus) {
   const data = await supabaseGet('attendance_records', {
     select: RECORD_SELECT,
     dia: `eq.${dia}`,
+    sede: `eq.${campus}`,
     order: 'hora_entrada.desc',
   });
 
@@ -29,9 +31,16 @@ module.exports = async function handler(req, res) {
   try {
     const body = parseBody(req);
     const id = String(body.id || '').trim();
+    const campus = String(body.campus || '').trim();
 
     if (!id) {
       return res.status(400).json({ error: 'Debes indicar un registro válido.' });
+    }
+    if (!campus) {
+      return res.status(400).json({ error: 'Debes indicar el campus.' });
+    }
+    if (!CAMPUS_OPTIONS.includes(campus)) {
+      return res.status(400).json({ error: 'Debes indicar un campus válido.' });
     }
 
     const { fecha, hora, timestampUTC } = getFechaHoraCL();
@@ -45,6 +54,7 @@ module.exports = async function handler(req, res) {
       select: RECORD_SELECT,
       id: `eq.${id}`,
       dia: `eq.${dia}`,
+      sede: `eq.${campus}`,
       limit: '1',
     });
 
@@ -60,7 +70,7 @@ module.exports = async function handler(req, res) {
 
     const updated = await supabasePatch(
       'attendance_records',
-      { id: `eq.${id}`, select: RECORD_SELECT },
+      { id: `eq.${id}`, sede: `eq.${campus}`, select: RECORD_SELECT },
       {
         hora_salida: timestampUTC,
         estado: 'Fuera',
@@ -68,7 +78,7 @@ module.exports = async function handler(req, res) {
     );
 
     const registroActualizado = Array.isArray(updated) ? updated[0] || null : updated;
-    const registrosHoy = await getTodayRecords(dia);
+    const registrosHoy = await getTodayRecords(dia, campus);
 
     return res.status(200).json({
       message: 'Salida registrada correctamente.',
